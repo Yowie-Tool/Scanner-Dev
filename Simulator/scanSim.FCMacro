@@ -5,26 +5,6 @@
 import Part, FreeCAD, math, copy
 from FreeCAD import Base
 
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-# Useful bits of geometry partly nicked from this project from the reign of Queen Anne:
-
-# https://github.com/AdrianBowyer/SvLis
-
-# Rotate vector v through angle in the plane (v, a). Both assumed to be unit orthogonal vectors.
-# sSign flips between right and left handed coordinates.  That is,
-# in Cartesian terms, if you are rotating X in the plane (x,y) sSign should be 1; if rotating Y
-# it should be -1.
-
-def RotateVector(angle, v, a, sSign):
- s = math.sin(angle)
- c = math.cos(angle)
- vc = copy.deepcopy(v)
- ac = copy.deepcopy(a)
- newVc = vc.multiply(c)
- newVs = ac.multiply(s*sSign)
- return newVc.add(newVs).normalize()  # Should still be unit length, but let's not let errors accumulate
-
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
