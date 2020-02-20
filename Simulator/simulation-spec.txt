@@ -1,0 +1,69 @@
+Scanner Simulation
+------------------
+
+
+Propsed Python class:
+
+scannerPart
+
+  4 vectors:
+    offset - from another component
+    u, v, w - 3 right-angled unit-length orthogonal axes (i.e. local x, y, z)
+
+  parent (the component directly above it in the tree)
+  children (the components directly below it in the tree)
+
+  And some other capabilities, like rotating about an axis, taking a picture etc.
+  
+
+scannerPart trees:
+
+world
+
+  Just a scannerPart with offset = (0, 0, 0) and u=X, v=Y, and w=Z.
+
+world->room
+
+  A solid model of the room the scanner is in.  Only plane faces allowed.
+
+world->scanner
+
+  The scanner - able to rotate about its w axis.
+
+world->scanner->cameraAxis
+
+  The axis of rotation of the camera
+
+world->scanner->cameraAxis->camera
+
+  Able to take a picture along its w axis; u is picture horizontal, v is picture vertical.  
+  It has a flat ccd a x b pixels and A x B mm.  The centre of the ccd is at offset.
+  The lens is f mm along axis w.
+
+world->scanner->lightAxis
+
+  The axis of rotation of the light
+
+world->scanner->lightAxis->light
+
+  Able to put out a sheet of light in its v,w plane, or be turned off.
+
+
+Note that the scanner and the bar move, but the camera and the light don't (except when the scanner or bar moves, obviously).
+
+
+
+General idea:
+
+The control program moves the scanner and bar about using the same instructions as the real machine.
+
+In one position the light sheet is turned on and the intersection with its light plane and the room is calculated.  This will be a series of straight lines in the plane of the sheet.
+
+The camera takes a ray-traced image.  Each ray comes from a pixel and passes through the centre of the lens.  The light lines nearest to where the ray passes will be found.  "Nearest" means within 2 standard deviations of a pre-defined gaussian light intensity function.  The value of the gaussians at the ray will be added to find the brightness of the corresponding pixel.
+
+Note that this is a simplification of the physics that we may need to correct. When the light sheet hits a wall of the room at a shallow angle, the gaussian will smear out across that wall becoming wider and dimmer.  We could add that to the model if needs be.
+
+We could also simulate textures, colours and surface roughness in the room, which would affect the intersection lines, their intensity of illumination, and its spread.
+
+
+

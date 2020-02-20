@@ -1,0 +1,98 @@
+# Beech Design Scanner Simulation
+# Adrian Bowyer
+# 19 February 2020
+
+import Part, FreeCAD, math, copy
+from FreeCAD import Base
+
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Useful bits of geometry partly nicked from this project from the reign of Queen Anne:
+
+# https://github.com/AdrianBowyer/SvLis
+
+# Rotate vector v through angle in the plane (v, a). Both assumed to be unit vectors.
+# sSign flips between right and left handed coordinates.  That is,
+# in Cartesian terms, if you are rotating X in the plane (x,y) sSign should be 1; if rotating Y
+# it should be -1.
+
+def RotateVector(angle, v, a, sSign):
+ s = math.sin(angle)
+ c = math.cos(angle)
+ vc = copy.deepcopy(v)
+ ac = copy.deepcopy(a)
+ newVc = vc.multiply(c)
+ newVs = ac.multiply(s*sSign)
+ return newVc.add(newVs).normalize()  # Should still be unit length, but let's not let errors accumulate
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
+
+class ScannerPart:
+ def __init__(self, offset = Base.Vector(0, 0, 0), u = Base.Vector(1, 0, 0), v = Base.Vector(0, 1, 0), w = Base.Vector(0, 0, 1), parent = None):
+
+  # Offset from the parent
+
+  self.offset = offset
+
+  # Local Cartesian coordinates
+ 
+  self.u = u
+  self.v = v
+  self.w = w
+
+  # Parent and children in the tree
+
+  self.parent = parent
+  self.children = []
+  if parent is not None:
+   parent.children.append(self)
+
+#-----------------
+
+ # Rotate about the u axis. angle is in radians
+
+ def RotateU(self, angle):
+  newV = RotateVector(angle, self.v, self.w, 1)
+  newW = RotateVector(angle, self.w, self.v, -1)
+  self.v = newV
+  self.w = newW
+
+ # Rotate about the v axis. angle is in radians
+
+ def RotateV(self, angle):
+  newU = RotateVector(angle, self.u, self.w, -1)
+  newW = RotateVector(angle, self.w, self.u, 1)
+  self.u = newU
+  self.w = newW
+
+ # Rotate about the w axis. angle is in radians
+
+ def RotateW(self, angle):
+  newU = RotateVector(angle, self.u, self.v, 1)
+  newV = RotateVector(angle, self.v, self.u, -1)
+  self.u = newU
+  self.v = newV
+
+ # Turn the local corrdinates into a solid - mainly diagnostic
+
+ def Model(self):
+  uc = Part.makeCylinder(1, 20, self.offset, self.u, 360)
+  vc = Part.makeCylinder(1, 10, self.offset, self.v, 360)
+  wc = Part.makeCylinder(1, 5, self.offset, self.w, 360)
+  m = uc.fuse(vc)
+  m = m.fuse(wc)
+  return m
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+p = ScannerPart()
+a = p.Model()
+Part.show(a)
+p.RotateU(1)
+p.RotateV(0.5)
+b = p.Model()
+Part.show(b)
+print(p.u, " ", p.v, " ", p.w)
+
