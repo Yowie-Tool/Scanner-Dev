@@ -11,7 +11,7 @@ from FreeCAD import Base
 
 # https://github.com/AdrianBowyer/SvLis
 
-# Rotate vector v through angle in the plane (v, a). Both assumed to be unit vectors.
+# Rotate vector v through angle in the plane (v, a). Both assumed to be unit orthogonal vectors.
 # sSign flips between right and left handed coordinates.  That is,
 # in Cartesian terms, if you are rotating X in the plane (x,y) sSign should be 1; if rotating Y
 # it should be -1.
@@ -25,22 +25,37 @@ def RotateVector(angle, v, a, sSign):
  newVs = ac.multiply(s*sSign)
  return newVc.add(newVs).normalize()  # Should still be unit length, but let's not let errors accumulate
 
+
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
 
 class ScannerPart:
- def __init__(self, offset = Base.Vector(0, 0, 0), u = Base.Vector(1, 0, 0), v = Base.Vector(0, 1, 0), w = Base.Vector(0, 0, 1), parent = None):
+ def __init__(self, offset = Base.Vector(0, 0, 0), u = Base.Vector(1, 0, 0), v = Base.Vector(0, 1, 0), w = Base.Vector(0, 0, 1), parent = None,\
+  lightAngle = -1, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1):
 
-  # Offset from the parent
+  # Offset from the parent in the parent's coordinate system
+  # If the parent is None these are absolute cartesian coordinates
 
   self.offset = offset
 
   # Local Cartesian coordinates
  
-  self.u = u
-  self.v = v
-  self.w = w
+  self.u = u.normalize()
+  self.v = v.normalize()
+  self.w = w.normalize()
+
+  # If we are a light source (i.e. lightAngle >= 0)
+
+  self.lightAngle = lightAngle
+
+  # If we are a camera (i.e. focalLength >= 0)
+
+  self.uPixels = uPixels
+  self.vPixels = vPixels
+  self.uMM = uMM
+  self.vMM = vMM
+  self.focalLength = focalLength
 
   # Parent and children in the tree
 
@@ -51,36 +66,50 @@ class ScannerPart:
 
 #-----------------
 
+# Compute my absolute offset from the origin recursively
+
+ def AbsoluteOffset():
+  if parent is None:
+   return self.offset
+  parentUO = parent.u.multiply(self.offset.x)
+  parentVO = parent.v.multiply(self.offset.y)
+  parentWO = parent.w.multiply(self.offset.z)
+  o = parentUO.add(parentVO.add(parentWO))
+  return o.add(parent.AbsoluteOffset())
+
+# Rotate my coordinates, and the coordinates of all my descendents recursively
+
+ def Rotate(self, r):
+  self.u = r.multVec(self.u).normalize()
+  self.v = r.multVec(self.v).normalize()
+  self.w = r.multVec(self.w).normalize()
+  for child in self.children:
+   child.Rotate(r)
+
  # Rotate about the u axis. angle is in radians
 
  def RotateU(self, angle):
-  newV = RotateVector(angle, self.v, self.w, 1)
-  newW = RotateVector(angle, self.w, self.v, -1)
-  self.v = newV
-  self.w = newW
+  r = Base.Rotation(self.u, angle*180/math.pi)
+  self.Rotate(r)
 
  # Rotate about the v axis. angle is in radians
 
  def RotateV(self, angle):
-  newU = RotateVector(angle, self.u, self.w, -1)
-  newW = RotateVector(angle, self.w, self.u, 1)
-  self.u = newU
-  self.w = newW
+  r = Base.Rotation(self.v, angle*180/math.pi)
+  self.Rotate(r)
 
  # Rotate about the w axis. angle is in radians
 
  def RotateW(self, angle):
-  newU = RotateVector(angle, self.u, self.v, 1)
-  newV = RotateVector(angle, self.v, self.u, -1)
-  self.u = newU
-  self.v = newV
+  r = Base.Rotation(self.w, angle*180/math.pi)
+  self.Rotate(r)
 
  # Turn the local corrdinates into a solid - mainly diagnostic
 
  def Model(self):
-  uc = Part.makeCylinder(1, 20, self.offset, self.u, 360)
-  vc = Part.makeCylinder(1, 10, self.offset, self.v, 360)
-  wc = Part.makeCylinder(1, 5, self.offset, self.w, 360)
+  uc = Part.makeCylinder(0.2, 10, self.offset, self.u, 360)
+  vc = Part.makeCylinder(0.2, 10, self.offset, self.v, 360)
+  wc = Part.makeCylinder(0.2, 10, self.offset, self.w, 360)
   m = uc.fuse(vc)
   m = m.fuse(wc)
   return m
