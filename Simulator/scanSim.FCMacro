@@ -5,6 +5,29 @@
 import Part, FreeCAD, math, copy
 from FreeCAD import Base
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Useful general functions
+
+# There must be an easier way to make the null set...
+
+def Null():
+ n1 = Part.makeBox(1, 1, 1)
+ n2 = Part.makeBox(1, 1, 1)
+ n2.translate(Base.Vector(10, 10, 10))
+ return(n1.common(n2))
+
+
+# Make a cylinder between two points of a given radius
+
+def Cylinder(p0, p1, r):
+ p2 = p1.sub(p0)
+ length = p2.Length
+ if length < 0.001:
+  return Null()
+ c = Part.makeCylinder(r, length, p0, p2, 360)
+ return c
+
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -48,14 +71,17 @@ class ScannerPart:
 
 # Compute my absolute offset from the origin recursively
 
- def AbsoluteOffset():
-  if parent is None:
+ def AbsoluteOffset(self):
+  if self.parent is None:
    return self.offset
-  parentUO = parent.u.multiply(self.offset.x)
-  parentVO = parent.v.multiply(self.offset.y)
-  parentWO = parent.w.multiply(self.offset.z)
+  parentUO = copy.deepcopy(self.parent.u)
+  parentVO = copy.deepcopy(self.parent.v)
+  parentWO = copy.deepcopy(self.parent.w)
+  parentUO = parentUO.multiply(self.offset.x)
+  parentVO = parentVO.multiply(self.offset.y)
+  parentWO = parentWO.multiply(self.offset.z)
   o = parentUO.add(parentVO.add(parentWO))
-  return o.add(parent.AbsoluteOffset())
+  return o.add(self.parent.AbsoluteOffset())
 
 # Rotate my coordinates, and the coordinates of all my descendents recursively
 
@@ -84,24 +110,33 @@ class ScannerPart:
   r = Base.Rotation(self.w, angle*180/math.pi)
   self.Rotate(r)
 
- # Turn the local corrdinates into a solid - mainly diagnostic
+ # Make a picture of the tree recursively
 
  def Model(self):
-  uc = Part.makeCylinder(0.2, 10, self.offset, self.u, 360)
-  vc = Part.makeCylinder(0.2, 10, self.offset, self.v, 360)
-  wc = Part.makeCylinder(0.2, 10, self.offset, self.w, 360)
+  p1 = self.AbsoluteOffset()
+  uc = Part.makeCylinder(0.2, 10, p1, self.u, 360)
+  vc = Part.makeCylinder(0.2, 10, p1, self.v, 360)
+  wc = Part.makeCylinder(0.2, 10, p1, self.w, 360)
   m = uc.fuse(vc)
   m = m.fuse(wc)
+  if self.parent is not None:
+   p0 = self.parent.AbsoluteOffset()
+  else:
+   p0 = Base.Vector(0, 0, 0)
+  twig = Cylinder(p0, p1, 0.1)
+  m = m.fuse(twig)
+  for child in self.children:
+   m = m.fuse(child.Model())
   return m
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-p = ScannerPart()
-a = p.Model()
+world = ScannerPart()
+twig1 = ScannerPart(offset = Base.Vector(8, 20, 25), parent = world)
+twig2 = ScannerPart(offset = Base.Vector(10, -5, 6), parent = world)
+twig3 = ScannerPart(offset = Base.Vector(-10, 10, 30), parent = twig1)
+twig1.RotateU(1)
+a = world.Model()
 Part.show(a)
-p.RotateU(1)
-p.RotateV(0.5)
-b = p.Model()
-Part.show(b)
-print(p.u, " ", p.v, " ", p.w)
+
 
