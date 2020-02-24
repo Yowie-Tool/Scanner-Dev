@@ -2,12 +2,16 @@
 # Adrian Bowyer
 # 19 February 2020
 
-import Part, FreeCAD, math, copy
+import Part, BOPTools, FreeCAD, math, copy
 from FreeCAD import Base
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Useful general functions
+# Useful general functions and numbers
+
+# Length in mm considered to be 0
+
+tooShort = 0.001
 
 # There must be an easier way to make the null set...
 
@@ -27,6 +31,19 @@ def Cylinder(p0, p1, r):
   return Null()
  c = Part.makeCylinder(r, length, p0, p2, 360)
  return c
+
+# Make a plane cross section of a solid, s, and return it as a list of wires
+# The plane passes through point p0 and has normal n
+
+def CrossSection(s, p0, n):
+ nn = copy.deepcopy(n)
+ nn.normalize()
+ d = nn.dot(p0)
+ wires=list()
+ for i in s.slice(nn, d):
+  wires.append(i)
+ comp=Part.Compound(wires)
+ return comp
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -110,6 +127,13 @@ class ScannerPart:
   r = Base.Rotation(self.w, angle*180/math.pi)
   self.Rotate(r)
 
+ # Turn on the light and make a cross section of a shape, s.
+ # The result is a Part consisting of zero (miss) or more wires.
+
+ def LightSlice(self, s):
+  p0 = self.AbsoluteOffset()
+  return CrossSection(s, p0, self.u)
+
  # Make a picture of the tree recursively
 
  def Model(self):
@@ -131,12 +155,26 @@ class ScannerPart:
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+b = Part.makeBox(10, 20, 30)
+Part.show(b)
 world = ScannerPart()
-twig1 = ScannerPart(offset = Base.Vector(8, 20, 25), parent = world)
-twig2 = ScannerPart(offset = Base.Vector(10, -5, 6), parent = world)
-twig3 = ScannerPart(offset = Base.Vector(-10, 10, 30), parent = twig1)
-twig1.RotateU(1)
-a = world.Model()
-Part.show(a)
+twig1 = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world)
+twig1.RotateV(1)
+c = twig1.LightSlice(b)
+es = c.Edges
+for edge in es:
+ v = edge.Vertexes
+ for p in v:
+  print(p.Point)
+Part.show(c)
+Part.show(world.Model())
+
+#world = ScannerPart()
+#twig1 = ScannerPart(offset = Base.Vector(8, 20, 25), parent = world)
+#twig2 = ScannerPart(offset = Base.Vector(10, -5, 6), parent = world)
+#twig3 = ScannerPart(offset = Base.Vector(-10, 10, 30), parent = twig1)
+#twig1.RotateU(1)
+#a = world.Model()
+#Part.show(a)
 
 

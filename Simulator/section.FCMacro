@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+
+# Macro Begin: /home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/section.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++
+import FreeCAD
+import Part
+
+
+from FreeCAD import Base
+
+wires=list()
+shape=FreeCAD.getDocument("Unnamed").Fusion.Shape
+
+for i in shape.slice(Base.Vector(0,0,1),7):
+    wires.append(i)
+
+comp=Part.Compound(wires)
+slice=FreeCAD.getDocument("Unnamed").addObject("Part::Feature","Fusion_cs")
+slice.Shape=comp
+slice.purgeTouched()
+del slice,comp,wires,shape
+# Macro End: /home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/section.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++
