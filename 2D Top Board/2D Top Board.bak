@@ -821,17 +821,11 @@ F 8 "Unavailable" H 6675 4925 50  0001 L BNN "Field8"
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5600 5525 6000 5525
-Wire Wire Line
-	5600 5625 6100 5625
-Wire Wire Line
-	5600 5325 5800 5325
-Wire Wire Line
 	6350 5125 6675 5125
 Wire Wire Line
 	5525 4550 5800 4550
 Wire Wire Line
-	6675 5425 5900 5425
+	6675 5425 6000 5425
 Wire Wire Line
 	6100 4650 6100 4550
 Connection ~ 6100 4550
@@ -852,26 +846,6 @@ Wire Wire Line
 Connection ~ 5800 4550
 Wire Wire Line
 	5800 4550 5900 4550
-Wire Wire Line
-	5800 5050 5800 5325
-Connection ~ 5800 5325
-Wire Wire Line
-	5800 5325 6675 5325
-Wire Wire Line
-	5900 5050 5900 5425
-Connection ~ 5900 5425
-Wire Wire Line
-	5900 5425 5600 5425
-Wire Wire Line
-	6000 5050 6000 5525
-Connection ~ 6000 5525
-Wire Wire Line
-	6000 5525 6675 5525
-Wire Wire Line
-	6100 5050 6100 5625
-Connection ~ 6100 5625
-Wire Wire Line
-	6100 5625 6675 5625
 Wire Wire Line
 	5600 5225 6525 5225
 Wire Wire Line
@@ -1488,4 +1462,30 @@ Wire Wire Line
 NoConn ~ 3900 1500
 NoConn ~ 3900 1400
 NoConn ~ 3900 1300
+Wire Wire Line
+	5600 5625 5800 5625
+Wire Wire Line
+	6100 5050 6100 5325
+Connection ~ 6100 5325
+Wire Wire Line
+	6100 5325 6675 5325
+Wire Wire Line
+	5600 5525 5900 5525
+Wire Wire Line
+	6000 5050 6000 5425
+Connection ~ 6000 5425
+Wire Wire Line
+	5600 5425 6000 5425
+Wire Wire Line
+	5900 5050 5900 5525
+Connection ~ 5900 5525
+Wire Wire Line
+	5900 5525 6675 5525
+Wire Wire Line
+	5600 5325 6100 5325
+Wire Wire Line
+	5800 5050 5800 5625
+Connection ~ 5800 5625
+Wire Wire Line
+	5800 5625 6675 5625
 $EndSCHEMATC
