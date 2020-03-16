@@ -1,0 +1,63 @@
+; pcb2gcode 2.0.0 
+; Software-independent Gcode 
+
+; This file uses only one drill bit. Forced by 'onedrill' option 
+
+G94       ;Millimeters per minute feed rate.
+G21       ;Units == Millimeters.
+G90       ;Absolute coordinates.
+;G1 F3000 S10000     ;RPM spindle speed.
+
+G1 F3000 Z3.00000 ;Retract
+;T1
+;M5      ;Spindle stop.
+;G04 P1.00000
+;MSG, Change tool bit to drill size 0.7 mm
+;M6      ;Tool change.
+;M0      ;Temporary machine stop.
+;M3      ;Spindle on clockwise.
+G1 F3000 Z3.00000
+;G04 P1.00000
+
+;F1000.00000
+G1 F3000 X3.89500 Y16.14500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X21.89500 Y22.14500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X33.89500 Y10.14500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X34.64500 Y4.39500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X27.02500 Y1.85500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X21.94500 Y4.39500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X21.89500 Y10.14500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X33.89500 Y22.14500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X27.02500 Y28.10500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X21.94500 Y30.64500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+G1 F3000 X34.64500 Y30.64500
+G1 F300 Z-2.50000
+G1 F300 Z3.00000
+
+G1 F3000 Z3.000 ; All done -- retract 
+
+;M5      ;Spindle off.
+;G04 P1.000000
+;M9      ;Coolant off.
+M0      ;Program end.
+

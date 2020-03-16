@@ -1,0 +1,72 @@
+; pcb2gcode 2.0.0 
+; Software-independent Gcode 
+
+G94 ; Millimeters per minute feed rate. 
+G21 ; Units == Millimeters. 
+
+G90 ; Absolute coordinates. 
+;G1 F3000 S10000 ; RPM spindle speed. 
+G1 F300 F600.00000 ; Feedrate. 
+
+
+G1 F3000 Z3.00000 ;Retract to tool change height
+;T0
+;M5      ;Spindle stop.
+;G04 P1.00000 ;Wait for spindle to stop
+;MSG, Change tool bit to cutter diameter 0.12000mm
+;M6      ;Tool change.
+;M0      ;Temporary machine stop.
+;M3 ; Spindle on clockwise. 
+;G04 P1.00000 ;Wait for spindle to get up to speed
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F3000 Z3.00000 ; retract 
+
+G1 F3000 X0.08497 Y1.14502 ; rapid move to begin. 
+G1 F300 Z-0.07000 F300.00000 ; plunge. 
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F300 F600.00000
+G1 F300 X0.08497 Y31.39503
+G1 F300 X0.10676 Y31.60752
+G1 F300 X0.16818 Y31.80600
+G1 F300 X0.26711 Y31.98865
+G1 F300 X0.39147 Y32.14019
+G1 F300 X0.55134 Y32.27287
+G1 F300 X0.74489 Y32.37633
+G1 F300 X0.94400 Y32.43551
+G1 F300 X1.14499 Y32.45504
+G1 F300 X38.39498 Y32.45504
+G1 F300 X38.60747 Y32.43322
+G1 F300 X38.80595 Y32.37183
+G1 F300 X38.98860 Y32.27287
+G1 F300 X39.14847 Y32.14019
+G1 F300 X39.27283 Y31.98865
+G1 F300 X39.37628 Y31.79513
+G1 F300 X39.43546 Y31.59599
+G1 F300 X39.45499 Y31.39503
+G1 F300 X39.45499 Y1.14502
+G1 F300 X39.43318 Y0.93253
+G1 F300 X39.37178 Y0.73405
+G1 F300 X39.27283 Y0.55140
+G1 F300 X39.14847 Y0.39986
+G1 F300 X38.98860 Y0.26717
+G1 F300 X38.79508 Y0.16372
+G1 F300 X38.59594 Y0.10454
+G1 F300 X38.39498 Y0.08503
+G1 F300 X1.14499 Y0.08503
+G1 F300 X0.94400 Y0.10454
+G1 F300 X0.74489 Y0.16372
+G1 F300 X0.56112 Y0.26065
+G1 F300 X0.39980 Y0.39153
+G1 F300 X0.26711 Y0.55140
+G1 F300 X0.16818 Y0.73405
+G1 F300 X0.10676 Y0.93253
+G1 F300 X0.08497 Y1.14502
+
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F3000 Z3.000 ; retract 
+
+;M5 ; Spindle off. 
+;G04 P1.000000
+;M9 ; Coolant off. 
+M0 ; Program end. 
+

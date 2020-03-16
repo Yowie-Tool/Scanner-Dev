@@ -92,7 +92,11 @@ class Point2D:
 
  def Dot(self, p):
   return self.x*p.x + self.y*p.y
- 
+
+ # Outer product
+
+ def Cross(self, p):
+  return self.x*p.y - self.y*p.x 
 
 # Small class for working with 2D parametric lines
 
@@ -108,20 +112,45 @@ class Line2D:
   p = self.direction.Multiply(t)
   return p0.Add(p)
 
- # Fine the parameter value at which another line crosses me
+ # Fine the parameter value at which another line crosses me (s) and I cross it (t)
 
  def Cross(self, otherLine):
-  determinant = self.direction.x*otherLine.direction.y - otherLine.direction.x*self.direction.y
+  determinant = self.direction.Cross(otherLine.direction)
   if determinant < tooShort2:
    return None # Lines parallel
   dp = otherLine.p0.Sub(self.p0)
-  t = (otherLine.direction.x*dp.y - otherLine.direction.y*dp.x)/determinant
-  return t
+  s = otherLine.direction.Cross(dp)/determinant
+  t = self.direction.Cross(dp)/determinant
+  return s, t
 
  # Squared length
 
  def Length2(self):
   return self.direction.Length2()
+
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Non-member functions that rely on the definitions above
+
+# Clip line1 by line2, returning the result in r1 and maybe r2
+
+def Clip(line1, line2):
+ r1 = Line2D()
+ r2 = Line2D()
+
+ lp1 = line2.Point(0)
+ lp2 = line2.Point(1)
+ see1 = Line2D(Point2D(0, 0), lp1)
+ see2 = Line2D(Point2D(0, 0), lp2)
+ s1, t1 = line1.Cross(see1)
+ s2, t2 = line1.Cross(see2)
+
+ if s1 >= 1 || s2 <= 0:
+  r1 = line1
+  r2.empty = True
+  return r1, r2
+
+  
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
