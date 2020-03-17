@@ -145,10 +145,40 @@ def Clip(line1, line2):
  s1, t1 = line1.Cross(see1)
  s2, t2 = line1.Cross(see2)
 
- if s1 >= 1 || s2 <= 0:
+ tMax = t1
+ tMin = t1
+ if t2 > tMax:
+  tMax = t2
+ if t2 < tMin:
+  tMin = t2
+
+ if tMax <= 1 + tooShort: # Is line1 in front of line2?
   r1 = line1
-  r2.empty = True
   return r1, r2
+
+ sMax = s1
+ sMin = s1
+ if s2 > sMax:
+  sMax = s2
+ if s2 < sMin:
+  sMin = s2
+
+ if sMax <= tooShort || sMin >= 1 - tooShort: # Does line2 lie wholly to one side or the other of line1?
+  r1 = line1
+  return r1, r2
+
+ if sMin <= tooShort && sMax >= 1 - tooShort: # Is line1 wholly obscured?
+  return r1, r2
+
+ if sMin > tooShort && sMax < 1 - tooShort: # Is line1 split in the middle?
+  r1 = Line2D(line1.Point(0), line1.Point(sMin))
+  r2 = Line2D(line1.Point(sMax), line1.Point(1))
+  return r1, r2
+
+ if tMin <= 1 + tooShort: # We already know that tMax is > 1
+
+
+
 
   
 
