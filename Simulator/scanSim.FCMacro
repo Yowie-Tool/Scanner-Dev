@@ -117,7 +117,7 @@ class Line2D:
  def Cross(self, otherLine):
   determinant = self.direction.Cross(otherLine.direction)
   if determinant < tooShort2:
-   return None # Lines parallel
+   return None, None # Lines parallel
   dp = otherLine.p0.Sub(self.p0)
   s = otherLine.direction.Cross(dp)/determinant
   t = self.direction.Cross(dp)/determinant
@@ -143,7 +143,11 @@ def Clip(line1, line2):
  see1 = Line2D(Point2D(0, 0), lp1)
  see2 = Line2D(Point2D(0, 0), lp2)
  s1, t1 = line1.Cross(see1)
+ if s1 is None: # line1 parallel?
+  xxxx
  s2, t2 = line1.Cross(see2)
+ if s2 is None: # line1 parallel?
+  xxxx
 
  tMax = t1
  tMin = t1
