@@ -1,4 +1,5 @@
 EESchema Schematic File Version 4
+LIBS:Camera Adapter-cache
 EELAYER 29 0
 EELAYER END
 $Descr A4 11693 8268
@@ -13,28 +14,6 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-$Comp
-L Connector_Generic:Conn_02x15_Top_Bottom J1
-U 1 1 5E85BBBC
-P 2125 2150
-F 0 "J1" H 2175 3067 50  0000 C CNN
-F 1 "Conn_02x15_Top_Bottom" H 2175 2976 50  0000 C CNN
-F 2 "digikey-footprints:117342485" H 2125 2150 50  0001 C CNN
-F 3 "~" H 2125 2150 50  0001 C CNN
-	1    2125 2150
-	1    0    0    -1  
-$EndComp
-$Comp
-L Connector_Generic:Conn_02x15_Top_Bottom J5
-U 1 1 5E85D897
-P 6075 2150
-F 0 "J5" H 6125 3067 50  0000 C CNN
-F 1 "Conn_02x15_Top_Bottom" H 6125 2976 50  0000 C CNN
-F 2 "digikey-footprints:117342485" H 6075 2150 50  0001 C CNN
-F 3 "~" H 6075 2150 50  0001 C CNN
-	1    6075 2150
-	1    0    0    -1  
-$EndComp
 $Comp
 L MC33269D-3.3G:MC33269D-3.3G U1
 U 1 1 5E85F90B
@@ -266,10 +245,6 @@ Wire Wire Line
 Wire Wire Line
 	1925 1650 1675 1650
 Wire Wire Line
-	1675 1850 1925 1850
-Wire Wire Line
-	1925 1950 1675 1950
-Wire Wire Line
 	1675 2150 1925 2150
 Wire Wire Line
 	1925 2250 1675 2250
@@ -422,10 +397,6 @@ Wire Wire Line
 Wire Wire Line
 	5875 1650 5625 1650
 Wire Wire Line
-	5625 1850 5875 1850
-Wire Wire Line
-	5875 1950 5625 1950
-Wire Wire Line
 	5625 2150 5875 2150
 Wire Wire Line
 	5875 2250 5625 2250
@@ -511,41 +482,43 @@ Wire Wire Line
 Wire Wire Line
 	3825 3600 3825 3675
 Wire Wire Line
-	6375 1950 5875 1950
-Connection ~ 5875 1950
+	1925 1850 1675 1850
 Wire Wire Line
-	6375 1850 5875 1850
-Connection ~ 5875 1850
+	1675 1950 1925 1950
+$Comp
+L 68611514122:68611514122 J1
+U 1 1 6366E004
+P 2125 2150
+F 0 "J1" H 2089 2190 50  0000 L CNN
+F 1 "68611514122" H 2089 2099 50  0000 L CNN
+F 2 "digikey-footprints:68611514122" H 2125 2150 50  0001 L BNN
+F 3 "" H 2125 2150 50  0001 L BNN
+F 4 "68611514122" H 2125 2150 50  0001 L BNN "Field4"
+F 5 "None" H 2125 2150 50  0001 L BNN "Field5"
+F 6 "Unavailable" H 2125 2150 50  0001 L BNN "Field6"
+F 7 "Connector [Würth Elektronik] 68611514122 Connector" H 2125 2150 50  0001 L BNN "Field7"
+F 8 "Würth Elektronik" H 2125 2150 50  0001 L BNN "Field8"
+	1    2125 2150
+	1    0    0    -1  
+$EndComp
+$Comp
+L 68611514122:68611514122 J5
+U 1 1 6367193C
+P 6075 2150
+F 0 "J5" H 6039 2190 50  0000 L CNN
+F 1 "68611514122" H 6039 2099 50  0000 L CNN
+F 2 "digikey-footprints:68611514122" H 6075 2150 50  0001 L BNN
+F 3 "" H 6075 2150 50  0001 L BNN
+F 4 "68611514122" H 6075 2150 50  0001 L BNN "Field4"
+F 5 "None" H 6075 2150 50  0001 L BNN "Field5"
+F 6 "Unavailable" H 6075 2150 50  0001 L BNN "Field6"
+F 7 "Connector [Würth Elektronik] 68611514122 Connector" H 6075 2150 50  0001 L BNN "Field7"
+F 8 "Würth Elektronik" H 6075 2150 50  0001 L BNN "Field8"
+	1    6075 2150
+	1    0    0    -1  
+$EndComp
 Wire Wire Line
-	1925 1850 2425 1850
-Connection ~ 1925 1850
+	5625 1850 5875 1850
 Wire Wire Line
-	2425 1950 1925 1950
-Connection ~ 1925 1950
-NoConn ~ 2425 1450
-NoConn ~ 2425 1550
-NoConn ~ 2425 1650
-NoConn ~ 2425 1750
-NoConn ~ 2425 2050
-NoConn ~ 2425 2150
-NoConn ~ 2425 2250
-NoConn ~ 2425 2350
-NoConn ~ 2425 2450
-NoConn ~ 2425 2550
-NoConn ~ 2425 2650
-NoConn ~ 2425 2750
-NoConn ~ 2425 2850
-NoConn ~ 6375 2850
-NoConn ~ 6375 2750
-NoConn ~ 6375 2650
-NoConn ~ 6375 2550
-NoConn ~ 6375 2450
-NoConn ~ 6375 2350
-NoConn ~ 6375 2250
-NoConn ~ 6375 2150
-NoConn ~ 6375 2050
-NoConn ~ 6375 1750
-NoConn ~ 6375 1650
-NoConn ~ 6375 1550
-NoConn ~ 6375 1450
+	5875 1950 5625 1950
 $EndSCHEMATC
