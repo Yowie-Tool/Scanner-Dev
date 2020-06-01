@@ -9,9 +9,10 @@ from FreeCAD import Base
 
 # Useful general functions and numbers
 
-# Length in mm considered to be 0
+# Length in mm considered to be 0 and its square
 
 tooShort = 0.001
+tooShort2 = tooShort*tooShort
 
 # There must be an easier way to make the null set...
 
@@ -45,12 +46,18 @@ def CrossSection(s, p0, n):
  comp=Part.Compound(wires)
  return comp
 
+# Make a model to represent the room being scanned
+
+def MakeRoom():
+ b = Part.makeBox(10, 20, 30)
+ return b
+
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Small classes for working with 2D vectors
 
 class Point2D:
- def __init__(self, x = 0, y = 0):
+ def __init__(self, x = 0, y = 0)
   self.x = x
   self.y = y
 
@@ -94,14 +101,14 @@ class Point2D:
 # Small class for working with 2D parametric lines
 
 class Line2D:
- def __init__(self, p0 = Point2D(0, 0), p1 = Point2D(0, 0)):
+ def __init__(self, p0 = Point2D(0, 0), p1 = Point2D(0, 0))
   self.p0 = p0
   self.direction = p1.Sub(p0)
   self.empty = self.Length2() < tooShort2
 
 # The point at parameter value t
 
- def Point(self, t):
+ def Point(self, t)
   p = self.direction.Multiply(t)
   return p0.Add(p)
 
@@ -121,11 +128,65 @@ class Line2D:
  def Length2(self):
   return self.direction.Length2()
 
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Non-member functions that rely on the definitions above
+
+# Clip line1 by line2, returning the result in r1 and maybe r2
+
+def Clip(line1, line2):
+ r1 = Line2D()
+ r2 = Line2D()
+
+ lp1 = line2.Point(0)
+ lp2 = line2.Point(1)
+ see1 = Line2D(Point2D(0, 0), lp1)
+ see2 = Line2D(Point2D(0, 0), lp2)
+ s1, t1 = line1.Cross(see1)
+ if s1 is None: # line1 parallel?
+  xxxx
+ s2, t2 = line1.Cross(see2)
+ if s2 is None: # line1 parallel?
+  xxxx
+
+ tMax = t1
+ tMin = t1
+ if t2 > tMax:
+  tMax = t2
+ if t2 < tMin:
+  tMin = t2
+
+ if tMax <= 1 + tooShort: # Is line1 in front of line2?
+  r1 = line1
+  return r1, r2
+
+ sMax = s1
+ sMin = s1
+ if s2 > sMax:
+  sMax = s2
+ if s2 < sMin:
+  sMin = s2
+
+ if sMax <= tooShort || sMin >= 1 - tooShort: # Does line2 lie wholly to one side or the other of line1?
+  r1 = line1
+  return r1, r2
+
+ if sMin <= tooShort && sMax >= 1 - tooShort: # Is line1 wholly obscured?
+  return r1, r2
+
+ if sMin > tooShort && sMax < 1 - tooShort: # Is line1 split in the middle?
+  r1 = Line2D(line1.Point(0), line1.Point(sMin))
+  r2 = Line2D(line1.Point(sMax), line1.Point(1))
+  return r1, r2
+
+ if tMin <= 1 + tooShort: # We already know that tMax is > 1
 
 
 
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  
+
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
 
@@ -155,6 +216,12 @@ class ScannerPart:
   self.uMM = uMM
   self.vMM = vMM
   self.focalLength = focalLength
+
+  # Hidden line calculations
+
+  self.lines = []
+
+  # Camera calculations
 
   # Parent and children in the tree
 
@@ -206,12 +273,65 @@ class ScannerPart:
   r = Base.Rotation(self.w, angle*180/math.pi)
   self.Rotate(r)
 
+ # Project edge onto the plane with axes x and y (usually, though not necessarily, two of u, v, or w)
+
+ def Project(self, edge, x, y):
+  v = copy.deepcopy(edge.Vertexes)
+  ao = self.AbsoluteOffset()
+  v[0] = v[0].sub(ao)
+  v[1] = v[1].sub(ao)
+  xe0 = x.multiply(v[0])
+  ye0 = y.multiply(v[0])
+  p0 = Point2D(xe0, ye0)
+  xe1 = x.multiply(v[1])
+  ye1 = y.multiply(v[1])
+  p1 = Point2D(xe1, ye1)
+  line = Line2D(p0, p1)
+  return line
+
+ # Initialise the hidden line eliminator
+
+ def HideStart(self):
+  self.lines = []
+
+ # Visibility of one line against another
+
+ def LinesVisible(self, edge, line):
+  edgeA = Line2D(Point2D(0, 0), edge.p0)
+  edgeB = Line2D(Point2D(0, 0), edge.Point(1.0))
+  lineA = Line2D(Point2D(0, 0), line.p0)
+  lineB = Line2D(Point2D(0, 0), line.Point(1.0))
+  #...
+
+ # Hide lines behind edge e, or e behind them.
+ # Add (what's left of) e to the lines.
+
+ def Hide(self, e):
+  edge = self.Project(e, self.v, self.w)
+  for line in self.lines:
+   if edge.empty:
+    break
+   self.LinesVisible(edge, line)
+   if line.empty:
+    self.lines.remove(line)
+  if !edge.empty:
+   self.lines.append(edge)
+
+ # Take the list of visible edges in x, y space and put it into 3D. x and y are usually, though not necessarily, two of u, v, or w.
+
+ def EdgesTo3D(self, x, y):
+
  # Turn on the light and make a cross section of a shape, s.
  # The result is a Part consisting of zero (miss) or more wires.
 
  def LightSlice(self, s):
   p0 = self.AbsoluteOffset()
-  return CrossSection(s, p0, self.u)
+  cs = CrossSection(s, p0, self.u)
+  es = cs.Edges
+  self.HideStart()
+  for edge in es:
+   self.Hide(edge)
+  return self.VWEdgesTo3D()
 
  # Make a picture of the tree recursively
 
@@ -234,7 +354,7 @@ class ScannerPart:
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-b = Part.makeBox(10, 20, 30)
+b = MakeRoom()
 Part.show(b)
 world = ScannerPart()
 twig1 = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world)
@@ -244,9 +364,13 @@ es = c.Edges
 for edge in es:
  v = edge.Vertexes
  for p in v:
-  print(p.Point)
+  print(p.Point, end = ' ')
+ print()
 Part.show(c)
 Part.show(world.Model())
+twig1.RotateV(0.1)
+d = twig1.LightSlice(b)
+Part.show(d)
 
 #world = ScannerPart()
 #twig1 = ScannerPart(offset = Base.Vector(8, 20, 25), parent = world)
@@ -255,5 +379,6 @@ Part.show(world.Model())
 #twig1.RotateU(1)
 #a = world.Model()
 #Part.show(a)
+
 
 

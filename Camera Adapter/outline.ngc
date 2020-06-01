@@ -1,0 +1,94 @@
+; pcb2gcode 2.0.0 
+; Software-independent Gcode 
+
+G94 ; Millimeters per minute feed rate. 
+G21 ; Units == Millimeters. 
+
+G90 ; Absolute coordinates. 
+;G1 F3000 S10000 ; RPM spindle speed. 
+G1 F300 F600.00000 ; Feedrate. 
+
+
+G1 F3000 Z3.00000 ;Retract to tool change height
+;T0
+;M5      ;Spindle stop.
+;G04 P1.00000 ;Wait for spindle to stop
+;MSG, Change tool bit to cutter diameter 0.12000mm
+;M6      ;Tool change.
+;M0      ;Temporary machine stop.
+;M3 ; Spindle on clockwise. 
+;G04 P1.00000 ;Wait for spindle to get up to speed
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F3000 Z3.00000 ; retract 
+
+G1 F3000 X21.70498 Y21.70503 ; rapid move to begin. 
+G1 F300 Z-0.07000 F300.00000 ; plunge. 
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F300 F600.00000
+G1 F300 X21.70498 Y35.58501
+G1 F300 X29.98498 Y35.58501
+G1 F300 X29.98498 Y21.70503
+G1 F300 X21.70498 Y21.70503
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F3000 Z3.00000 ; retract 
+
+G1 F3000 X21.70498 Y3.20504 ; rapid move to begin. 
+G1 F300 Z-0.07000 F300.00000 ; plunge. 
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F300 F600.00000
+G1 F300 X21.70498 Y17.08503
+G1 F300 X29.98498 Y17.08503
+G1 F300 X29.98498 Y3.20504
+G1 F300 X21.70498 Y3.20504
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F3000 Z3.00000 ; retract 
+
+G1 F3000 X0.08496 Y1.14500 ; rapid move to begin. 
+G1 F300 Z-0.07000 F300.00000 ; plunge. 
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F300 F600.00000
+G1 F300 X0.08496 Y49.14501
+G1 F300 X0.10678 Y49.35753
+G1 F300 X0.16817 Y49.55598
+G1 F300 X0.26058 Y49.72888
+G1 F300 X0.39146 Y49.89019
+G1 F300 X0.56111 Y50.02941
+G1 F300 X0.73401 Y50.12181
+G1 F300 X0.93248 Y50.18323
+G1 F300 X1.14498 Y50.20503
+G1 F300 X29.14497 Y50.20503
+G1 F300 X29.35747 Y50.18323
+G1 F300 X29.55595 Y50.12181
+G1 F300 X29.72882 Y50.02941
+G1 F300 X29.89013 Y49.89852
+G1 F300 X30.02938 Y49.72888
+G1 F300 X30.12178 Y49.55598
+G1 F300 X30.18317 Y49.35753
+G1 F300 X30.20499 Y49.14501
+G1 F300 X30.20499 Y1.14500
+G1 F300 X30.18317 Y0.93253
+G1 F300 X30.12178 Y0.73406
+G1 F300 X30.02938 Y0.56118
+G1 F300 X29.89844 Y0.39987
+G1 F300 X29.72882 Y0.26062
+G1 F300 X29.55595 Y0.16822
+G1 F300 X29.35747 Y0.10683
+G1 F300 X29.14497 Y0.08501
+G1 F300 X1.14498 Y0.08501
+G1 F300 X0.93248 Y0.10683
+G1 F300 X0.73401 Y0.16822
+G1 F300 X0.55133 Y0.26718
+G1 F300 X0.39146 Y0.39987
+G1 F300 X0.26058 Y0.56118
+G1 F300 X0.16368 Y0.74493
+G1 F300 X0.10449 Y0.94406
+G1 F300 X0.08496 Y1.14500
+
+;G04 P0 ; dwell for no time -- G64 should not smooth over this point 
+G1 F3000 Z3.000 ; retract 
+
+;M5 ; Spindle off. 
+;G04 P1.000000
+;M9 ; Coolant off. 
+M0 ; Program end. 
+

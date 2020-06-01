@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name Camera-Adapter-rescue)(type Legacy)(uri "${KIPRJMOD}/Camera Adapter-rescue.lib")(options "")(descr ""))
+)
