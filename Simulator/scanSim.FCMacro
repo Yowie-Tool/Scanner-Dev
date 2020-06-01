@@ -54,6 +54,9 @@ class Point2D:
   self.x = x
   self.y = y
 
+ def Print(self):
+  print(self.x, ',' , self.y)
+
  # Vector addition and subtraction
 
  def Add(self, p):
@@ -206,12 +209,6 @@ class ScannerPart:
   r = Base.Rotation(self.w, angle*180/math.pi)
   self.Rotate(r)
 
- # Turn on the light and make a cross section of a shape, s.
- # The result is a Part consisting of zero (miss) or more wires.
-
- def LightSlice(self, s):
-  p0 = self.AbsoluteOffset()
-  return CrossSection(s, p0, self.u)
 
  # Make a picture of the tree recursively
 
@@ -232,20 +229,48 @@ class ScannerPart:
    m = m.fuse(child.Model())
   return m
 
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ # Turn on the light and make a cross section of a shape, s.
+ # Return the resulting 3D points as 2D polygons in this part's v, w plane
 
-b = Part.makeBox(10, 20, 30)
+ def VisibilityPolygon(self, s):
+  faces = s.Faces
+  p0 = self.AbsoluteOffset()
+  lines = []
+  for face in faces:
+   line = CrossSection(face, p0, self.u)
+   lines.append(line)
+  x0 = self.v.dot(p0)
+  y0 = self.w.dot(p0)
+  edgeList = []
+  for line in lines:
+   vertices = line.Vertexes
+   edge = []
+   for p in vertices:
+    edge.append(p.Point)
+    x = self.v.dot(p.Point) - x0
+    y = self.w.dot(p.Point) - y0
+    pp = Point2D(x, y)
+    pp.Print()
+   if len(edge) >= 2:
+    edgeList.append(Part.makePolygon(edge))
+  return edgeList
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#a = Part.makeBox(100, 80, 300)
+#a.translate(Base.Vector(-40, -20, -100))
+b = Part.makeBox(10, 8, 30)
+c =  Part.makeBox(10, 8, 30)
+c.translate(Base.Vector(0, 16, 0))
+b = b.fuse(c)
+#b = a.cut(b)
 Part.show(b)
 world = ScannerPart()
 twig1 = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world)
 twig1.RotateV(1)
-c = twig1.LightSlice(b)
-es = c.Edges
-for edge in es:
- v = edge.Vertexes
- for p in v:
-  print(p.Point)
-Part.show(c)
+edgeList = twig1.VisibilityPolygon(b)
+for edge in edgeList:
+ Part.show(edge)
+#Part.show(c)
 Part.show(world.Model())
 
 #world = ScannerPart()
