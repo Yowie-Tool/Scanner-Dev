@@ -9,11 +9,12 @@ from FreeCAD import Base
 
 # Useful general functions and numbers
 
-# Length in mm considered to be 0
+# Length in mm considered to be 0 and its square
 
 tooShort = 0.001
+tooShort2 = tooShort*tooShort
 
-# There must be an easier way to make the null set...
+# There must be an easier way to make the FreeCAD null set...
 
 def Null():
  n1 = Part.makeBox(1, 1, 1)
@@ -95,18 +96,21 @@ class Point2D:
   return self.x*p.y - self.y*p.x 
 
 # Small class for working with 2D parametric lines
+# These are defined by a start and end point.  The parameterisation
+# is such that the start point has parameter = 0, and the end parameter = 1.
 
 class Line2D:
- def __init__(self, p0 = Point2D(0, 0), p1 = Point2D(0, 0)):
+ def __init__(self, p0 = Point2D(0, 0), p1 = Point2D(0, 0), f = None):
   self.p0 = p0
   self.direction = p1.Sub(p0)
+  self.face = f
   self.empty = self.Length2() < tooShort2
 
 # The point at parameter value t
 
  def Point(self, t):
   p = self.direction.Multiply(t)
-  return p0.Add(p)
+  return self.p0.Add(p)
 
  # Fine the parameter value at which another line crosses me (s) and I cross it (t)
 
@@ -123,9 +127,6 @@ class Line2D:
 
  def Length2(self):
   return self.direction.Length2()
-
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -166,25 +167,38 @@ class ScannerPart:
   if parent is not None:
    parent.children.append(self)
 
+  # Used for lazy evaluation of position
+
+  self.notMoved = False
+  self.position = Base.Vector(0, 0, 0)
+
 #-----------------
 
 # Compute my absolute offset from the origin recursively
+# Use lazy evaluation if I haven't moved.
 
  def AbsoluteOffset(self):
+  if self.notMoved:
+   return self.position
+
   if self.parent is None:
-   return self.offset
-  parentUO = copy.deepcopy(self.parent.u)
-  parentVO = copy.deepcopy(self.parent.v)
-  parentWO = copy.deepcopy(self.parent.w)
-  parentUO = parentUO.multiply(self.offset.x)
-  parentVO = parentVO.multiply(self.offset.y)
-  parentWO = parentWO.multiply(self.offset.z)
-  o = parentUO.add(parentVO.add(parentWO))
-  return o.add(self.parent.AbsoluteOffset())
+   self.position = self.offset
+  else:
+   parentUO = copy.deepcopy(self.parent.u)
+   parentVO = copy.deepcopy(self.parent.v)
+   parentWO = copy.deepcopy(self.parent.w)
+   parentUO = parentUO.multiply(self.offset.x)
+   parentVO = parentVO.multiply(self.offset.y)
+   parentWO = parentWO.multiply(self.offset.z)
+   o = parentUO.add(parentVO.add(parentWO))
+   self.position = o.add(self.parent.AbsoluteOffset())
+  self.notMoved = True
+  return self.position
 
 # Rotate my coordinates, and the coordinates of all my descendents recursively
 
  def Rotate(self, r):
+  self.notMoved = False
   self.u = r.multVec(self.u).normalize()
   self.v = r.multVec(self.v).normalize()
   self.w = r.multVec(self.w).normalize()
@@ -194,18 +208,21 @@ class ScannerPart:
  # Rotate about the u axis. angle is in radians
 
  def RotateU(self, angle):
+  self.notMoved = False
   r = Base.Rotation(self.u, angle*180/math.pi)
   self.Rotate(r)
 
  # Rotate about the v axis. angle is in radians
 
  def RotateV(self, angle):
+  self.notMoved = False
   r = Base.Rotation(self.v, angle*180/math.pi)
   self.Rotate(r)
 
  # Rotate about the w axis. angle is in radians
 
  def RotateW(self, angle):
+  self.notMoved = False
   r = Base.Rotation(self.w, angle*180/math.pi)
   self.Rotate(r)
 
@@ -229,33 +246,73 @@ class ScannerPart:
    m = m.fuse(child.Model())
   return m
 
+ # Convert a point p in the [v, w] plane into a point in absolute 3D space.
+
+ def vwPoint(self, p):
+  v = copy.deepcopy(self.v)
+  v.multiply(p.x)
+  w = copy.deepcopy(self.w)
+  w.multiply(p.y)
+  return self.AbsoluteOffset().add(v).add(w)
+
  # Turn on the light and make a cross section of a shape, s.
- # Return the resulting 3D points as 2D polygons in this part's v, w plane
+ # Then compute its visibility polygon in the 2D plane of the light
+ # sheet (the [v, w] plane) and return that as a FreeCAD object in 3D.
+ # (See: https://en.wikipedia.org/wiki/Visibility_polygon)
 
  def VisibilityPolygon(self, s):
-  faces = s.Faces
   p0 = self.AbsoluteOffset()
-  lines = []
-  for face in faces:
-   line = CrossSection(face, p0, self.u)
-   lines.append(line)
   x0 = self.v.dot(p0)
   y0 = self.w.dot(p0)
+  lines = []
+
+ # We have to visit each face of object s in turn and compute the line of
+ # intersection of the light sheet plane with it because the FreeCAD CrossSection
+ # function for whole objects creates internal triangulations in cross-section polygons,
+ # which we don't want.
+
+  faces = s.Faces
+  for face in faces:
+
+   # Where does the plane cut the face. Note that line may have
+   # more than one section.
+
+   line = CrossSection(face, p0, self.u)
+   vertices = line.Vertexes
+   count = 0
+   for v in vertices:
+
+    # Find the projection of v into the light sheet plane.
+    # The projection of the light source point is the origin
+    # of coordinates.
+
+    x = self.v.dot(v.Point) - x0
+    y = self.w.dot(v.Point) - y0
+    p = Point2D(x, y)
+    p.Print()
+
+    # For odd points just remember them.
+    # For even points make a line from the last old point to them.
+
+    count += 1
+    if count%2 == 1:
+     pOld = p
+    else:
+     line = Line2D(pOld, p, face)
+     lines.append(line)
+     print("---")
   edgeList = []
   for line in lines:
-   vertices = line.Vertexes
    edge = []
-   for p in vertices:
-    edge.append(p.Point)
-    x = self.v.dot(p.Point) - x0
-    y = self.w.dot(p.Point) - y0
-    pp = Point2D(x, y)
-    pp.Print()
-   if len(edge) >= 2:
-    edgeList.append(Part.makePolygon(edge))
+   edge.append(self.vwPoint(line.Point(0)))
+   edge.append(self.vwPoint(line.Point(1)))
+   edgeList.append(Part.makePolygon(edge))
   return edgeList
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Testing, testing...
+
 #a = Part.makeBox(100, 80, 300)
 #a.translate(Base.Vector(-40, -20, -100))
 b = Part.makeBox(10, 8, 30)
