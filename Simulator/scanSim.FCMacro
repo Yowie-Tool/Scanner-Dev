@@ -2,7 +2,7 @@
 # Adrian Bowyer
 # 19 February 2020
 
-import Part, BOPTools, FreeCAD, math, copy
+import Part, BOPTools, FreeCAD, math, copy, sys
 from FreeCAD import Base
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -127,6 +127,15 @@ class Line2D:
 
  def Length2(self):
   return self.direction.Length2()
+
+# Class to hold points round the visibility polygon
+
+class VisibilityPoint:
+ def __init__(self, point, face, d2, theta):
+  self.point = point
+  self.face = face
+  self.d2 = d2
+  self.theta = theta
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -255,12 +264,52 @@ class ScannerPart:
   w.multiply(p.y)
   return self.AbsoluteOffset().add(v).add(w)
 
+ def RayCheck(self, visibilityPolygon, p0, lineWithEnds, t, lines):
+  p = lineWithEnds.Point(t)
+  line = Line2D(p0, p)
+  minS = 1
+  for line1 in lines:
+   if line1 != lineWithEnds:
+    s, t = line.Cross(line1)
+    if s != None:
+     if t >= 0 and t <= 1:
+      if s < minS:
+       minS = s
+  visibilityPolygon.append(line.Point(minS))
+
+ def SortByThetaAndMakeWire(self, visibiltyPolygon):
+  angles = []
+  for p in visibiltyPolygon:
+   line = Line2D(Point2D(0, 0), p)
+   angle = math.atan2(line.direction.y, line.direction.x)
+   angles.append((angle, p))
+  angles.sort(key=lambda pair: pair[0])
+
+ # Remove duplicates
+
+  oldPair = angles[0]
+  newAngles = []
+  for pair in angles:
+   diff = pair[1].Sub(oldPair[1])
+   d2 = diff.Length2()
+   if d2 > tooShort2:
+    newAngles.append(pair)
+    oldPair = pair
+  print(newAngles)
+  wire = []
+  for pair in newAngles:
+   p = pair[1]
+   p3D = self.vwPoint(p)
+   wire.append(p3D)
+  return Part.makePolygon(wire)
+  
+
  # Turn on the light and make a cross section of a shape, s.
  # Then compute its visibility polygon in the 2D plane of the light
  # sheet (the [v, w] plane) and return that as a FreeCAD object in 3D.
  # (See: https://en.wikipedia.org/wiki/Visibility_polygon)
 
- def VisibilityPolygon(self, s):
+ def GetVisibilityPolygon(self, s):
   p0 = self.AbsoluteOffset()
   x0 = self.v.dot(p0)
   y0 = self.w.dot(p0)
@@ -289,7 +338,6 @@ class ScannerPart:
     x = self.v.dot(v.Point) - x0
     y = self.w.dot(v.Point) - y0
     p = Point2D(x, y)
-    p.Print()
 
     # For odd points just remember them.
     # For even points make a line from the last old point to them.
@@ -300,13 +348,12 @@ class ScannerPart:
     else:
      line = Line2D(pOld, p, face)
      lines.append(line)
-     print("---")
-  edgeList = []
-  for line in lines:
-   edge = []
-   edge.append(self.vwPoint(line.Point(0)))
-   edge.append(self.vwPoint(line.Point(1)))
-   edgeList.append(Part.makePolygon(edge))
+
+  visibilityPolygon = []
+  for lineWithEnds in lines:
+   self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 0, lines)
+   self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 1, lines)
+  edgeList = self.SortByThetaAndMakeWire(visibilityPolygon)   
   return edgeList
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -324,9 +371,9 @@ Part.show(b)
 world = ScannerPart()
 twig1 = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world)
 twig1.RotateV(1)
-edgeList = twig1.VisibilityPolygon(b)
-for edge in edgeList:
- Part.show(edge)
+edgeList = twig1.GetVisibilityPolygon(b)
+#for edge in edgeList:
+Part.show(edgeList)
 #Part.show(c)
 Part.show(world.Model())
 
