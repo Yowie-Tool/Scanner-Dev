@@ -50,9 +50,10 @@ def CrossSection(s, p0, n):
 # Small classes for working with 2D vectors
 
 class Point2D:
- def __init__(self, x = 0, y = 0):
+ def __init__(self, x = 0, y = 0, f = None):
   self.x = x
   self.y = y
+  self.face = f
 
  def __repr__(self):
   return "<Point2D x:%s y:%s>" % (self.x, self.y)
@@ -95,7 +96,12 @@ class Point2D:
  # Outer product
 
  def Cross(self, p):
-  return self.x*p.y - self.y*p.x 
+  return self.x*p.y - self.y*p.x
+
+# Set or change the associated face
+
+ def SetFace(self, f):
+  self.face = f
 
 # Small class for working with 2D parametric lines
 # These are defined by a start and end point.  The parameterisation
@@ -273,6 +279,7 @@ class ScannerPart:
   p1 = lineWithEnds.Point(r)
   line = Line2D(p0, p1)
   minS = 1
+  minFace = lineWithEnds.face
   for line1 in lines:
    if line1 != lineWithEnds:
     s, t = line.Cross(line1)
@@ -281,16 +288,43 @@ class ScannerPart:
       if s > 0:
        if s < minS:
         minS = s
-  visibilityPolygon.append(line.Point(minS))
-  
+        minFace = line1.face
+  p2 = line.Point(minS)
+  p2.SetFace(minFace)
+  visibilityPolygon.append(p2)
+ 
+ def PointIsInAFace(self, p, faces):
+  v = Part.Vertex(p)
+  for face in faces:
+   if face.distToShape(v)[0] < tooShort:
+    return True
+  return False
+   
 
- def MakeWire(self, anglePairs):
+ def MakeWires(self, anglePairs, faces):
+  wires = []
   wire = []
-  for pair in anglePairs:
-   p = pair[1]
-   p3D = self.vwPoint(p)
-   wire.append(p3D)
-  return Part.makePolygon(wire)
+  pair1 = anglePairs[0] 
+  p3D1 = self.vwPoint(pair1[1])
+  wire.append(p3D1)
+  for i in range(1, len(anglePairs)):
+   pair2 = anglePairs[i] 
+   p3D2 = self.vwPoint(pair2[1])
+   halfWayPoint = copy.deepcopy(p3D1)
+   halfWayPoint = halfWayPoint.add(p3D2)
+   halfWayPoint.multiply(0.5)
+   if self.PointIsInAFace(halfWayPoint, faces):
+    wire.append(p3D2)
+   else:
+    if len(wire) >= 2:
+     wires.append(Part.makePolygon(wire))
+    wire = []
+    wire.append(p3D2)
+   pair1 = pair2
+   p3D1 = p3D2
+  if len(wire) >= 2:
+   wires.append(Part.makePolygon(wire))
+  return wires
 
  def SortByAngle(self, visibiltyPolygon):
   anglePairs = []
@@ -318,7 +352,7 @@ class ScannerPart:
  # sheet (the [v, w] plane) and return that as a FreeCAD object in 3D.
  # (See: https://en.wikipedia.org/wiki/Visibility_polygon)
 
- def GetVisibilityPolygon(self, s):
+ def GetVisibilityPolygons(self, s):
   p0 = self.AbsoluteOffset()
   x0 = self.v.dot(p0)
   y0 = self.w.dot(p0)
@@ -353,11 +387,11 @@ class ScannerPart:
 
      xa = self.v.dot(va.Point) - x0
      ya = self.w.dot(va.Point) - y0
-     pa = Point2D(xa, ya)
+     pa = Point2D(xa, ya, face)
 
      xb = self.v.dot(vb.Point) - x0
      yb = self.w.dot(vb.Point) - y0
-     pb = Point2D(xb, yb)
+     pb = Point2D(xb, yb, face)
 
      line = Line2D(pa, pb, face)
      lines.append(line)
@@ -366,26 +400,28 @@ class ScannerPart:
    self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 0, lines)
    self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 1, lines)
   anglePairs = self.SortByAngle(visibilityPolygon)  
-  edgeList = self.MakeWire(anglePairs)   
-  return edgeList
+  edges = self.MakeWires(anglePairs, faces)   
+  return edges
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Testing, testing...
 
-#a = Part.makeBox(100, 80, 300)
-#a.translate(Base.Vector(-40, -20, -100))
+a = Part.makeBox(10, 4, 15)
+a.translate(Base.Vector(0, 3, 0))
 b = Part.makeBox(10, 8, 30)
 c =  Part.makeBox(10, 8, 30)
 c.translate(Base.Vector(0, 16, 0))
 b = b.fuse(c)
+b = b.cut(a)
 #b = a.cut(b)
 Part.show(b)
 world = ScannerPart()
 twig1 = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world)
 twig1.RotateV(1) #math.pi/2)
-edgeList = twig1.GetVisibilityPolygon(b)
-Part.show(edgeList)
+wires = twig1.GetVisibilityPolygons(b)
+for wire in wires:
+ Part.show(wire)
 #Part.show(c)
 Part.show(world.Model())
 
