@@ -33,18 +33,17 @@ def Cylinder(p0, p1, r):
  c = Part.makeCylinder(r, length, p0, p2, 360)
  return c
 
-# Make a plane cross section of a solid, s, and return it as a list of wires
+# Make a plane cross section of FreeCAD geometry s, and return it as a list of wires
 # The plane passes through point p0 and has normal n
 
 def CrossSection(s, p0, n):
  nn = copy.deepcopy(n)
  nn.normalize()
  d = nn.dot(p0)
- wires=list()
+ wires=[]
  for i in s.slice(nn, d):
   wires.append(i)
- comp=Part.Compound(wires)
- return comp
+ return wires
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -54,6 +53,9 @@ class Point2D:
  def __init__(self, x = 0, y = 0):
   self.x = x
   self.y = y
+
+ def __repr__(self):
+  return "<Point2D x:%s y:%s>" % (self.x, self.y)
 
  def Print(self):
   print(self.x, ',' , self.y)
@@ -106,6 +108,9 @@ class Line2D:
   self.face = f
   self.empty = self.Length2() < tooShort2
 
+ def __repr__(self):
+  return "<Line2D p0:%s direction:%s>" % (self.p0, self.direction)
+
 # The point at parameter value t
 
  def Point(self, t):
@@ -115,8 +120,8 @@ class Line2D:
  # Fine the parameter value at which another line crosses me (s) and I cross it (t)
 
  def Cross(self, otherLine):
-  determinant = self.direction.Cross(otherLine.direction)
-  if determinant < tooShort2:
+  determinant = otherLine.direction.Cross(self.direction)
+  if abs(determinant) < tooShort2:
    return None, None # Lines parallel
   dp = otherLine.p0.Sub(self.p0)
   s = otherLine.direction.Cross(dp)/determinant
@@ -130,12 +135,12 @@ class Line2D:
 
 # Class to hold points round the visibility polygon
 
-class VisibilityPoint:
- def __init__(self, point, face, d2, theta):
-  self.point = point
-  self.face = face
-  self.d2 = d2
-  self.theta = theta
+#class VisibilityPoint:
+# def __init__(self, point, face, d2, theta):
+#  self.point = point
+#  self.face = face
+#  self.d2 = d2
+#  self.theta = theta
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -264,45 +269,49 @@ class ScannerPart:
   w.multiply(p.y)
   return self.AbsoluteOffset().add(v).add(w)
 
- def RayCheck(self, visibilityPolygon, p0, lineWithEnds, t, lines):
-  p = lineWithEnds.Point(t)
-  line = Line2D(p0, p)
+ def RayCheck(self, visibilityPolygon, p0, lineWithEnds, r, lines):
+  p1 = lineWithEnds.Point(r)
+  line = Line2D(p0, p1)
   minS = 1
   for line1 in lines:
    if line1 != lineWithEnds:
     s, t = line.Cross(line1)
     if s != None:
      if t >= 0 and t <= 1:
-      if s < minS:
-       minS = s
+      if s > 0:
+       if s < minS:
+        minS = s
   visibilityPolygon.append(line.Point(minS))
+  
 
- def SortByThetaAndMakeWire(self, visibiltyPolygon):
-  angles = []
-  for p in visibiltyPolygon:
-   line = Line2D(Point2D(0, 0), p)
-   angle = math.atan2(line.direction.y, line.direction.x)
-   angles.append((angle, p))
-  angles.sort(key=lambda pair: pair[0])
-
- # Remove duplicates
-
-  oldPair = angles[0]
-  newAngles = []
-  for pair in angles:
-   diff = pair[1].Sub(oldPair[1])
-   d2 = diff.Length2()
-   if d2 > tooShort2:
-    newAngles.append(pair)
-    oldPair = pair
-  print(newAngles)
+ def MakeWire(self, anglePairs):
   wire = []
-  for pair in newAngles:
+  for pair in anglePairs:
    p = pair[1]
    p3D = self.vwPoint(p)
    wire.append(p3D)
   return Part.makePolygon(wire)
-  
+
+ def SortByAngle(self, visibiltyPolygon):
+  anglePairs = []
+  for p in visibiltyPolygon:
+   line = Line2D(Point2D(0, 0), p)
+   angle = math.atan2(line.direction.y, line.direction.x)
+   anglePairs.append((angle, p))
+  anglePairs.sort(key=lambda pair: pair[0])
+
+ # Remove duplicates
+
+  oldPair = anglePairs[0]
+  newAnglePairs = []
+  newAnglePairs.append(oldPair)
+  for pair in anglePairs:
+   diff = pair[1].Sub(oldPair[1])
+   d2 = diff.Length2()
+   if d2 > tooShort2:
+    newAnglePairs.append(pair)
+    oldPair = pair
+  return newAnglePairs  
 
  # Turn on the light and make a cross section of a shape, s.
  # Then compute its visibility polygon in the 2D plane of the light
@@ -314,6 +323,7 @@ class ScannerPart:
   x0 = self.v.dot(p0)
   y0 = self.w.dot(p0)
   lines = []
+  visibilityPolygon = []
 
  # We have to visit each face of object s in turn and compute the line of
  # intersection of the light sheet plane with it because the FreeCAD CrossSection
@@ -326,34 +336,37 @@ class ScannerPart:
    # Where does the plane cut the face. Note that line may have
    # more than one section.
 
-   line = CrossSection(face, p0, self.u)
-   vertices = line.Vertexes
-   count = 0
-   for v in vertices:
+   faceLines = CrossSection(face, p0, self.u)
 
-    # Find the projection of v into the light sheet plane.
+   for line in faceLines:
+    vertexes = line.Vertexes
+    if len(vertexes) != 2:
+     print("Line without 2 ends!", len(vertexes))
+    else:
+
+    # Find the projection of line into the light sheet plane.
     # The projection of the light source point is the origin
     # of coordinates.
 
-    x = self.v.dot(v.Point) - x0
-    y = self.w.dot(v.Point) - y0
-    p = Point2D(x, y)
+     va = vertexes[0]
+     vb = vertexes[1]
 
-    # For odd points just remember them.
-    # For even points make a line from the last old point to them.
+     xa = self.v.dot(va.Point) - x0
+     ya = self.w.dot(va.Point) - y0
+     pa = Point2D(xa, ya)
 
-    count += 1
-    if count%2 == 1:
-     pOld = p
-    else:
-     line = Line2D(pOld, p, face)
+     xb = self.v.dot(vb.Point) - x0
+     yb = self.w.dot(vb.Point) - y0
+     pb = Point2D(xb, yb)
+
+     line = Line2D(pa, pb, face)
      lines.append(line)
 
-  visibilityPolygon = []
   for lineWithEnds in lines:
    self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 0, lines)
    self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 1, lines)
-  edgeList = self.SortByThetaAndMakeWire(visibilityPolygon)   
+  anglePairs = self.SortByAngle(visibilityPolygon)  
+  edgeList = self.MakeWire(anglePairs)   
   return edgeList
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -370,9 +383,8 @@ b = b.fuse(c)
 Part.show(b)
 world = ScannerPart()
 twig1 = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world)
-twig1.RotateV(1)
+twig1.RotateV(1) #math.pi/2)
 edgeList = twig1.GetVisibilityPolygon(b)
-#for edge in edgeList:
 Part.show(edgeList)
 #Part.show(c)
 Part.show(world.Model())
