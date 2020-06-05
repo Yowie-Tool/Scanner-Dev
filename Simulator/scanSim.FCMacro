@@ -275,23 +275,75 @@ class ScannerPart:
   w.multiply(p.y)
   return self.AbsoluteOffset().add(v).add(w)
 
+ def FindOtherLineAtPoint(self, p0, line0, lines):
+  for line in lines:
+   if line != line0:
+    for a in (0, 1):
+     pa = line.Point(a).Sub(p0)
+     if pa.Length2() < tooShort2:
+      return line
+  print("FindOtherLineAtPoint - coincident line end not found!")
+  return line0
+
+ def ExtremePoint(self, p1, ray, lineWithEnds, otherLine, r, lines):
+  q = 1 - r
+  otherEnd1 = lineWithEnds.Point(q)
+  for a in (0, 1):
+   pa = otherLine.Point(a).Sub(p1)
+   if pa.Length2() < tooShort2:
+    b = 1 - a
+    otherEnd2 = otherLine.Point(b)
+    s0 = ray.direction.Cross(otherEnd1.Sub(ray.p0))
+    s1 = ray.direction.Cross(otherEnd2.Sub(ray.p0))
+    sign = s0*s1
+    if sign <= 0:
+     return 0
+    return s0
+  print("ExtremePoint - other line does not touch original line!")
+  return 0
+      
+
  def RayCheck(self, visibilityPolygon, p0, lineWithEnds, r, lines):
   p1 = lineWithEnds.Point(r)
-  line = Line2D(p0, p1)
+  otherLine = self.FindOtherLineAtPoint(p1, lineWithEnds, lines)
+  ray = Line2D(p0, p1)
   minS = 1
   minFace = lineWithEnds.face
+  minBehind = sys.float_info.max
+  behindFace = None
   for line1 in lines:
-   if line1 != lineWithEnds:
-    s, t = line.Cross(line1)
+   if line1 != lineWithEnds and line1 != otherLine:
+    s, t = ray.Cross(line1)
     if s != None:
      if t >= 0 and t <= 1:
       if s > 0:
+       if s < minBehind:
+        minBehind = s
+        behindFace = line1.face
        if s < minS:
         minS = s
         minFace = line1.face
-  p2 = line.Point(minS)
-  p2.SetFace(minFace)
-  visibilityPolygon.append(p2)
+  classification = 0
+  if (abs(minS - 1) < tooShort) and (behindFace != None):
+   classification = self.ExtremePoint(p1, ray, lineWithEnds, otherLine, r, lines)
+  if classification > 0:
+   p2 = ray.Point(minBehind)
+   p2.SetFace(behindFace)
+   visibilityPolygon.append(p2)
+   p3 = ray.Point(minS)
+   p3.SetFace(minFace)
+   visibilityPolygon.append(p3)
+  elif classification == 0:
+   p2 = ray.Point(minS)
+   p2.SetFace(minFace)
+   visibilityPolygon.append(p2)
+  else:     
+   p2 = ray.Point(minS)
+   p2.SetFace(minFace)
+   visibilityPolygon.append(p2)
+   p3 = ray.Point(minBehind)
+   p3.SetFace(behindFace)
+   visibilityPolygon.append(p3)
  
  def PointIsInAFace(self, p, faces):
   v = Part.Vertex(p)
@@ -299,7 +351,33 @@ class ScannerPart:
    if face.distToShape(v)[0] < tooShort:
     return True
   return False
-   
+
+ def PlotPolygon(self, polygon):
+  wire = []
+  for p in polygon: 
+   p3D = self.vwPoint(p)
+   wire.append(p3D)
+  if len(wire) >= 2:
+   Part.show(Part.makePolygon(wire))
+
+ def PlotLine(self, line):
+  p0 = line.Point(0)
+  p03 = self.vwPoint(p0)
+  p1 = line.Point(1)
+  p13 = self.vwPoint(p1)
+  Part.show(Part.makePolygon([p03, p13]))
+
+ def MakeWiresIncludingFacelessOnes(self, anglePairs, faces):
+  wires = []
+  wire = []
+  for i in range(0, len(anglePairs)):
+   pair = anglePairs[i] 
+   p3D = self.vwPoint(pair[1])
+   wire.append(p3D)
+  if len(wire) >= 2:
+   wires.append(Part.makePolygon(wire))
+  return wires
+ 
 
  def MakeWires(self, anglePairs, faces):
   wires = []
@@ -334,7 +412,8 @@ class ScannerPart:
    anglePairs.append((angle, p))
   anglePairs.sort(key=lambda pair: pair[0])
 
- # Remove duplicates
+ # Remove duplicates (note separate points may share
+ # the same angle, so we use inter-point distance).
 
   oldPair = anglePairs[0]
   newAnglePairs = []
@@ -399,8 +478,9 @@ class ScannerPart:
   for lineWithEnds in lines:
    self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 0, lines)
    self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 1, lines)
-  anglePairs = self.SortByAngle(visibilityPolygon)  
-  edges = self.MakeWires(anglePairs, faces)   
+  anglePairs = self.SortByAngle(visibilityPolygon)
+#  edges = self.MakeWiresIncludingFacelessOnes(anglePairs, faces)
+  edges = self.MakeWires(anglePairs, faces)     
   return edges
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
