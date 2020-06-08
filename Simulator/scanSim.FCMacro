@@ -139,14 +139,6 @@ class Line2D:
  def Length2(self):
   return self.direction.Length2()
 
-# Class to hold points round the visibility polygon
-
-#class VisibilityPoint:
-# def __init__(self, point, face, d2, theta):
-#  self.point = point
-#  self.face = face
-#  self.d2 = d2
-#  self.theta = theta
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -247,7 +239,7 @@ class ScannerPart:
   self.Rotate(r)
 
 
- # Make a picture of the tree recursively
+ # Make a solid model of the tree recursively
 
  def Model(self):
   p1 = self.AbsoluteOffset()
@@ -275,6 +267,9 @@ class ScannerPart:
   w.multiply(p.y)
   return self.AbsoluteOffset().add(v).add(w)
 
+ # Each line in the section polygon should join to another as the polygon
+ # is a section through a solid.  Find the other line.
+
  def FindOtherLineAtPoint(self, p0, line0, lines):
   for line in lines:
    if line != line0:
@@ -284,6 +279,10 @@ class ScannerPart:
       return line
   print("FindOtherLineAtPoint - coincident line end not found!")
   return line0
+
+ # A ray through a polygon vertex can go into solid, or it can
+ # just kiss the vertex and carry on in space. This categorises
+ # that situation.
 
  def ExtremePoint(self, p1, ray, lineWithEnds, otherLine, r, lines):
   q = 1 - r
@@ -302,107 +301,149 @@ class ScannerPart:
   print("ExtremePoint - other line does not touch original line!")
   return 0
       
+ # Cast rays from the origin (where the light is) through the points lineWithEnds(r), find
+ # what they hit, add that to the output polygon, sort that into angle order, then
+ # convert it back to 3D.
 
- def RayCheck(self, visibilityPolygon, p0, lineWithEnds, r, lines):
-  p1 = lineWithEnds.Point(r)
-  otherLine = self.FindOtherLineAtPoint(p1, lineWithEnds, lines)
-  ray = Line2D(p0, p1)
-  minS = 1
-  minFace = lineWithEnds.face
-  minBehind = sys.float_info.max
-  behindFace = None
-  for line1 in lines:
-   if line1 != lineWithEnds and line1 != otherLine:
-    s, t = ray.Cross(line1)
-    if s != None:
-     if t >= 0 and t <= 1:
-      if s > 0:
-       if s < minBehind:
-        minBehind = s
-        behindFace = line1.face
-       if s < minS:
-        minS = s
-        minFace = line1.face
-  classification = 0
-  if (abs(minS - 1) < tooShort) and (behindFace != None):
-   classification = self.ExtremePoint(p1, ray, lineWithEnds, otherLine, r, lines)
-  if classification > 0:
-   p2 = ray.Point(minBehind)
-   p2.SetFace(behindFace)
-   visibilityPolygon.append(p2)
-   p3 = ray.Point(minS)
-   p3.SetFace(minFace)
-   visibilityPolygon.append(p3)
-  elif classification == 0:
-   p2 = ray.Point(minS)
-   p2.SetFace(minFace)
-   visibilityPolygon.append(p2)
-  else:     
-   p2 = ray.Point(minS)
-   p2.SetFace(minFace)
-   visibilityPolygon.append(p2)
-   p3 = ray.Point(minBehind)
-   p3.SetFace(behindFace)
-   visibilityPolygon.append(p3)
+ def RayCast(self, lines, faces):
+  visibilityPolygon = []
+  for lineWithEnds in lines:
+   for r in (0, 1): 
+    p1 = lineWithEnds.Point(r)
+
+  # Find the other line at this point
+
+    otherLine = self.FindOtherLineAtPoint(p1, lineWithEnds, lines)
+    ray = Line2D(Point2D(0, 0), p1)
+
+  # s is the ray's parameter. We need to know the closest hit to 
+  # p0, and possibly (if that is a projecting vertex) the point hit
+  # behind that.
+
+    minS = 1
+    minFace = lineWithEnds.face
+    minBehind = sys.float_info.max
+    behindFace = None
+    for line1 in lines:
+     if line1 != lineWithEnds and line1 != otherLine:
+      s, t = ray.Cross(line1)
+      if s != None:
+       if t >= 0 and t <= 1:
+        if s > 0:
+         if s < minBehind:
+          minBehind = s
+          behindFace = line1.face
+         if s < minS:
+          minS = s
+          minFace = line1.face
+    classification = 0
+    if (abs(minS - 1) < tooShort) and (behindFace != None):
+     classification = self.ExtremePoint(p1, ray, lineWithEnds, otherLine, r, lines)
+    if classification > 0:
+     p2 = ray.Point(minBehind)
+     p2.SetFace(behindFace)
+     visibilityPolygon.append(p2)
+     p3 = ray.Point(minS)
+     p3.SetFace(minFace)
+     visibilityPolygon.append(p3)
+    elif classification == 0:
+     p2 = ray.Point(minS)
+     p2.SetFace(minFace)
+     visibilityPolygon.append(p2)
+    else:     
+     p2 = ray.Point(minS)
+     p2.SetFace(minFace)
+     visibilityPolygon.append(p2)
+     p3 = ray.Point(minBehind)
+     p3.SetFace(behindFace)
+     visibilityPolygon.append(p3)
+  anglePairs = self.SortByAngle(visibilityPolygon)
+  return self.Make3DPolygons(anglePairs, faces) 
+   
  
+ # Find out if p is in a face of the 3D model
+
  def PointIsInAFace(self, p, faces):
   v = Part.Vertex(p)
   for face in faces:
    if face.distToShape(v)[0] < tooShort:
-    return True
-  return False
+    return face
+  return None
 
- def PlotPolygon(self, polygon):
-  wire = []
-  for p in polygon: 
-   p3D = self.vwPoint(p)
-   wire.append(p3D)
-  if len(wire) >= 2:
-   Part.show(Part.makePolygon(wire))
+ # We have a set of points on the visible polygon in 2D, sorted by angle.
+ # Add lines between them in 3D that are in actual faces to the output, together.
+ # with their face.  Join contiguous lines that share a face.
 
- def PlotLine(self, line):
-  p0 = line.Point(0)
-  p03 = self.vwPoint(p0)
-  p1 = line.Point(1)
-  p13 = self.vwPoint(p1)
-  Part.show(Part.makePolygon([p03, p13]))
+ def Make3DPolygons(self, anglePairs, faces):
 
- def MakeWiresIncludingFacelessOnes(self, anglePairs, faces):
-  wires = []
-  wire = []
-  for i in range(0, len(anglePairs)):
-   pair = anglePairs[i] 
-   p3D = self.vwPoint(pair[1])
-   wire.append(p3D)
-  if len(wire) >= 2:
-   wires.append(Part.makePolygon(wire))
-  return wires
- 
+ # Make a list of all the 3D points and which faces (if any) the lines
+ # between them lie in.
 
- def MakeWires(self, anglePairs, faces):
-  wires = []
-  wire = []
+  allPolygons = []
   pair1 = anglePairs[0] 
   p3D1 = self.vwPoint(pair1[1])
-  wire.append(p3D1)
+  allPolygons.append((p3D1, None))
   for i in range(1, len(anglePairs)):
    pair2 = anglePairs[i] 
    p3D2 = self.vwPoint(pair2[1])
    halfWayPoint = copy.deepcopy(p3D1)
    halfWayPoint = halfWayPoint.add(p3D2)
    halfWayPoint.multiply(0.5)
-   if self.PointIsInAFace(halfWayPoint, faces):
-    wire.append(p3D2)
-   else:
-    if len(wire) >= 2:
-     wires.append(Part.makePolygon(wire))
-    wire = []
-    wire.append(p3D2)
-   pair1 = pair2
+   face = self.PointIsInAFace(halfWayPoint, faces)
+   allPolygons.append((p3D2, face))
    p3D1 = p3D2
-  if len(wire) >= 2:
-   wires.append(Part.makePolygon(wire))
-  return wires
+
+ # Go through and split the list at lines with no faces
+
+   polygon = []
+   polygons = []
+   pair1 = allPolygons[0]
+   polygon.append(pair1)
+   for i in range (1, len(allPolygons)):
+    pair2 = allPolygons[i]
+    if pair2[1] != None:
+      polygon.append(pair2)
+    else:
+     if len(polygon) >= 2:
+      polygons.append(polygon)
+     polygon = []
+     polygon.append(pair2)
+    pair1 = pair2
+   if len(polygon) >= 2:
+    polygons.append(polygon)
+
+ # Now correct the faces of points with faces still set to None
+
+  for polygon in polygons:
+   for i in range(1, len(polygon)):
+    newPair = (polygon[i-1][0], polygon[i][1])
+    polygon[i-1] = newPair
+
+ # Now remove points internal to faces
+
+  for k in range(0, len(polygons)):
+   polygon = polygons[k]
+   newPolygon = []
+   newPolygon.append(polygon[0])
+   for i in range(1, len(polygon) - 1):
+    if polygon[i-1][1] != polygon[i][1]:
+     newPolygon.append(polygon[i])
+   newPolygon.append(polygon[len(polygon) - 1])
+   polygons[k] = newPolygon
+
+  return polygons
+
+ # Plot the 3D polygons (mainly for checking)
+
+ def PlotPolygons(self, polygons):
+  for polygon in polygons:
+   wire = []
+   for pair in polygon:
+    wire.append(pair[0])
+   Part.show(Part.makePolygon(wire))
+
+ # We have the visibility polygon, but it is in random order. Sort the points
+ # by swept angle from the origin (which is where the light is).
 
  def SortByAngle(self, visibiltyPolygon):
   anglePairs = []
@@ -413,7 +454,7 @@ class ScannerPart:
   anglePairs.sort(key=lambda pair: pair[0])
 
  # Remove duplicates (note separate points may share
- # the same angle, so we use inter-point distance).
+ # the same angle, so we use inter-point distance to discriminate).
 
   oldPair = anglePairs[0]
   newAnglePairs = []
@@ -432,6 +473,10 @@ class ScannerPart:
  # (See: https://en.wikipedia.org/wiki/Visibility_polygon)
 
  def GetVisibilityPolygons(self, s):
+
+  # The origin of coordinates in the 2D light sheet (x0, y0) is the position
+  # of the light source in 3D.
+
   p0 = self.AbsoluteOffset()
   x0 = self.v.dot(p0)
   y0 = self.w.dot(p0)
@@ -447,7 +492,7 @@ class ScannerPart:
   for face in faces:
 
    # Where does the plane cut the face. Note that line may have
-   # more than one section.
+   # more than one section if the face has a hole in it.
 
    faceLines = CrossSection(face, p0, self.u)
 
@@ -460,6 +505,9 @@ class ScannerPart:
     # Find the projection of line into the light sheet plane.
     # The projection of the light source point is the origin
     # of coordinates.
+
+    # We keep track of the face each line came from, though (perhaps surprisingly)
+    # that is not much use.
 
      va = vertexes[0]
      vb = vertexes[1]
@@ -475,13 +523,10 @@ class ScannerPart:
      line = Line2D(pa, pb, face)
      lines.append(line)
 
-  for lineWithEnds in lines:
-   self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 0, lines)
-   self.RayCheck(visibilityPolygon, Point2D(0, 0), lineWithEnds, 1, lines)
-  anglePairs = self.SortByAngle(visibilityPolygon)
-#  edges = self.MakeWiresIncludingFacelessOnes(anglePairs, faces)
-  edges = self.MakeWires(anglePairs, faces)     
-  return edges
+  # Cast a ray from the light source through each line end in turn and add what it hits
+  # to the visibility polygons.
+
+  return self.RayCast(lines, faces)
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -499,10 +544,8 @@ Part.show(b)
 world = ScannerPart()
 twig1 = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world)
 twig1.RotateV(1) #math.pi/2)
-wires = twig1.GetVisibilityPolygons(b)
-for wire in wires:
- Part.show(wire)
-#Part.show(c)
+polygons = twig1.GetVisibilityPolygons(b)
+twig1.PlotPolygons(polygons)
 Part.show(world.Model())
 
 #world = ScannerPart()
