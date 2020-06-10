@@ -160,7 +160,7 @@ class Line2D:
 
 def FindOtherLineAtPoint(p0, line0, lines):
  for line in lines:
-  if line != line0:
+  if line is not line0:
    for a in (0, 1):
     pa = line.Point(a).Sub(p0)
     if pa.Length2() < tooShort2:
@@ -232,7 +232,7 @@ def Make3DPolygons(anglePairs, faces, lightSource):
   polygon.append(pair1)
   for i in range (1, len(allPolygons)):
    pair2 = allPolygons[i]
-   if pair2[1] != None:
+   if pair2[1] is not None:
      polygon.append(pair2)
    else:
     if len(polygon) >= 2:
@@ -257,7 +257,7 @@ def Make3DPolygons(anglePairs, faces, lightSource):
   newPolygon = []
   newPolygon.append(polygon[0])
   for i in range(1, len(polygon) - 1):
-   if polygon[i-1][1] != polygon[i][1]:
+   if polygon[i-1][1] is not polygon[i][1]:
     newPolygon.append(polygon[i])
   newPolygon.append(polygon[len(polygon) - 1])
   polygons[k] = newPolygon
@@ -276,16 +276,23 @@ def PlotPolygons(polygons):
 # We have the visibility polygon, but it is in random order. Sort the points
 # by swept angle from the origin (which is where the light is).
 
-def SortByAngle(visibiltyPolygon):
+def SortByAngle(visibiltyPolygon, lightSource):
  anglePairs = []
  for p in visibiltyPolygon:
   line = Line2D(Point2D(0, 0), p)
   angle = math.atan2(line.direction.y, line.direction.x)
+
+  # atan2's returns angles in [-pi, pi]. Fix that so they sort right
+
+  if angle < 0:
+   angle = angle + 2*math.pi
+
   anglePairs.append((angle, p))
  anglePairs.sort(key=lambda pair: pair[0])
 
 # Remove duplicates (note separate points may share
 # the same angle, so we use inter-point distance to discriminate).
+# We also convert the angles back into [-pi, pi].
 
  oldPair = anglePairs[0]
  newAnglePairs = []
@@ -294,8 +301,32 @@ def SortByAngle(visibiltyPolygon):
   diff = pair[1].Sub(oldPair[1])
   d2 = diff.Length2()
   if d2 > tooShort2:
+   if pair[0] > math.pi:
+    newPair = (pair[0] - 2*math.pi, pair[1])
+    pair = newPair
    newAnglePairs.append(pair)
    oldPair = pair
+
+# Eliminate everything outside the angle of the light sheet
+ """ 
+ enter = -1
+ exit = -1
+ for i in range (0, len(newAnglePairs)):
+  pair = newAnglePairs[i]
+  if pair[0] >= -halfAngle:
+   if enter < 0:
+    enter = i
+  if pair[0] > halfAngle:
+   if exit < 0:
+    exit = i
+
+ if enter < 0 and exit < 0:
+  return []
+
+ anglePairs = []
+ 
+ """
+  
  return newAnglePairs  
      
 # Cast rays from the origin (where the light is) through the points lineWithEnds(r), find
@@ -323,9 +354,9 @@ def RayCast(lines, faces, lightSource):
    minBehind = sys.float_info.max
    behindFace = None
    for line1 in lines:
-    if line1 != lineWithEnds and line1 != otherLine:
+    if line1 is not lineWithEnds and line1 is not otherLine:
      s, t = ray.Cross(line1)
-     if s != None:
+     if s is not None:
       if t >= 0 and t <= 1:
        if s > 0:
         if s < minBehind:
@@ -335,7 +366,7 @@ def RayCast(lines, faces, lightSource):
          minS = s
          minFace = line1.face
    classification = 0
-   if (abs(minS - 1) < tooShort) and (behindFace != None):
+   if (abs(minS - 1) < tooShort) and (behindFace is not None):
     classification = ExtremePoint(p1, ray, lineWithEnds, otherLine, r, lines)
    if classification > 0:
     p2 = ray.Point(minBehind)
@@ -344,7 +375,7 @@ def RayCast(lines, faces, lightSource):
     p3 = ray.Point(minS)
     p3.SetFace(minFace)
     visibilityPolygon.append(p3)
-   elif classification == 0:
+   elif classification is 0:
     p2 = ray.Point(minS)
     p2.SetFace(minFace)
     visibilityPolygon.append(p2)
@@ -355,7 +386,7 @@ def RayCast(lines, faces, lightSource):
     p3 = ray.Point(minBehind)
     p3.SetFace(behindFace)
     visibilityPolygon.append(p3)
- anglePairs = SortByAngle(visibilityPolygon)
+ anglePairs = SortByAngle(visibilityPolygon, lightSource)
  return Make3DPolygons(anglePairs, faces, lightSource) 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -478,14 +509,35 @@ class ScannerPart:
   return m
 
  # Convert a point p in the [v, w] plane into a point in absolute 3D space.
- # The [v, w] plane is the light sheet for a light source.
+ # The [v, w] plane is the light sheet for a light source.  Remember that
+ # w is the plane's x axis because w is the centre of the beam.  
+ # This and the next function are for the light sheet simulation.
 
  def vwPoint(self, p):
-  v = copy.deepcopy(self.v)
-  v.multiply(p.x)
   w = copy.deepcopy(self.w)
-  w.multiply(p.y)
+  w.multiply(p.x)
+  v = copy.deepcopy(self.v)
+  v.multiply(p.y)
   return self.AbsoluteOffset().add(v).add(w)
+
+ # Project a 3D point into the [v, w] plane.  Again w is the x axis.
+
+ def xyPoint(self, p3D):
+  x = self.w.dot(p3D)
+  y = self.v.dot(p3D)
+  p = Point2D(x, y)
+  return p
+
+ # Convert a point p in the [u, v] plane into a point in absolute 3D space.
+ # The [u, v] plane is the focal plane of a camera, which points along the
+ # w axis.  The lens (or pinhole) is self.focalLength along w.  
+
+ def uvPoint(self, p):
+  u = copy.deepcopy(self.u)
+  u.multiply(p.x)
+  v = copy.deepcopy(self.v)
+  v.multiply(p.y)
+  return self.AbsoluteOffset().add(u).add(v)
 
 
  # If we are a light source...
@@ -495,14 +547,16 @@ class ScannerPart:
  # (See: https://en.wikipedia.org/wiki/Visibility_polygon)
 
  def GetVisibilityPolygons(self, s):
+  if self.lightAngle <= 0:
+   print("Illuminated polygon requested for non light source.")
 
   # The origin of coordinates in the 2D light sheet (x0, y0) is the projection of the position
   # of the light source in 3D into the light source's [v, w] plane.  We use (x, y) for
   # coordinates in the plane to avoid confuusion with the u, v, and w vectors.
 
   p0 = self.AbsoluteOffset()
-  x0 = self.v.dot(p0)
-  y0 = self.w.dot(p0)
+
+  origin2D = self.xyPoint(p0)
   lines = []
 
  # We have to visit each face of object s in turn and compute the line of
@@ -520,7 +574,7 @@ class ScannerPart:
 
    for line in faceLines:
     vertexes = line.Vertexes
-    if len(vertexes) != 2:
+    if len(vertexes) is not 2:
      print("Line without 2 ends!", len(vertexes))
     else:
 
@@ -531,18 +585,10 @@ class ScannerPart:
     # We keep track of the face each line came from, though (perhaps surprisingly)
     # that is not much use.
 
-     va = vertexes[0]
-     vb = vertexes[1]
+     v2D0 = self.xyPoint(vertexes[0].Point).Sub(origin2D)
+     v2D1 = self.xyPoint(vertexes[1].Point).Sub(origin2D)     
 
-     xa = self.v.dot(va.Point) - x0
-     ya = self.w.dot(va.Point) - y0
-     pa = Point2D(xa, ya, face)
-
-     xb = self.v.dot(vb.Point) - x0
-     yb = self.w.dot(vb.Point) - y0
-     pb = Point2D(xb, yb, face)
-
-     line = Line2D(pa, pb, face)
+     line = Line2D(v2D0, v2D1, face)
      lines.append(line)
 
   # Cast a ray from the light source through each line end in turn and add what it hits
@@ -564,9 +610,9 @@ b = b.cut(a)
 #b = a.cut(b)
 Part.show(b)
 world = ScannerPart()
-twig1 = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world)
-twig1.RotateV(1) #math.pi/2)
-polygons = twig1.GetVisibilityPolygons(b)
+lightSource = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world, lightAngle = 1)
+lightSource.RotateV(1) #math.pi/2)
+polygons = lightSource.GetVisibilityPolygons(b)
 PlotPolygons(polygons)
 Part.show(world.Model())
 
