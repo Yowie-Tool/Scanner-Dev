@@ -306,27 +306,41 @@ def SortByAngle(visibiltyPolygon, lightSource):
     pair = newPair
    newAnglePairs.append(pair)
    oldPair = pair
-
+ """
 # Eliminate everything outside the angle of the light sheet
- """ 
- enter = -1
- exit = -1
- for i in range (0, len(newAnglePairs)):
-  pair = newAnglePairs[i]
-  if pair[0] >= -halfAngle:
-   if enter < 0:
-    enter = i
-  if pair[0] > halfAngle:
-   if exit < 0:
-    exit = i
-
- if enter < 0 and exit < 0:
-  return []
 
  anglePairs = []
- 
- """
+ inside = False
+ halfAngle = 0.5*lightSource.lightAngle
+ for i in range (0, len(newAnglePairs)):
+  pair = newAnglePairs[i]
+  newInside = False
+  if pair[0] > -halfAngle:
+    if not inside and i is not 0:
+     previous = newAnglePairs[i-1]
+     polygonLine = Line2D(previous[1], pair[1])
+     lightEdgeLine = Line2D(Point2D(0, 0), Point2D(math.cos(-halfAngle), math.sin(-halfAngle)))
+     s, t = polygonLine.Cross(lightEdgeLine)
+     if s < 0 or s > 1:
+      print("SortByAngle - negative light edge not in line segment, parameter: ", s)
+     anglePairs.append((-halfAngle, polygonLine.Point(s)))
+     newInside = True
+  if pair[0] > halfAngle:
+   if inside and i is not 0:
+    previous = newAnglePairs[i-1]
+    polygonLine = Line2D(previous[1], pair[1])
+    lightEdgeLine = Line2D(Point2D(0, 0), Point2D(math.cos(halfAngle), math.sin(halfAngle)))
+    s, t = polygonLine.Cross(lightEdgeLine)
+    if s < 0 or s > 1:
+     print("SortByAngle - positive light edge not in line segment, parameter: ", s)
+    anglePairs.append((halfAngle, polygonLine.Point(s)))
+    newInside = False
+   else:
+    anglePairs.append(pair)
+   inside = newInside   
   
+ return anglePairs
+ """
  return newAnglePairs  
      
 # Cast rays from the origin (where the light is) through the points lineWithEnds(r), find
