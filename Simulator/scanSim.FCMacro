@@ -4,6 +4,8 @@
 
 import Part, BOPTools, FreeCAD, math, copy, sys
 from FreeCAD import Base
+import PySide
+from PySide import QtGui, QtCore
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -12,8 +14,12 @@ from FreeCAD import Base
 
 # Length in mm considered to be 0 and its square
 
-tooShort = 0.001
-tooShort2 = tooShort*tooShort
+veryShort = 0.001
+veryShort2 = veryShort*veryShort
+
+# Roughly the largest dimension in mm of anything that will be dealt with
+
+veryLong = 80
 
 # There must be an easier way to make the FreeCAD null set...
 
@@ -119,7 +125,7 @@ class Line2D:
   self.p0 = p0
   self.direction = p1.Sub(p0)
   self.face = f
-  self.empty = self.Length2() < tooShort2
+  self.empty = self.Length2() < veryShort2
 
  def __repr__(self):
   return "<Line2D p0:%s direction:%s>" % (self.p0, self.direction)
@@ -134,7 +140,7 @@ class Line2D:
 
  def Cross(self, otherLine):
   determinant = otherLine.direction.Cross(self.direction)
-  if abs(determinant) < tooShort2:
+  if abs(determinant) < veryShort2:
    return None, None # Lines parallel
   dp = otherLine.p0.Sub(self.p0)
   s = otherLine.direction.Cross(dp)/determinant
@@ -163,7 +169,7 @@ def FindOtherLineAtPoint(p0, line0, lines):
   if line is not line0:
    for a in (0, 1):
     pa = line.Point(a).Sub(p0)
-    if pa.Length2() < tooShort2:
+    if pa.Length2() < veryShort2:
      return line
  print("FindOtherLineAtPoint - coincident line end not found!")
  return line0
@@ -177,7 +183,7 @@ def ExtremePoint(p1, ray, lineWithEnds, otherLine, r, lines):
  otherEnd1 = lineWithEnds.Point(q)
  for a in (0, 1):
   pa = otherLine.Point(a).Sub(p1)
-  if pa.Length2() < tooShort2:
+  if pa.Length2() < veryShort2:
    b = 1 - a
    otherEnd2 = otherLine.Point(b)
    s0 = ray.direction.Cross(otherEnd1.Sub(ray.p0))
@@ -195,7 +201,7 @@ def ExtremePoint(p1, ray, lineWithEnds, otherLine, r, lines):
 def PointIsInAFace(p, faces):
  v = Part.Vertex(p)
  for face in faces:
-  if face.distToShape(v)[0] < tooShort:
+  if face.distToShape(v)[0] < veryShort:
    return face
  return None
 
@@ -281,12 +287,8 @@ def SortByAngle(visibiltyPolygon, lightSource):
  for p in visibiltyPolygon:
   line = Line2D(Point2D(0, 0), p)
   angle = math.atan2(line.direction.y, line.direction.x)
-
-  # atan2's returns angles in [-pi, pi]. Fix that so they sort right
-
   if angle < 0:
-   angle = angle + 2*math.pi
-
+   angle = angle + 2*math.pi   # atan2's returns angles in [-pi, pi]. Fix that so they sort right
   anglePairs.append((angle, p))
  anglePairs.sort(key=lambda pair: pair[0])
 
@@ -300,13 +302,13 @@ def SortByAngle(visibiltyPolygon, lightSource):
  for pair in anglePairs:
   diff = pair[1].Sub(oldPair[1])
   d2 = diff.Length2()
-  if d2 > tooShort2:
+  if d2 > veryShort2:
    if pair[0] > math.pi:
     newPair = (pair[0] - 2*math.pi, pair[1])
     pair = newPair
    newAnglePairs.append(pair)
    oldPair = pair
- """
+
 # Eliminate everything outside the angle of the light sheet
 
  anglePairs = []
@@ -335,13 +337,13 @@ def SortByAngle(visibiltyPolygon, lightSource):
      print("SortByAngle - positive light edge not in line segment, parameter: ", s)
     anglePairs.append((halfAngle, polygonLine.Point(s)))
     newInside = False
-   else:
-    anglePairs.append(pair)
-   inside = newInside   
+  else:
+   anglePairs.append(pair)
+  inside = newInside   
   
  return anglePairs
- """
- return newAnglePairs  
+
+ #return newAnglePairs  
      
 # Cast rays from the origin (where the light is) through the points lineWithEnds(r), find
 # what they hit, add that to the output polygon, sort that into angle order, then
@@ -380,7 +382,7 @@ def RayCast(lines, faces, lightSource):
          minS = s
          minFace = line1.face
    classification = 0
-   if (abs(minS - 1) < tooShort) and (behindFace is not None):
+   if (abs(minS - 1) < veryShort) and (behindFace is not None):
     classification = ExtremePoint(p1, ray, lineWithEnds, otherLine, r, lines)
    if classification > 0:
     p2 = ray.Point(minBehind)
@@ -424,6 +426,9 @@ class ScannerPart:
   self.w = w.normalize()
 
   # If we are a light source (i.e. lightAngle >= 0)
+
+  if lightAngle > math.pi:
+   print("Light source with angle > pi: ", lightAngle)
 
   self.lightAngle = lightAngle
 
@@ -507,9 +512,20 @@ class ScannerPart:
 
  def Model(self):
   p1 = self.AbsoluteOffset()
-  uc = Part.makeCylinder(0.2, 10, p1, self.u, 360)
-  vc = Part.makeCylinder(0.2, 10, p1, self.v, 360)
-  wc = Part.makeCylinder(0.2, 10, p1, self.w, 360)
+  uc = Part.makeCylinder(0.2, 5, p1, self.u, 360)
+  vc = Part.makeCylinder(0.2, 5, p1, self.v, 360)
+  wc = Part.makeCylinder(0.2, 5, p1, self.w, 360)
+  if self.lightAngle > 0:
+   vv = copy.deepcopy(self.v)
+   ww = copy.deepcopy(self.w)
+   vv.multiply(veryLong*math.sin(self.lightAngle*0.5))
+   ww.multiply(veryLong*math.cos(self.lightAngle*0.5))
+   p2 = p1.add(vv).add(ww)
+   p3 = p1.sub(vv).add(ww)
+   e1 = Part.makeLine(p1, p2)
+   e2 = Part.makeLine(p2, p3)
+   e3 = Part.makeLine(p3, p1)
+   Part.show(Part.Wire([e1,e2,e3]))
   m = uc.fuse(vc)
   m = m.fuse(wc)
   if self.parent is not None:
@@ -614,6 +630,13 @@ class ScannerPart:
 
 # Testing, testing...
 
+#clearing previous messages
+mw=Gui.getMainWindow()
+c=mw.findChild(QtGui.QPlainTextEdit, "Python console")
+c.clear()
+r=mw.findChild(QtGui.QTextEdit, "Report view")
+r.clear()
+
 a = Part.makeBox(10, 4, 15)
 a.translate(Base.Vector(0, 3, 0))
 b = Part.makeBox(10, 8, 30)
@@ -624,8 +647,8 @@ b = b.cut(a)
 #b = a.cut(b)
 Part.show(b)
 world = ScannerPart()
-lightSource = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world, lightAngle = 1)
-lightSource.RotateV(1) #math.pi/2)
+lightSource = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world, lightAngle = 2)
+lightSource.RotateV(math.pi - 1) #math.pi/2)
 polygons = lightSource.GetVisibilityPolygons(b)
 PlotPolygons(polygons)
 Part.show(world.Model())
