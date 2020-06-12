@@ -21,6 +21,15 @@ veryShort2 = veryShort*veryShort
 
 veryLong = 80
 
+# Unique count as a string
+
+objectCount = -1
+
+def UniqueNumber():
+ global objectCount
+ objectCount += 1
+ return str(objectCount)
+
 # There must be an easier way to make the FreeCAD null set...
 
 def Null():
@@ -51,6 +60,13 @@ def CrossSection(s, p0, n):
  for i in s.slice(nn, d):
   wires.append(i)
  return wires
+
+# Display a FreeCAD shape with a given colour like (0, 1, 0)
+
+def DisplayShape(shape, colour):
+ obj = FreeCAD.ActiveDocument.addObject("Part::Feature" ,"Shape"+UniqueNumber())
+ obj.Shape = shape
+ obj.ViewObject.ShapeColor = colour
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -216,6 +232,9 @@ def Make3DPolygons(anglePairs, faces, lightSource):
 # Make a list of all the 3D points and which faces (if any) the lines
 # between them lie in.
 
+ if len(anglePairs) <= 0:
+  return
+
  allPolygons = []
  pair1 = anglePairs[0] 
  p3D1 = lightSource.vwPoint(pair1[1])
@@ -273,6 +292,10 @@ def Make3DPolygons(anglePairs, faces, lightSource):
 # Plot the 3D polygons (mainly for checking; not actually 2D but 3D...)
 
 def PlotPolygons(polygons):
+ if polygons is None:
+  return
+ if len(polygons) <= 0:
+  return
  for polygon in polygons:
   wire = []
   for pair in polygon:
@@ -287,10 +310,11 @@ def SortByAngle(visibiltyPolygon, lightSource):
  for p in visibiltyPolygon:
   line = Line2D(Point2D(0, 0), p)
   angle = math.atan2(line.direction.y, line.direction.x)
-  if angle < 0:
-   angle = angle + 2*math.pi   # atan2's returns angles in [-pi, pi]. Fix that so they sort right
   anglePairs.append((angle, p))
  anglePairs.sort(key=lambda pair: pair[0])
+
+ if len(anglePairs) <= 0:
+  return anglePairs
 
 # Remove duplicates (note separate points may share
 # the same angle, so we use inter-point distance to discriminate).
@@ -303,14 +327,11 @@ def SortByAngle(visibiltyPolygon, lightSource):
   diff = pair[1].Sub(oldPair[1])
   d2 = diff.Length2()
   if d2 > veryShort2:
-   if pair[0] > math.pi:
-    newPair = (pair[0] - 2*math.pi, pair[1])
-    pair = newPair
    newAnglePairs.append(pair)
    oldPair = pair
 
 # Eliminate everything outside the angle of the light sheet
-
+ """
  anglePairs = []
  inside = False
  halfAngle = 0.5*lightSource.lightAngle
@@ -342,8 +363,8 @@ def SortByAngle(visibiltyPolygon, lightSource):
   inside = newInside   
   
  return anglePairs
-
- #return newAnglePairs  
+ """
+ return newAnglePairs  
      
 # Cast rays from the origin (where the light is) through the points lineWithEnds(r), find
 # what they hit, add that to the output polygon, sort that into angle order, then
@@ -440,6 +461,10 @@ class ScannerPart:
   self.vMM = vMM
   self.focalLength = focalLength
 
+  # Orientation
+
+  self.orientation = Base.Placement()
+
   # Parent and children in the tree
 
   self.parent = parent
@@ -482,8 +507,14 @@ class ScannerPart:
   self.u = r.multVec(self.u).normalize()
   self.v = r.multVec(self.v).normalize()
   self.w = r.multVec(self.w).normalize()
+  p = Base.Placement(Base.Vector(0, 0, 0), r)
+  self.orientation = p.multiply(self.orientation)
   for child in self.children:
    child.Rotate(r)
+
+ def PutShapeInMyCoordinates(self, s):
+  s.transformShape(self.orientation.toMatrix())
+  s.translate(self.AbsoluteOffset())
 
  # Rotate about the u axis. angle is in radians
 
@@ -506,15 +537,18 @@ class ScannerPart:
   r = Base.Rotation(self.w, angle*180/math.pi)
   self.Rotate(r)
 
-
  # Make a solid model of the tree recursively so we can plot it to check
  # what we've got.
 
- def Model(self):
+ def Display(self):
   p1 = self.AbsoluteOffset()
   uc = Part.makeCylinder(0.2, 5, p1, self.u, 360)
+  DisplayShape(uc, (1.0, 0.0, 0.0))
   vc = Part.makeCylinder(0.2, 5, p1, self.v, 360)
+  DisplayShape(vc, (0.0, 1.0, 0.0))
   wc = Part.makeCylinder(0.2, 5, p1, self.w, 360)
+  DisplayShape(wc, (0.0, 0.0, 1.0))
+  """
   if self.lightAngle > 0:
    vv = copy.deepcopy(self.v)
    ww = copy.deepcopy(self.w)
@@ -525,18 +559,16 @@ class ScannerPart:
    e1 = Part.makeLine(p1, p2)
    e2 = Part.makeLine(p2, p3)
    e3 = Part.makeLine(p3, p1)
-   Part.show(Part.Wire([e1,e2,e3]))
-  m = uc.fuse(vc)
-  m = m.fuse(wc)
+   DisplayShape(Part.Wire([e1,e2,e3]), (1.0, 0.0, 0.0))
+  """
   if self.parent is not None:
    p0 = self.parent.AbsoluteOffset()
   else:
    p0 = Base.Vector(0, 0, 0)
   twig = Cylinder(p0, p1, 0.1)
-  m = m.fuse(twig)
+  DisplayShape(twig, (1.0, 1.0, 0.0))
   for child in self.children:
-   m = m.fuse(child.Model())
-  return m
+   child.Display()
 
  # Convert a point p in the [v, w] plane into a point in absolute 3D space.
  # The [v, w] plane is the light sheet for a light source.  Remember that
@@ -580,6 +612,19 @@ class ScannerPart:
   if self.lightAngle <= 0:
    print("Illuminated polygon requested for non light source.")
 
+  # The edges of the beam
+
+  wall1 = Part.makeBox(4, 1, veryLong)
+  wall2 = Part.makeBox(4, 1, veryLong)
+  wall1.translate(Base.Vector(-2, -1 - 2*veryShort, 0))
+  wall2.translate(Base.Vector(-2, 2*veryShort, 0))
+  wall1.rotate(Base.Vector(0, 0, 0),Base.Vector(1, 0, 0), 0.5*self.lightAngle*180/math.pi)
+  wall2.rotate(Base.Vector(0, 0, 0),Base.Vector(1, 0, 0), -0.5*self.lightAngle*180/math.pi)
+  self.PutShapeInMyCoordinates(wall1)
+  self.PutShapeInMyCoordinates(wall2)
+  s = s.fuse(wall1)
+  s = s.fuse(wall2)
+
   # The origin of coordinates in the 2D light sheet (x0, y0) is the projection of the position
   # of the light source in 3D into the light source's [v, w] plane.  We use (x, y) for
   # coordinates in the plane to avoid confuusion with the u, v, and w vectors.
@@ -595,6 +640,9 @@ class ScannerPart:
  # which we don't want.
 
   faces = s.Faces
+  #facesAndWalls = copy.deepcopy(faces)
+  #facesAndWalls.extend(wall1.Faces)
+  #facesAndWalls.extend(wall2.Faces)
   for face in faces:
 
    # Where does the plane cut the face. Note that line may have
@@ -645,13 +693,16 @@ c.translate(Base.Vector(0, 16, 0))
 b = b.fuse(c)
 b = b.cut(a)
 #b = a.cut(b)
-Part.show(b)
+
 world = ScannerPart()
-lightSource = ScannerPart(offset = Base.Vector(18, 20, 15), parent = world, lightAngle = 2)
-lightSource.RotateV(math.pi - 1) #math.pi/2)
+lightSource = ScannerPart(offset = Base.Vector(38, 20, 15), parent = world, lightAngle = 1)
+lightSource.RotateV(math.pi + 1.3)
 polygons = lightSource.GetVisibilityPolygons(b)
 PlotPolygons(polygons)
-Part.show(world.Model())
+
+
+world.Display()
+Part.show(b)
 
 #world = ScannerPart()
 #twig1 = ScannerPart(offset = Base.Vector(8, 20, 25), parent = world)
