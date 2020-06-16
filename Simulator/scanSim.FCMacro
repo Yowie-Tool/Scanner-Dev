@@ -335,7 +335,6 @@ def SortByAngle(visibiltyPolygon, lightSource):
   angle = math.atan2(line.direction.y, line.direction.x)
   inside = angle >= -halfAngle and angle <= halfAngle
   angleTripples.append((angle, p, inside))
-
  if len(angleTripples) <= 0:
   return angleTripples
  angleTripples.sort(key=lambda tup: tup[0])
@@ -356,6 +355,7 @@ def SortByAngle(visibiltyPolygon, lightSource):
 # Eliminate everything outside the angle of the light sheet
 
  angleTripples = []
+ beenInside = False
  for i in range (0, len(newAngleTripples)):
   tripple = newAngleTripples[i]
   if tripple[2]:
@@ -364,7 +364,8 @@ def SortByAngle(visibiltyPolygon, lightSource):
     if not previous[2]:
      angleTripples.append(CrossingPoint(previous, tripple, -halfAngle))
    angleTripples.append(tripple)
-  else:
+   beenInside = True
+  elif beenInside:
    if i < len(newAngleTripples) - 1:
     previous = newAngleTripples[i - 1]
     if previous[2]:
@@ -708,9 +709,12 @@ b = b.cut(a)
 
 world = ScannerPart()
 lightSource = ScannerPart(offset = Base.Vector(38, 20, 15), parent = world, lightAngle = 1)
-lightSource.RotateV(math.pi + 1.3)
-polygons = lightSource.GetVisibilityPolygons(b)
-PlotPolygons(polygons)
+lightSource.RotateV(math.pi + 1.35)
+for i in range(1, 15):
+ polygons = lightSource.GetVisibilityPolygons(b)
+ PlotPolygons(polygons)
+ a = i*0.01
+ lightSource.RotateV(a)
 
 
 world.Display()
