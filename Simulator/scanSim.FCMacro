@@ -722,6 +722,7 @@ class ScannerPart:
   return self.AbsoluteOffset().add(u).add(v)
 
 # Cast a single ray into the scene and find the nearest thing it hits
+# FIXME: Not comparing like with like - distance to hit room, vs distance between ray and polygon line
 
  def CastRay(self, ray, room, polygons):
   minDistance = RayIntoSolid(ray, room)
