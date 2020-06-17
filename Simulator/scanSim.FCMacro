@@ -6,6 +6,7 @@ import Part, BOPTools, FreeCAD, math, copy, sys
 from FreeCAD import Base
 import PySide
 from PySide import QtGui, QtCore
+from PIL import Image
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -378,7 +379,7 @@ def SortByAngle(visibiltyPolygon, lightSource):
 # convert it back to 3D.  Almost all this function and the functions it calls work
 # in 2D except for the very last line.
 
-def RayCast(lines, faces, lightSource):
+def RayCast2D(lines, faces, lightSource):
  visibilityPolygon = []
  for lineWithEnds in lines:
   for r in (0, 1): 
@@ -442,22 +443,26 @@ def RayCast(lines, faces, lightSource):
 # 3D functions for simulating cameras by ray tracing
 # ----------------------------------------------------------------
 
-# Cast a ray and find the distance to the first thing it hits
-# The ray is a FreeCAD line segment assumed to be longer
-# than the space being probed.
+# Cast a ray and find the distance to the first solid 3D thing it hits
+# The ray is turned into a FreeCAD line segment longer
+# than the space being probed.  The resulting parameter is finally
+# scaled back to give real distance.
 
 def RayIntoSolid(ray, solid):
- intersection = solid.common(ray)
+ direction = ray[1].sub(ray[0])
+ direction.normalize()
+ newEnd = ray[0].add(direction.multiply(veryLong))
+ fcRay = Part.LineSegment(ray[0], newEnd).toShape()
+ intersection = solid.common(fcRay)
  smallestS = sys.float_info.max
- rayVs = ray.Vertexes
- if intersection.Vertexes:
-  for v in intersection.Vertexes:
-   s = v.Point.sub(rayVs[0].Point).Length
-   if s < smallestS:
-    smallestS = s
-  return smallestS  
- else:
+ if not intersection.Vertexes:
   return None
+ for v in intersection.Vertexes:
+  s = v.Point.sub(ray[0]).Length
+  if s < smallestS:
+   smallestS = s
+ return smallestS*veryLong
+
 
 # Find the parameter values along two lines in space at their closest point.
 # The standard way to find the distance between two such lines is to find the
@@ -490,6 +495,13 @@ def ClosestPointsParameters(line1, line2):
  line1 = Line2D(origin1, second1)
  line2 = Line2D(origin2, second2)
  return line1.Cross(line2)
+
+# Return the point on a ray with a given parameter value
+
+def RayPoint(ray, s):
+ direction = ray[1].sub(ray[0])
+ direction.multiply(s)
+ return ray[0].add(direction) 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -604,15 +616,41 @@ class ScannerPart:
   r = Base.Rotation(self.w, angle*180/math.pi)
   self.Rotate(r)
 
- def DisplayCameraRay(self, pixel, lens):
+# Draw a line to represent the camera ray from the pixel through the lens
+
+ def DisplayCameraRay(self, ray):
+  pixel = ray[0]
+  lens = ray[1]
   direction = lens.sub(pixel)
   direction.multiply(veryLong)
   DisplayShape(Part.LineSegment(pixel, pixel.add(direction)).toShape(), (0.0, 0.0, 0.5))
 
-# Make a solid model of the tree recursively and plot it to check
+# Create the ray from a pixel in a camera's [u, v] plane through the centre of the lens.
+
+ def GetCameraRay(self, pixelU, pixelV):
+   u = copy.deepcopy(self.u)
+   u.multiply(pixelU)
+   v = copy.deepcopy(self.v)
+   v.multiply(pixelV)
+   pixel = self.AbsoluteOffset().add(u).add(v)  
+   w = copy.deepcopy(self.w)
+   w.multiply(self.focalLength)
+   lens = self.AbsoluteOffset().add(w)
+   return (pixel, lens)
+
+# As above, but so that parameter values along the ray measure real distance
+
+ def GetCameraRayNormalised(self, pixelU, pixelV):
+  ray = self.GetCameraRay(pixelU, pixelV)
+  direction = ray[1].sub(ray[0])
+  direction.normalize()
+  newRay = (ray[0], ray[0].add(direction))
+  return newRay
+
+# Make a 3D model of the tree recursively and plot it to check
 # what we've got.
 
- def Display(self):
+ def Display(self, showLight = False, showCamera = False):
   p1 = self.AbsoluteOffset()
   uc = Part.makeCylinder(0.2, 5, p1, self.u, 360)
   DisplayShape(uc, (1.0, 0.0, 0.0))
@@ -621,7 +659,9 @@ class ScannerPart:
   wc = Part.makeCylinder(0.2, 5, p1, self.w, 360)
   DisplayShape(wc, (0.0, 0.0, 1.0))
   
-  if self.lightAngle > 0:
+  # Light source - display the light sheet
+
+  if self.lightAngle > 0 and showLight:
    vv = copy.deepcopy(self.v)
    ww = copy.deepcopy(self.w)
    vv.multiply(veryLong*math.sin(self.lightAngle*0.5))
@@ -633,23 +673,14 @@ class ScannerPart:
    e3 = Part.makeLine(p3, p1)
    DisplayShape(Part.Wire([e1,e2,e3]), (0.5, 0.0, 0.0))
 
-  if self.focalLength > 0:
-   u = copy.deepcopy(self.u)
-   u.multiply(self.uMM*0.5)
-   v = copy.deepcopy(self.v)
-   v.multiply(self.vMM*0.5)
-   w = copy.deepcopy(self.w)
-   w.multiply(self.focalLength)
-   lens = p1.add(w)
-   corner = p1.add(u).add(v)
-   self.DisplayCameraRay(corner, lens)
-   corner = p1.add(u).sub(v)
-   self.DisplayCameraRay(corner, lens)
-   corner = p1.sub(u).add(v)
-   self.DisplayCameraRay(corner, lens)
-   corner = p1.sub(u).sub(v)
-   self.DisplayCameraRay(corner, lens)
-  
+  # Camera - display the view pyramid
+
+  if self.focalLength > 0 and showCamera:
+   for u in (-1, 1):
+    for v in (-1, 1):
+     ray = self.GetCameraRay(self.uMM*0.5*u, self.vMM*0.5*v)
+     self.DisplayCameraRay(ray)
+
   if self.parent is not None:
    p0 = self.parent.AbsoluteOffset()
   else:
@@ -657,7 +688,7 @@ class ScannerPart:
   twig = Cylinder(p0, p1, 0.1)
   DisplayShape(twig, (1.0, 1.0, 0.0))
   for child in self.children:
-   child.Display()
+   child.Display(showLight, showCamera)
 
 # Convert a point p in the [v, w] plane into a point in absolute 3D space.
 # The [v, w] plane is the light sheet for a light source.  Remember that
@@ -690,6 +721,66 @@ class ScannerPart:
   v.multiply(p.y)
   return self.AbsoluteOffset().add(u).add(v)
 
+# Cast a single ray into the scene and find the nearest thing it hits
+
+ def CastRay(self, ray, room, polygons):
+  minDistance = RayIntoSolid(ray, room)
+  rayHitRoom = True
+  if minDistance is None:
+   rayHitRoom = False
+   minDistance = sys.float_info.max
+  else:
+   minDistance = minDistance + veryShort # we want the ray to hit a polygon line rather than the face it is in
+  rayHitPolygon = False
+  for polygon in polygons:
+   pair = polygon[0]
+   firstPoint = pair[0]
+   for i in range(1, len(polygon)):
+    pair = polygon[i]
+    secondPoint = pair[0]
+    polygonLine = (firstPoint, secondPoint)
+    s, t = ClosestPointsParameters(ray, polygonLine)
+    if s is not None:
+     if s > 0:
+      if t < 0:
+       t = 0
+      elif t > 1:
+       t = 1
+      rayPoint = RayPoint(ray, s)
+      polygonPoint = RayPoint(polygonLine, t)
+      distance = rayPoint.sub(polygonPoint).Length
+      if distance < minDistance:
+       rayHitPolygon = True
+       minDistance = distance
+    firstPoint = secondPoint
+  if rayHitPolygon:
+   if minDistance < 0.5:
+    return 255
+  if rayHitRoom:
+    return 125
+  return 0
+  
+
+# If we are a camera...
+# Take a visibilityPolygon from a light source and find what it looks like.
+
+ def SaveCameraImage(self, room, polygons, fileName):
+  if self.focalLength <= 0:
+   print("Image requested for non camera.")
+  uInc = self.uMM/(self.uPixels - 1)
+  vInc = self.vMM/(self.vPixels - 1)
+  v = -self.vMM*0.5
+  image = Image.new("L", (self.uPixels, self.vPixels))
+  for row in range(0, self.vPixels): 
+   u = -self.uMM*0.5
+   for column in range(0, self.uPixels):
+    ray = self.GetCameraRayNormalised(u, v)
+    hit = self.CastRay(ray, room, polygons)
+    image.putpixel((column, row), hit)
+    u += uInc
+   v += vInc
+  image.save(fileName)
+   
 
 # If we are a light source...
 # Turn on the light and make a cross section of a shape, s.
@@ -697,7 +788,7 @@ class ScannerPart:
 # sheet (the [v, w] plane) and return that as a FreeCAD object in 3D.
 # (See: https://en.wikipedia.org/wiki/Visibility_polygon)
 
- def GetVisibilityPolygons(self, s):
+ def GetVisibilityPolygons(self, room):
   if self.lightAngle <= 0:
    print("Illuminated polygon requested for non light source.")
 
@@ -730,7 +821,7 @@ class ScannerPart:
  # function for whole objects creates internal triangulations in cross-section polygons,
  # which we don't want.
 
-  faces = s.Faces
+  faces = room.Faces
 
   for face in faces:
 
@@ -761,7 +852,7 @@ class ScannerPart:
   # Cast a ray from the light source through each line end in turn and add what it hits
   # to the visibility polygons.  Process those polygons back into 3D.
 
-  return RayCast(lines, faces, self)
+  return RayCast2D(lines, faces, self)
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -780,26 +871,27 @@ b = Part.makeBox(10, 8, 30)
 c =  Part.makeBox(10, 8, 30)
 c.translate(Base.Vector(0, 16, 0))
 b = b.fuse(c)
-b = b.cut(a)
+room = b.cut(a)
 #b = a.cut(b)
 
 world = ScannerPart()
 scanner = ScannerPart(offset = Base.Vector(38, 12, 10), parent = world)
 lightSource = ScannerPart(offset = Base.Vector(0, 10, 0), parent = scanner, lightAngle = 1)
-camera = ScannerPart(offset = Base.Vector(0, -10, 0), parent = scanner, uPixels = 10, vPixels = 10, uMM = 1, vMM = 1, focalLength = 5) 
+camera = ScannerPart(offset = Base.Vector(0, -10, 0), parent = scanner, uPixels = 75, vPixels = 100, uMM = 1.5, vMM = 2, focalLength = 5) 
 lightSource.RotateV(-0.5*math.pi)
 lightSource.RotateW(0.5*math.pi)
 lightSource.RotateV(-0.5)
 camera.RotateV(-0.5*math.pi)
-camera.RotateU(-0.2)
-polygons = lightSource.GetVisibilityPolygons(b)
+camera.RotateU(-0.15)
+polygons = lightSource.GetVisibilityPolygons(room)
 PlotPolygons(polygons)
+camera.SaveCameraImage(room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan.png")
 
 
 
 
-world.Display()
-Part.show(b)
+world.Display(showCamera = True)
+Part.show(room)
 
 #world = ScannerPart()
 #twig1 = ScannerPart(offset = Base.Vector(8, 20, 25), parent = world)
