@@ -439,6 +439,60 @@ def RayCast(lines, faces, lightSource):
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+# 3D functions for simulating cameras by ray tracing
+# ----------------------------------------------------------------
+
+# Cast a ray and find the distance to the first thing it hits
+# The ray is a FreeCAD line segment assumed to be longer
+# than the space being probed.
+
+def RayIntoSolid(ray, solid):
+ intersection = solid.common(ray)
+ smallestS = sys.float_info.max
+ rayVs = ray.Vertexes
+ if intersection.Vertexes:
+  for v in intersection.Vertexes:
+   s = v.Point.sub(rayVs[0].Point).Length
+   if s < smallestS:
+    smallestS = s
+  return smallestS  
+ else:
+  return None
+
+# Find the parameter values along two lines in space at their closest point.
+# The standard way to find the distance between two such lines is to find the
+# two parallel planes in which they lie, then work out the distance between those.
+# Here we find one such plane, project the lines into it, then find
+# the parameter values where those two 2D lines cross.
+# The lines are defined by endpoint pairs: (Base.Vector(), Base.Vector())
+
+def ClosestPointsParameters(line1, line2):
+ d1 = line1[1].sub(line1[0])
+ d2 = line2[1].sub(line2[0])
+ planeNormal = d1.cross(d2)
+
+ if planeNormal.Length < veryShort:
+  return None, None # Lines parallel
+
+ # Gram–Schmidt orthonormalise to get a 2D coordinate system in the plane
+
+ planeX = planeNormal.cross(d1)
+ planeX.normalize()
+ planeY = planeNormal.cross(planeX)
+ planeY.normalize()
+
+ # Project the lines into the plane and find the parameters where they intersect
+
+ origin1 = Point2D(planeX.dot(line1[0]), planeY.dot(line1[0]))
+ origin2 = Point2D(planeX.dot(line2[0]), planeY.dot(line2[0]))
+ second1 = Point2D(planeX.dot(line1[1]), planeY.dot(line1[1]))
+ second2 = Point2D(planeX.dot(line2[1]), planeY.dot(line2[1]))
+ line1 = Line2D(origin1, second1)
+ line2 = Line2D(origin2, second2)
+ return line1.Cross(line2)
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
 # ------------------------------------------------------------------------------------------------------------------------------
 
@@ -550,6 +604,11 @@ class ScannerPart:
   r = Base.Rotation(self.w, angle*180/math.pi)
   self.Rotate(r)
 
+ def DisplayCameraRay(self, pixel, lens):
+  direction = lens.sub(pixel)
+  direction.multiply(veryLong)
+  DisplayShape(Part.LineSegment(pixel, pixel.add(direction)).toShape(), (0.0, 0.0, 0.5))
+
 # Make a solid model of the tree recursively and plot it to check
 # what we've got.
 
@@ -573,6 +632,23 @@ class ScannerPart:
    e2 = Part.makeLine(p2, p3)
    e3 = Part.makeLine(p3, p1)
    DisplayShape(Part.Wire([e1,e2,e3]), (0.5, 0.0, 0.0))
+
+  if self.focalLength > 0:
+   u = copy.deepcopy(self.u)
+   u.multiply(self.uMM*0.5)
+   v = copy.deepcopy(self.v)
+   v.multiply(self.vMM*0.5)
+   w = copy.deepcopy(self.w)
+   w.multiply(self.focalLength)
+   lens = p1.add(w)
+   corner = p1.add(u).add(v)
+   self.DisplayCameraRay(corner, lens)
+   corner = p1.add(u).sub(v)
+   self.DisplayCameraRay(corner, lens)
+   corner = p1.sub(u).add(v)
+   self.DisplayCameraRay(corner, lens)
+   corner = p1.sub(u).sub(v)
+   self.DisplayCameraRay(corner, lens)
   
   if self.parent is not None:
    p0 = self.parent.AbsoluteOffset()
@@ -698,7 +774,7 @@ c.clear()
 r=mw.findChild(QtGui.QTextEdit, "Report view")
 r.clear()
 
-a = Part.makeBox(10, 4, 15)
+a = Part.makeBox(10, 4, 12)
 a.translate(Base.Vector(0, 3, 0))
 b = Part.makeBox(10, 8, 30)
 c =  Part.makeBox(10, 8, 30)
@@ -708,13 +784,18 @@ b = b.cut(a)
 #b = a.cut(b)
 
 world = ScannerPart()
-lightSource = ScannerPart(offset = Base.Vector(38, 20, 15), parent = world, lightAngle = 1)
-lightSource.RotateV(math.pi + 1.35)
-for i in range(1, 15):
- polygons = lightSource.GetVisibilityPolygons(b)
- PlotPolygons(polygons)
- a = i*0.01
- lightSource.RotateV(a)
+scanner = ScannerPart(offset = Base.Vector(38, 12, 10), parent = world)
+lightSource = ScannerPart(offset = Base.Vector(0, 10, 0), parent = scanner, lightAngle = 1)
+camera = ScannerPart(offset = Base.Vector(0, -10, 0), parent = scanner, uPixels = 10, vPixels = 10, uMM = 1, vMM = 1, focalLength = 5) 
+lightSource.RotateV(-0.5*math.pi)
+lightSource.RotateW(0.5*math.pi)
+lightSource.RotateV(-0.5)
+camera.RotateV(-0.5*math.pi)
+camera.RotateU(-0.2)
+polygons = lightSource.GetVisibilityPolygons(b)
+PlotPolygons(polygons)
+
+
 
 
 world.Display()
