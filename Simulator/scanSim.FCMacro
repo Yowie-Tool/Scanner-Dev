@@ -6,7 +6,7 @@ import Part, BOPTools, FreeCAD, math, copy, sys
 from FreeCAD import Base
 import PySide
 from PySide import QtGui, QtCore
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -21,6 +21,11 @@ veryShort2 = veryShort*veryShort
 # Roughly the largest dimension in mm of anything that will be dealt with
 
 veryLong = 80
+
+# The standard deviation width of a light stripe on a surface
+
+lightSD = 0.25
+gaussDivide = 1.0/(lightSD*math.sqrt(2.0*math.pi))
 
 # Unique count as a string
 
@@ -69,6 +74,18 @@ def DisplayShape(shape, colour):
  obj.Shape = shape
  obj.ViewObject.ShapeColor = colour
  obj.ViewObject.LineColor = colour
+
+# Clean out the active document and the text windows
+
+def ClearAll():
+ doc = FreeCAD.ActiveDocument
+ for obj in doc.Objects:
+  doc.removeObject(obj.Name)
+ mw=Gui.getMainWindow()
+ c=mw.findChild(QtGui.QPlainTextEdit, "Python console")
+ c.clear()
+ r=mw.findChild(QtGui.QTextEdit, "Report view")
+ r.clear()
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -647,6 +664,19 @@ class ScannerPart:
   newRay = (ray[0], ray[0].add(direction))
   return newRay
 
+# Find the pixel (u, v) in the camera's image plane that the point p projects into
+
+ def ProjectPointIntoCameraPixel(self, p):
+  w = copy.deepcopy(self.w)
+  w.multiply(self.focalLength)
+  pRelativeInv = self.focalLength/p.sub(self.AbsoluteOffset().add(w)).dot(self.w)
+  pd = self.AbsoluteOffset().sub(p)
+  u = pd.dot(self.u)*pRelativeInv
+  v = pd.dot(self.v)*pRelativeInv
+  u = int(round((u + 0.5*self.uMM)*(self.uPixels - 1)/self.uMM))
+  v = int(round((v + 0.5*self.vMM)*(self.vPixels - 1)/self.vMM))
+  return (u, v)
+
 # Make a 3D model of the tree recursively and plot it to check
 # what we've got.
 
@@ -721,17 +751,29 @@ class ScannerPart:
   v.multiply(p.y)
   return self.AbsoluteOffset().add(u).add(v)
 
-# Cast a single ray into the scene and find the nearest thing it hits
-# FIXME: Not comparing like with like - distance to hit room, vs distance between ray and polygon line
+# Generate the polygon mask - the projection of the polygons into the
+# image plane of the camera dilated by an appropriate width.  We only need to raytrace
+# the resulting pixels.
 
- def CastRay(self, ray, room, polygons):
-  minDistance = RayIntoSolid(ray, room)
-  rayHitRoom = True
-  if minDistance is None:
-   rayHitRoom = False
-   minDistance = sys.float_info.max
-  else:
-   minDistance = minDistance + veryShort # we want the ray to hit a polygon line rather than the face it is in
+ def PolygonMask(self, polygons):
+  mask = Image.new("1", (self.uPixels, self.vPixels))
+  draw = ImageDraw.Draw(mask)
+  for polygon in polygons:
+   pair = polygon[0]
+   p0 = pair[0]
+   for i in range(1, len(polygon)):
+    pair = polygon[i]
+    p1 = pair[0]
+    uv0 = self.ProjectPointIntoCameraPixel(p0)
+    uv1 = self.ProjectPointIntoCameraPixel(p1)
+    draw.line([uv0, uv1], 1, 1)
+    p0 = p1
+  return mask.filter(ImageFilter.MaxFilter(3))
+
+# Cast a single ray into the scene and find the nearest thing it hits
+
+ def CastRay(self, ray, room, polygons, startingPolygonDistance):
+  minPolygonDistance = startingPolygonDistance
   rayHitPolygon = False
   for polygon in polygons:
    pair = polygon[0]
@@ -748,17 +790,20 @@ class ScannerPart:
       elif t > 1:
        t = 1
       rayPoint = RayPoint(ray, s)
-      polygonPoint = RayPoint(polygonLine, t)
-      distance = rayPoint.sub(polygonPoint).Length
-      if distance < minDistance:
-       rayHitPolygon = True
-       minDistance = distance
+      uv0 = self.ProjectPointIntoCameraPixel(rayPoint)
+      testObstructionRay = self.GetCameraRayNormalised(uv0[0], uv0[1])
+      testObstruction = RayIntoSolid(testObstructionRay, room)
+      if testObstruction is None or testObstruction + veryShort > s:
+       polygonPoint = RayPoint(polygonLine, t)
+       rayLightDistance = rayPoint.sub(polygonPoint).Length
+       if s < minPolygonDistance and rayLightDistance < 3*lightSD:
+        minRayLightDistance = rayLightDistance
+        rayHitPolygon = True
+        minPolygonDistance = s
     firstPoint = secondPoint
   if rayHitPolygon:
-   if minDistance < 0.5:
-    return 255
-  if rayHitRoom:
-    return 125
+    e = rayLightDistance/lightSD
+    return int(round(255.0*math.exp(-0.5*(e*e))*gaussDivide))
   return 0
   
 
@@ -768,6 +813,7 @@ class ScannerPart:
  def SaveCameraImage(self, room, polygons, fileName):
   if self.focalLength <= 0:
    print("Image requested for non camera.")
+  polygonMask = self.PolygonMask(polygons)
   uInc = self.uMM/(self.uPixels - 1)
   vInc = self.vMM/(self.vPixels - 1)
   v = -self.vMM*0.5
@@ -776,11 +822,19 @@ class ScannerPart:
    u = -self.uMM*0.5
    for column in range(0, self.uPixels):
     ray = self.GetCameraRayNormalised(u, v)
-    hit = self.CastRay(ray, room, polygons)
-    image.putpixel((column, row), hit)
+    minRoomDistance = RayIntoSolid(ray, room)
+    if minRoomDistance is None:
+     minPolygonDistance = sys.float_info.max
+    else:
+     startingPolygonDistance = minRoomDistance + veryShort
+     image.putpixel((column, row), 125)
+    if polygonMask.getpixel((column, row)) == 1:
+     hit = self.CastRay(ray, room, polygons, startingPolygonDistance)
+     image.putpixel((column, row), hit)
     u += uInc
    v += vInc
-  image.save(fileName)
+  image.save(fileName + ".png")
+  polygonMask.save(fileName + "-mask.png")
    
 
 # If we are a light source...
@@ -859,12 +913,9 @@ class ScannerPart:
 
 # Testing, testing...
 
-#clearing previous messages
-mw=Gui.getMainWindow()
-c=mw.findChild(QtGui.QPlainTextEdit, "Python console")
-c.clear()
-r=mw.findChild(QtGui.QTextEdit, "Report view")
-r.clear()
+ClearAll()
+
+# Make the room
 
 a = Part.makeBox(10, 4, 12)
 a.translate(Base.Vector(0, 3, 0))
@@ -872,8 +923,13 @@ b = Part.makeBox(10, 8, 30)
 c =  Part.makeBox(10, 8, 30)
 c.translate(Base.Vector(0, 16, 0))
 b = b.fuse(c)
-room = b.cut(a)
-#b = a.cut(b)
+b = b.cut(a)
+d = Part.makeBox(7, 4, 2)
+d.translate(Base.Vector(1, 1, 9))
+room = b.fuse(d)
+Part.show(room)
+
+# Make the scanner
 
 world = ScannerPart()
 scanner = ScannerPart(offset = Base.Vector(38, 12, 10), parent = world)
@@ -883,23 +939,19 @@ lightSource.RotateV(-0.5*math.pi)
 lightSource.RotateW(0.5*math.pi)
 lightSource.RotateV(-0.5)
 camera.RotateV(-0.5*math.pi)
-camera.RotateU(-0.15)
+camera.RotateU(-0.1)
+camera.RotateW(-0.5*math.pi)
+world.Display(showCamera = True)
+
+# Run a scan and save the image
+
 polygons = lightSource.GetVisibilityPolygons(room)
 PlotPolygons(polygons)
-camera.SaveCameraImage(room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan.png")
+camera.SaveCameraImage(room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 
 
 
 
-world.Display(showCamera = True)
-Part.show(room)
 
-#world = ScannerPart()
-#twig1 = ScannerPart(offset = Base.Vector(8, 20, 25), parent = world)
-#twig2 = ScannerPart(offset = Base.Vector(10, -5, 6), parent = world)
-#twig3 = ScannerPart(offset = Base.Vector(-10, 10, 30), parent = twig1)
-#twig1.RotateU(1)
-#a = world.Model()
-#Part.show(a)
 
 
