@@ -13,6 +13,10 @@ from PIL import Image, ImageDraw, ImageFilter
 # Useful general functions and numbers
 # -----------------------------------------------
 
+# When True, output useful diagnostic information
+
+debug = True
+
 # Length in mm considered to be 0 and its square
 
 veryShort = 0.001
@@ -22,9 +26,9 @@ veryShort2 = veryShort*veryShort
 
 veryLong = 80
 
-# The standard deviation width of a light stripe on a surface
+# The standard deviation width of a light stripe on a surface in mm
 
-lightSD = 0.25
+lightSD = 0.05
 gaussDivide = 1.0/(lightSD*math.sqrt(2.0*math.pi))
 
 # Unique count as a string
@@ -86,6 +90,12 @@ def ClearAll():
  c.clear()
  r=mw.findChild(QtGui.QTextEdit, "Report view")
  r.clear()
+
+# The intensity of the light sheet at distance d from where its centre hits a surface
+
+def GaussianLightIntensity(d):
+ e = d/lightSD
+ return math.exp(-0.5*(e*e))*gaussDivide
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -478,7 +488,7 @@ def RayIntoSolid(ray, solid):
   s = v.Point.sub(ray[0]).Length
   if s < smallestS:
    smallestS = s
- return smallestS*veryLong
+ return smallestS
 
 
 # Find the parameter values along two lines in space at their closest point.
@@ -752,11 +762,16 @@ class ScannerPart:
   return self.AbsoluteOffset().add(u).add(v)
 
 # Generate the polygon mask - the projection of the polygons into the
-# image plane of the camera dilated by an appropriate width.  We only need to raytrace
-# the resulting pixels.
+# image plane of the camera dilated by an appropriate width to allow for
+# the width of the light sheet.  We only need to raytrace
+# the resulting pixels to find the actual image of the polygon.
+# Why can't we use this as the image of the polygon (it'd be quicker)? - Because it does not
+# allow for parts of the room obscuring a camera's view, and because rays from
+# camera pixels will not in general intersect the polygons; they will just run
+# near them.
 
  def PolygonMask(self, polygons):
-  mask = Image.new("1", (self.uPixels, self.vPixels))
+  mask = Image.new("L", (self.uPixels, self.vPixels))
   draw = ImageDraw.Draw(mask)
   for polygon in polygons:
    pair = polygon[0]
@@ -766,11 +781,13 @@ class ScannerPart:
     p1 = pair[0]
     uv0 = self.ProjectPointIntoCameraPixel(p0)
     uv1 = self.ProjectPointIntoCameraPixel(p1)
-    draw.line([uv0, uv1], 1, 1)
+    draw.line([uv0, uv1], 255, 1)
     p0 = p1
   return mask.filter(ImageFilter.MaxFilter(3))
 
-# Cast a single ray into the scene and find the nearest thing it hits
+# Cast a single ray into the scene and find the bit of polygon it hits.
+# startingPolygonDistance is the closest thing to the camera along the
+# ray already found in the room; anything behind that is invisible.
 
  def CastRay(self, ray, room, polygons, startingPolygonDistance):
   minPolygonDistance = startingPolygonDistance
@@ -793,7 +810,7 @@ class ScannerPart:
       uv0 = self.ProjectPointIntoCameraPixel(rayPoint)
       testObstructionRay = self.GetCameraRayNormalised(uv0[0], uv0[1])
       testObstruction = RayIntoSolid(testObstructionRay, room)
-      if testObstruction is None or testObstruction + veryShort > s:
+      if testObstruction is None or testObstruction + veryShort > s: # NB - relies on or operator not bothering with second argument if first is True
        polygonPoint = RayPoint(polygonLine, t)
        rayLightDistance = rayPoint.sub(polygonPoint).Length
        if s < minPolygonDistance and rayLightDistance < 3*lightSD:
@@ -802,8 +819,7 @@ class ScannerPart:
         minPolygonDistance = s
     firstPoint = secondPoint
   if rayHitPolygon:
-    e = rayLightDistance/lightSD
-    return int(round(255.0*math.exp(-0.5*(e*e))*gaussDivide))
+    return int(round(255.0*GaussianLightIntensity(minRayLightDistance)))
   return 0
   
 
@@ -824,17 +840,19 @@ class ScannerPart:
     ray = self.GetCameraRayNormalised(u, v)
     minRoomDistance = RayIntoSolid(ray, room)
     if minRoomDistance is None:
-     minPolygonDistance = sys.float_info.max
+     startingPolygonDistance = sys.float_info.max
     else:
-     startingPolygonDistance = minRoomDistance + veryShort
+     startingPolygonDistance = minRoomDistance + veryShort # We want a surface the light sheet hits to be just behind the line of light in it, so that is seen not the surface.
      image.putpixel((column, row), 125)
-    if polygonMask.getpixel((column, row)) == 1:
+    if polygonMask.getpixel((column, row)) != 0:
      hit = self.CastRay(ray, room, polygons, startingPolygonDistance)
-     image.putpixel((column, row), hit)
+     if hit != 0:
+      image.putpixel((column, row), hit)
     u += uInc
    v += vInc
   image.save(fileName + ".png")
-  polygonMask.save(fileName + "-mask.png")
+  if debug:
+   polygonMask.save(fileName + "-mask.png")
    
 
 # If we are a light source...
