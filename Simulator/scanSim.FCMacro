@@ -472,24 +472,39 @@ def RayCast2D(lines, faces, lightSource):
 
 # Cast a ray and find the distance to the first solid 3D thing it hits
 # The ray is turned into a FreeCAD line segment longer
-# than the space being probed.  The resulting parameter is finally
-# scaled back to give real distance.
+# than the space being probed.  4 items are returned:
+#
+# (distance between ray and shape, distance to hit point from ray start point, normal at hit point, hit point)
+#
+# Note that the ray-shape distance will be (aproximately) 0 if the ray hits, and the second distance returned
+# will be what is usually wanted.
 
 def RayIntoSolid(ray, solid):
  direction = ray[1].sub(ray[0])
  direction.normalize()
  newEnd = ray[0].add(direction.multiply(veryLong))
- fcRay = Part.LineSegment(ray[0], newEnd).toShape()
- intersection = solid.common(fcRay)
- smallestS = sys.float_info.max
- if not intersection.Vertexes:
-  return None
- for v in intersection.Vertexes:
-  s = v.Point.sub(ray[0]).Length
-  if s < smallestS:
-   smallestS = s
- return smallestS
+ fcRay = Part.makeLine(ray[0],newEnd)
+ distss = solid.Shells[0].distToShape(fcRay)
+ if distss[0] < veryShort:
+  info = distss[2][0]
+  normal = solid.Shells[0].Faces[info[1]].normalAt(info[2][0],info[2][1])
+  hitPoint = distss[1][0][0]
+  rayHitD = hitPoint.sub(ray[0]).Length
+  return (distss[0], rayHitD, normal, hitPoint)
+ else:
+  return (None, None, None, None)
 
+# Work out Lambert's Law illumination intensity at point with surface normal
+# normal from a light soutce at lightSource. Answer is in [0.0, 1.0].
+
+def Illumination(point, normal, lightSource):
+ lightPoint = lightSource.AbsoluteOffset()
+ iRay = point.sub(lightPoint).normalize()
+ normal.normalize()
+ i = normal.dot(iRay)
+ if i < 0.0:
+  i = 0.0
+ return i
 
 # Find the parameter values along two lines in space at their closest point.
 # The standard way to find the distance between two such lines is to find the
@@ -809,8 +824,8 @@ class ScannerPart:
       rayPoint = RayPoint(ray, s)
       uv0 = self.ProjectPointIntoCameraPixel(rayPoint)
       testObstructionRay = self.GetCameraRayNormalised(uv0[0], uv0[1])
-      testObstruction = RayIntoSolid(testObstructionRay, room)
-      if testObstruction is None or testObstruction + veryShort > s: # NB - relies on or operator not bothering with second argument if first is True
+      testObstruction = RayIntoSolid(testObstructionRay, room)[1]
+      if testObstruction is None or testObstruction + veryShort > s: # NB - relies on OR operator not bothering with second argument if first is True
        polygonPoint = RayPoint(polygonLine, t)
        rayLightDistance = rayPoint.sub(polygonPoint).Length
        if s < minPolygonDistance and rayLightDistance < 3*lightSD:
@@ -826,9 +841,39 @@ class ScannerPart:
 # If we are a camera...
 # Take a visibilityPolygon from a light source and find what it looks like.
 
- def SaveCameraImage(self, room, polygons, fileName):
+ def SaveCameraImageLights(self, room, polygons, fileName):
   if self.focalLength <= 0:
-   print("Image requested for non camera.")
+   print("Light image requested for non camera.")
+  polygonMask = self.PolygonMask(polygons)
+  uInc = self.uMM/(self.uPixels - 1)
+  vInc = self.vMM/(self.vPixels - 1)
+  v = -self.vMM*0.5
+  image = Image.new("L", (self.uPixels, self.vPixels))
+  for row in range(0, self.vPixels): 
+   u = -self.uMM*0.5
+   for column in range(0, self.uPixels):
+    if polygonMask.getpixel((column, row)) != 0:
+     ray = self.GetCameraRayNormalised(u, v)
+     minRoomDistance = RayIntoSolid(ray, room)[1]
+     if minRoomDistance is None:
+      startingPolygonDistance = sys.float_info.max
+     else:
+      startingPolygonDistance = minRoomDistance + veryShort # We want a surface the light sheet hits to be just behind the line of light in it, so that is seen not the surface.
+     hit = self.CastRay(ray, room, polygons, startingPolygonDistance)
+     if hit != 0:
+      image.putpixel((column, row), hit)
+    u += uInc
+   v += vInc
+  image.save(fileName + "-light.png")
+  if debug:
+   polygonMask.save(fileName + "-light-mask.png")
+
+# If we are a camera...
+# Save a ray-traced image of the room.
+
+ def SaveCameraImageRoom(self, room, light, fileName):
+  if self.focalLength <= 0:
+   print("Room image requested for non camera.")
   polygonMask = self.PolygonMask(polygons)
   uInc = self.uMM/(self.uPixels - 1)
   vInc = self.vMM/(self.vPixels - 1)
@@ -838,21 +883,19 @@ class ScannerPart:
    u = -self.uMM*0.5
    for column in range(0, self.uPixels):
     ray = self.GetCameraRayNormalised(u, v)
-    minRoomDistance = RayIntoSolid(ray, room)
+    rayHit = RayIntoSolid(ray, room)
+    minRoomDistance = rayHit[1]
     if minRoomDistance is None:
-     startingPolygonDistance = sys.float_info.max
+     image.putpixel((column, row), 0)
     else:
-     startingPolygonDistance = minRoomDistance + veryShort # We want a surface the light sheet hits to be just behind the line of light in it, so that is seen not the surface.
-     image.putpixel((column, row), 125)
-    if polygonMask.getpixel((column, row)) != 0:
-     hit = self.CastRay(ray, room, polygons, startingPolygonDistance)
-     if hit != 0:
-      image.putpixel((column, row), hit)
+     if rayHit[2] is not None:
+      i = 125 + int(round(Illumination(rayHit[3], rayHit[2], light)*125.0))
+      image.putpixel((column, row), i)
+     else:
+      image.putpixel((column, row), 50)
     u += uInc
    v += vInc
-  image.save(fileName + ".png")
-  if debug:
-   polygonMask.save(fileName + "-mask.png")
+  image.save(fileName + "-room.png")
    
 
 # If we are a light source...
@@ -933,20 +976,6 @@ class ScannerPart:
 
 ClearAll()
 
-# Make the room
-
-a = Part.makeBox(10, 4, 12)
-a.translate(Base.Vector(0, 3, 0))
-b = Part.makeBox(10, 8, 30)
-c =  Part.makeBox(10, 8, 30)
-c.translate(Base.Vector(0, 16, 0))
-b = b.fuse(c)
-b = b.cut(a)
-d = Part.makeBox(7, 4, 2)
-d.translate(Base.Vector(1, 1, 9))
-room = b.fuse(d)
-Part.show(room)
-
 # Make the scanner
 
 world = ScannerPart()
@@ -959,13 +988,32 @@ lightSource.RotateV(-0.5)
 camera.RotateV(-0.5*math.pi)
 camera.RotateU(-0.1)
 camera.RotateW(-0.5*math.pi)
+
 world.Display(showCamera = True)
+
+# Make the room
+
+a = Part.makeBox(10, 4, 12)
+a.translate(Base.Vector(0, 3, 0))
+b = Part.makeBox(10, 8, 30)
+c =  Part.makeBox(10, 8, 30)
+c.translate(Base.Vector(0, 16, 0))
+b = b.fuse(c)
+b = b.cut(a)
+d = Part.makeBox(7, 4, 2)
+d.translate(Base.Vector(1, 1, 9))
+room = b.fuse(d)
+
+roomLight = ScannerPart(offset = Base.Vector(200, 200, 1000), parent = world)
+
+Part.show(room)
 
 # Run a scan and save the image
 
 polygons = lightSource.GetVisibilityPolygons(room)
 PlotPolygons(polygons)
-camera.SaveCameraImage(room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
+camera.SaveCameraImageLights(room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
+camera.SaveCameraImageRoom(room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 
 
 
