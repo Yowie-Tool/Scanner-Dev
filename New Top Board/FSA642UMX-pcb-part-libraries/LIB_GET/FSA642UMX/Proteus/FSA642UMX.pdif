@@ -1,0 +1,274 @@
+;Proteus Design Interchange Format
+(PDIF
+ (vendor "SamacSys Limited")
+ (version 1 0)
+ (library
+  (part "FSA642UMX"
+   (description "ON Semiconductor FSA642UMX, MIPI Switch TPDT 500Mbit/s, 2.65  4.3 V, 24-Pin UMLP")
+   (family "ANA")
+   (package "FSA642UMX")
+   (attribute "Datasheet Link" "http://www.onsemi.com/pub/Collateral/FSA642-D.PDF")
+   (attribute "Geometry.Height" "0.55mm")
+   (attribute "Mouser Part Number" "512-FSA642UMX")
+   (attribute "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/ON-Semiconductor-Fairchild/FSA642UMX?qs=zv9oXRM5khjFUsaII5WQoA%3D%3D")
+   (attribute "Manufacturer_Name" "ON Semiconductor")
+   (attribute "Manufacturer_Part_Number" "FSA642UMX")
+   (gate
+    (symbol "FSA642UMX")
+    (pin "CLKP" 1 PS)
+    (pin "CLKN" 2 PS)
+    (pin "D1P" 3 PS)
+    (pin "D1N" 4 PS)
+    (pin "D2P" 5 PS)
+    (pin "D2N" 6 PS)
+    (pin "NC_1" 7 PS)
+    (pin "$OE$" 8 PS)
+    (pin "GND" 9 PS)
+    (pin "VCC" 10 PS)
+    (pin "SEL" 11 PS)
+    (pin "DA2N" 12 PS)
+    (pin "DA2P" 13 PS)
+    (pin "DA1N" 14 PS)
+    (pin "DA1P" 15 PS)
+    (pin "CLKAN" 16 PS)
+    (pin "CLKAP" 17 PS)
+    (pin "DB2N" 18 PS)
+    (pin "DB2P" 19 PS)
+    (pin "DB1P" 20 PS)
+    (pin "DB1N" 21 PS)
+    (pin "CLKBP" 22 PS)
+    (pin "CLKBN" 23 PS)
+    (pin "NC_2" 24 PS)
+   )
+  )
+  (symbol "FSA642UMX"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 200 100) (pt 1000 100) (pt 1000 -1200) (pt 200 -1200) (pt 200 100) (closed))
+   )
+   (terminal
+    (body (symbol "PIN") (pt 0 0) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -100) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -200) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -300) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -400) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -500) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -600) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -700) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -800) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -900) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -1000) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -1100) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 0) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -100) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -200) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -300) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -400) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -500) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -600) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -700) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -800) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -900) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -1000) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 1200 -1100) (rot 0) (mir X) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+  )
+  (symbol "PIN"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 0 0) (pt 200 0))))
+  (symbol "PINSHORT"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 0 0) (pt 100 0))))
+  (package "FSA642UMX"
+   (units MM)
+   (layer TASM
+    (graphic
+     (stroke 0.2)
+     (path
+      (closed true)
+      (pt -1.2 1.568)
+      (pt 1.2 1.568)
+      (pt 1.2 -1.569)
+      (pt -1.2 -1.569)
+      (pt -1.2 1.568))))
+   (layer OCCA
+    (graphic
+     (stroke 0.1)
+     (path
+      (closed true)
+      (pt -2.3 2.35)
+      (pt 1.9 2.35)
+      (pt 1.9 -2.35)
+      (pt -2.3 -2.35)
+      (pt -2.3 2.35))))
+   (layer TSLK
+    (graphic
+     (stroke 0.2)
+     (path
+      (closed true)
+      (pt -1.7 1.1)
+      (arc (pt -1.700 1.100) (pt -1.800 0.900) (pt -1.600 1.100) (start -180.0) (sweep 90.0))
+      (pt -1.7 0.9)
+      (arc (pt -1.700 0.900) (pt -1.800 0.900) (pt -1.600 1.100) (start -180.0) (sweep -90.0))
+      (pt -1.7 1.1))))
+   (leg 1 (pt -1.069 1.000) (padstack 1))
+   (leg 2 (pt -1.119 0.600) (padstack 2))
+   (leg 3 (pt -1.119 0.200) (padstack 3))
+   (leg 4 (pt -1.119 -0.200) (padstack 4))
+   (leg 5 (pt -1.119 -0.600) (padstack 5))
+   (leg 6 (pt -1.119 -1.000) (padstack 6))
+   (leg 7 (pt 1.119 -1.000) (padstack 7))
+   (leg 8 (pt 1.119 -0.600) (padstack 8))
+   (leg 9 (pt 1.119 -0.200) (padstack 9))
+   (leg 10 (pt 1.119 0.200) (padstack 10))
+   (leg 11 (pt 1.119 0.600) (padstack 11))
+   (leg 12 (pt 1.119 1.000) (padstack 12))
+   (leg 13 (pt -0.200 -1.569) (padstack 0))
+   (leg 14 (pt -0.600 -1.569) (padstack 0))
+   (leg 15 (pt -1.000 -1.569) (padstack 0))
+   (leg 16 (pt 0.200 -1.569) (padstack 0))
+   (leg 17 (pt 0.600 -1.569) (padstack 0))
+   (leg 18 (pt 1.000 -1.569) (padstack 0))
+   (leg 19 (pt 1.000 1.568) (padstack 0))
+   (leg 20 (pt 0.600 1.568) (padstack 0))
+   (leg 21 (pt 0.200 1.568) (padstack 0))
+   (leg 22 (pt -0.200 1.568) (padstack 0))
+   (leg 23 (pt -0.600 1.568) (padstack 0))
+   (leg 24 (pt -1.000 1.568) (padstack 0))
+   (padstack 0
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 90.000))
+   )
+   (padstack 1
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.663 0 0 0.000))
+   )
+   (padstack 2
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 3
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 4
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 5
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 6
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 7
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 8
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 9
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 10
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 11
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (padstack 12
+    (plated false)
+    (pad (layer TCOP) (rectf 0.225 0.563 0 0 0.000))
+   )
+   (model "FSA642UMX.stp"
+    (euler 0 0 0)
+    (offset 0 0 0)
+   )
+  )
+ )
+)

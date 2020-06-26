@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'FSA642UMX'
+CLASS = IC
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "ON Semiconductor", "FSA642UMX" (!) = "", "FSA642UMX", "Other", "512-FSA642UMX", "https://www.mouser.co.uk/ProductDetail/ON-Semiconductor-Fairchild/FSA642UMX?qs=zv9oXRM5khjFUsaII5WQoA%3D%3D", "ON Semiconductor FSA642UMX, MIPI Switch TPDT 500Mbit/s, 2.65  4.3 V, 24-Pin UMLP", "http://www.onsemi.com/pub/Collateral/FSA642-D.PDF", "0.55 mm"
+END_PART
+
+END.

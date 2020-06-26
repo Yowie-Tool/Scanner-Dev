@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP TMC5160_SilentStepStick
+D TMC5160 Silent Step Stick Driver Board
+K TMC5160 Silent Step Stick Driver Board
+F https://www.pololu.com/product/2980/pictures
+$ENDCMP
+#
+#End Doc Library

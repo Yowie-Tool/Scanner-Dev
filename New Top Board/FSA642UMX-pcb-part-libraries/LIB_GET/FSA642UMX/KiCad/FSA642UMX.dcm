@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP FSA642UMX
+D ON Semiconductor FSA642UMX, MIPI Switch TPDT 500Mbit/s, 2.65  4.3 V, 24-Pin UMLP
+K
+F http://www.onsemi.com/pub/Collateral/FSA642-D.PDF
+$ENDCMP
+#
+#End Doc Library

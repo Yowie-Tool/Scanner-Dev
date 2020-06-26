@@ -1,0 +1,33 @@
+Component,Description,Part,References,Value,Footprint,Quantity Per PCB,Datasheet,Field4,Field5,Field6,Field7,Field8,Height,Manufacturer_Name,Manufacturer_Part_Number,Mouser Part Number,Mouser Price/Stock,Category,Family,MPN,Manufacturer,Status
+1,Capacitor symbol for simulation only,CAP,C1 C2 C3 C4 C5,10nF,C_0603_1608Metric_Pad1.05x0.95mm_HandSolder,5,~,,,,,,,,,,,,,,,
+2,,68611514122,J2,68611514122,68611514122,1,None,68611514122,None,Unavailable,Connector [Würth Elektronik] 68611514122 Connector,Würth Elektronik,,,,,,,,,,
+3,"Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x02,J11 J12,Conn_01x02,JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical,2,~,,,,,,,,,,,,,,,
+4,"Generic connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x03,J8 J9,Conn_01x03,JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical,2,~,,,,,,,,,,,,,,,
+5,"Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x04,J1 J4 J10,Conn_01x04,JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical,3,~,,,,,,,,,,,,,,,
+6,"Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x05,J6 J7,Conn_01x05,JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical,2,~,,,,,,,,,,,,,,,
+7,"Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x06,J3,Conn_01x06,JST_PH_B6B-PH-K_1x06_P2.00mm_Vertical,1,~,,,,,,,,,,,,,,,
+8,"Modular Connectors / Ethernet Connectors RA Two Port With Shield, no LED",RJE392881400,J13 J14,RJE392881400,RJE392881400,2,https://componentsearchengine.com/Datasheets/1/RJE392881400.pdf,,,,,,13.2,Amphenol,RJE392881400,523-RJE392881400,https://www.mouser.com/Search/Refine.aspx?Keyword=523-RJE392881400,,,,,
+9,"Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)",Screw_Terminal_01x02,J5,Screw_Terminal_01x02,TerminalBlock_bornier-2_P5.08mm,1,~,,,,,,,,,,,,,,,
+10,"Generic connector, double row, 02x20, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_02x20_Odd_Even,P1,Conn_02x20_Odd_Even,PinSocket_2x20_P2.54mm_Vertical,1,,,,,,,,,,,,,,,,
+11,Resistor,R,R11 R12 R13,10K,R_0805_2012Metric_Pad1.15x1.40mm_HandSolder,3,~,,,,,,,,,,,,,,,
+12,Resistor,R,R14 R15,1K,R_0603_1608Metric_Pad1.05x0.95mm_HandSolder,2,~,,,,,,,,,,,,,,,
+13,"4 resistor network, parallel topology, DIP package",R_Pack04,RN1 RN2,10K,R_Array_Convex_4x1206,2,~,,,,,,,,,,,,,,,
+14,IC I2C SW 8CH W/RESET 24TSSOP,FSA642,U3 U7,FSA642,QFN50P400X400X60-25N,2,http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftca9548a,,,,,,,,,,,Integrated Circuits (ICs),"Logic - Signal Switches, Multiplexers, Decoders",FSA642,Fairchild,Active
+15,IC I2C SW 8CH W/RESET 24TSSOP,LTC4314,U2,LTC4314,SOP65P777X199-20N,1,http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftca9548a,,,,,,,,,,,Integrated Circuits (ICs),"Logic - Signal Switches, Multiplexers, Decoders",LTC4314,Linear Technology,Active
+16,,MC14555BCPG,U5,MC14555BCPG,SOIC127P600X175-16N,1,,,,,,,,,,,,,,,,
+
+
+
+
+
+Component Groups:,16
+Component Count:,31
+Fitted Components:,31
+Number of PCBs:,1
+Total components:,31
+Schematic Version:,1
+Schematic Date:,2020-01-29
+PCB Variant:,default
+BoM Date:,08/05/2020 20:28:33
+Schematic Source:,Top Board.sch
+KiCad Version:,Eeschema (5.1.0)-1

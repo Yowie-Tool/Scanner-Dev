@@ -1,0 +1,16 @@
+.FSA642UMX :1 ;ON Semiconductor FSA642UMX, MIPI Switch TPDT 500Mbit/s, 2.65  4.3 V, 24-Pin UMLP
+FSA642UMX
+*STM IC
+*NGS
+*PLB 1="CLKP" 2="CLKN" 3="D1P" 4="D1N" 5="D2P" 6="D2N" 7="NC_1" 8="'OE'" 9="GND" 10="VCC" 11="SEL" 12="DA2N" 13="DA2P" 14="DA1N" 15="DA1P" 16="CLKAN" 17="CLKAP" 18="DB2N" 19="DB2P" 20="DB1P" 21="DB1N" 22="CLKBP" 23="CLKBN" 24="NC_2"
+*MXP 24
+*DFN FSA642UMX
+~!Mouser Part Number (512-FSA642UMX)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/ON-Semiconductor-Fairchild/FSA642UMX?qs=zv9oXRM5khjFUsaII5WQoA%3D%3D)
+~!Manufacturer_Name (ON Semiconductor)
+~!Manufacturer_Part_Number (FSA642UMX)
+~!Link Datasheet (http://www.onsemi.com/pub/Collateral/FSA642-D.PDF)
+~!Height (0.55mm)
+~!3D_Model (FSA642UMX)
+FSA642UMX
+1.1!U 2.1!U 3.1!U 4.1!U 5.1!U 6.1!U 7.1!U 8.1!U 9.1!U 10.1!U 11.1!U 12.1!U 13.1!U 14.1!U 15.1!U 16.1!U 17.1!U 18.1!U 19.1!U 20.1!U 21.1!U 22.1!U 23.1!U 24.1!U 
