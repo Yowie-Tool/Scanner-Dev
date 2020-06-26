@@ -1,0 +1,13 @@
+(unit MM)
+
+(package "FSA642UMX"
+    (type UNDEF)
+    (uver 2)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (utime 2018-10-15-12:44:42)
+    (mountForm default
+        (footprintRef "FSA642UMX")
+        (spec "System")
+    )
+)

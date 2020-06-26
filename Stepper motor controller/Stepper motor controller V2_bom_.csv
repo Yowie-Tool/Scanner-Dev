@@ -1,0 +1,36 @@
+Component,Description,Part,References,Value,Footprint,Quantity Per PCB,Datasheet
+1,"Pololu Breakout Board, Stepper Driver A4988",Pololu_Breakout_A4988,A1,Pololu_Breakout_A4988,Pololu_Breakout-16_15.2x20.3mm,1,https://www.pololu.com/product/2980/pictures
+2,Capacitor symbol for simulation only,CAP,C3 C4 C5 C6 C8 C20 C21 C22,0.1uF,C_0805_2012Metric,8,~
+3,Capacitor symbol for simulation only,CAP,C1,1.0uF,C_0805_2012Metric,1,~
+4,Capacitor symbol for simulation only,CAP,C7,100uF,CAPPM7343X310N,1,~
+5,Capacitor symbol for simulation only,CAP,C19,10uF,C_0805_2012Metric,1,~
+6,Capacitor symbol for simulation only,CAP,C2,2.2uF,C_0805_2012Metric,1,~
+7,Capacitor symbol for simulation only,CAP,C18,470pF,C_0805_2012Metric,1,~
+8,Light emitting diode,LED,D1,LED,LED_PLCC-2,1,~
+9,Atmel 6-pin ISP connector,AVR-ISP-6,J4,AVR-ISP-6,PinHeader_2x03_P2.54mm_Vertical,1, ~
+10,"Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x04,J1,Conn_01x04,JST_XH_B4B-XH-A_1x04_P2.50mm_Vertical,1,~
+11,"Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x05,J2,Conn_01x05,JST_XH_B5B-XH-A_1x05_P2.50mm_Vertical,1,~
+12,"Solder Jumper, 3-pole, open",SolderJumper_3_Open,JP1,SolderJumper_3_Open,SolderJumper-3_P1.3mm_Open_Pad1.0x1.5mm,1,~
+13,Resistor,R,R7 R8 R9 R10,10K,R_0805_2012Metric,4,~
+14,Resistor,R,R1,1M,R_0805_2012Metric_Pad1.15x1.40mm_HandSolder,1,~
+15,Resistor,R,R6,270R,R_0805_2012Metric,1,~
+16,"150mA low dropout linear regulator, wide input voltage range, 5.0V fixed positive output, SOT-89-3 package",AP2204R-5.0,U2,AP2204R-5.0,SOT-89-3,1,https://www.diodes.com/assets/Datasheets/AP2204.pdf
+17,"Magnetic position sensor, 14-bit, PWM output, I2C Interface, TSSOP-14",AS5048B,U4,AS5048B,TSSOP-14_4.4x5mm_P0.65mm,1,https://ams.com/documents/20143/36005/AS5048_DS000298_4-00.pdf
+18,"20MHz, 32kB Flash, 2kB SRAM, 1kB EEPROM, TQFP-32",ATmega328P-AU,U1,ATmega328P-AU,TQFP-32_7x7mm_P0.8mm,1,http://ww1.microchip.com/downloads/en/DeviceDoc/ATmega328_P%20AVR%20MCU%20with%20picoPower%20Technology%20Data%20Sheet%2040001984A.pdf
+19,"Three pin crystal, GND on pin 2",Crystal_GND2,Y1,Crystal_GND2,Resonator_SMD_muRata_CSTxExxV-3Pin_3.0x1.1mm_HandSoldering,1,~
+
+
+
+
+
+Component Groups:,19
+Component Count:,29
+Fitted Components:,29
+Number of PCBs:,1
+Total components:,29
+Schematic Version:,
+Schematic Date:,
+PCB Variant:,['default']
+BoM Date:,10/05/2020 12:34:21
+Schematic Source:,Stepper motor controller V2.sch
+KiCad Version:,Eeschema (5.1.0)-1

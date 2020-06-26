@@ -1,0 +1,44 @@
+Component,Description,Part,References,Value,Footprint,Quantity Per PCB,Datasheet,Field4,Field5,Field6,Field7,Field8
+1,Single-cell battery,Battery_Cell,BT1,Battery_Cell,BatteryHolder_Keystone_3001_1x12mm,1,~,,,,,
+2,Capacitor symbol for simulation only,CAP,C6,0.1uF,C_0805_2012Metric_Pad1.15x1.40mm_HandSolder,1,~,,,,,
+3,Capacitor symbol for simulation only,CAP,C9 C10,2pF,C_0603_1608Metric_Pad1.05x0.95mm_HandSolder,2,~,,,,,
+4,Unpolarized capacitor,C,CBOOT1 CIN3,0.1uF,C_0603_1608Metric_Pad1.05x0.95mm_HandSolder,2,~,,,,,
+5,Unpolarized capacitor,C,CIN1 CIN2,4.7uF,C_1206_3216Metric_Pad1.42x1.75mm_HandSolder,2,~,,,,,
+6,Unpolarized capacitor,C,COUT1 COUT2 COUT3 COUT4,47uF,CAPC5750X260N,4,~,,,,,
+7,Unpolarized capacitor,C,CSS1,22nF,C_0805_2012Metric_Pad1.15x1.40mm_HandSolder,1,~,,,,,
+8,Diode,D,D1,D,D_SMB-SMC_Universal_Handsoldering,1,~,,,,,
+9,Schottky diode,D_Schottky,D2,D_Schottky 15V,TO-263-2,1,~,,,,,
+10,,647676-2,J1 J2 J3,647676-2,TE_647676-2,3,Compliant,3.96 mm[.156 in],https://www.te.com/usa-en/product-647676-2.html?te_bu=Cor&te_type=disp&te_campaign=seda_glo_cor-seda-global-disp-prtnr-fy19-seda-model-bom-cta_sma-317_1&elqCampaignId=32493,Header,2,647676-2
+11,"Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x02,J6,Conn_01x02,PinHeader_1x02_P2.54mm_Horizontal,1,~,,,,,
+12,Capacitor symbol for simulation only,INDUCTOR,L1,5.6uH,L_Vishay_IHLP-5050,1,https://docs.rs-online.com/b103/0900766b8102c939.pdf,,,,,
+13,Fan,Fan,M1,Fan,SolderWirePad_1x02_P3.81mm_Drill1mm,1,~,,,,,
+14,"Generic connector, double row, 02x20, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_02x20_Odd_Even,P1,Conn_02x20_Odd_Even,PinSocket_2x20_P2.54mm_Vertical,1,,,,,,
+15,,DMMT5401-7,Q4,DMMT5401-7,SOT26,1,,,,,,
+16,,DMG2305UX-7,Q3,DMP1045U-7,SOT-23-3,1,Diodes Inc.,1.1mm,IPC-7351B,09/2018,,
+17,Resistor,R,R1,10K,R_0603_1608Metric_Pad1.05x0.95mm_HandSolder,1,~,,,,,
+18,Resistor,R,R6,10K,R_0805_2012Metric_Pad1.15x1.40mm_HandSolder,1,~,,,,,
+19,Resistor,R,R8 R11,4.7K,R_0603_1608Metric_Pad1.05x0.95mm_HandSolder,2,~,,,,,
+20,Resistor,R,R5,47K,R_0603_1608Metric_Pad1.05x0.95mm_HandSolder,1,~,,,,,
+21,Resistor,R,RFBB1,12K,R_0603_1608Metric_Pad1.05x0.95mm_HandSolder,1,~,,,,,
+22,Resistor,R,RFBT1,68K,R_0603_1608Metric_Pad1.05x0.95mm_HandSolder,1,~,,,,,
+23,Resistor,R,RT1,54.9K,R_0603_1608Metric_Pad1.05x0.95mm_HandSolder,1,~,,,,,
+24,,IRFML8244TRPBF,U4,IRFML8244TRPBF,SOT-23,1,INTERNATIONAL RECTIFIER,IRFML8244TRPBF,1857298,25T5496,SOT-23-3,
+25,,LMR14050SDDAR,U1,LMR14050SDDAR,TI_LMR14050SDDAR,1,Manufacturer Recommendations,Texas Instruments,A,,,
+26,"Real-Time Clock, I2C, Battery Backup, SOIC-8",MCP7940N-xSN,U3,MCP7940N-xSN,SOIC-8_3.9x4.9mm_P1.27mm,1,http://ww1.microchip.com/downloads/en/DeviceDoc/20005010F.pdf,,,,,
+27,Two pin crystal,Crystal,Y1,Crystal 32.768KHZ,Crystal_SMD_SeikoEpson_MC146-4Pin_6.7x1.5mm,1,~,,,,,
+
+
+
+
+
+Component Groups:,27
+Component Count:,36
+Fitted Components:,36
+Number of PCBs:,1
+Total components:,36
+Schematic Version:,1
+Schematic Date:,2020-01-13
+PCB Variant:,default
+BoM Date:,08/05/2020 20:29:07
+Schematic Source:,Universal Interface Board.sch
+KiCad Version:,Eeschema (5.1.0)-1

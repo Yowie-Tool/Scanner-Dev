@@ -1,0 +1,44 @@
+Component,Description,Part,References,Value,Footprint,Quantity Per PCB,Datasheet,MPN,Manufacturer,Status
+1,Capacitor symbol for simulation only,CAP,C3 C4 C5 C6 C9 C10 C12 C13 C14 C20 C21 C22,0.1uF,C_0805_2012Metric,12,~,,,
+2,Capacitor symbol for simulation only,CAP,C1 C17,1.0uF,C_0805_2012Metric,2,~,,,
+3,Capacitor symbol for simulation only,CAP,C16,100uF,CP_Elec_6.3x7.7,1,~,,,
+4,Capacitor symbol for simulation only,CAP,C19,10uF,C_0805_2012Metric,1,~,,,
+5,Capacitor symbol for simulation only,CAP,C2,2.2uF,C_0805_2012Metric,1,~,,,
+6,Capacitor symbol for simulation only,CAP,C15,22n,C_0805_2012Metric,1,~,,,
+7,Capacitor symbol for simulation only,CAP,C7 C8,470n,C_0402_1005Metric,2,~,,,
+8,Capacitor symbol for simulation only,CAP,C18,470pF,C_0805_2012Metric,1,~,,,
+9,Capacitor symbol for simulation only,CAP,C11,4u7,C_0402_1005Metric,1,~,,,
+10,Light emitting diode,LED,D1,LED,LED_PLCC-2,1,~,,,
+11,Atmel 6-pin ISP connector,AVR-ISP-6,J4,AVR-ISP-6,PinHeader_2x03_P2.54mm_Vertical,1, ~,,,
+12,"Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x02_Male,J1,Conn_01x02_Male,JST_EH_B2B-EH-A_1x02_P2.50mm_Vertical,1,~,,,
+13,"Generic connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x03_Female,J3,Conn_01x03_Female,JST_EH_B3B-EH-A_1x03_P2.50mm_Vertical,1,~,,,
+14,"Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)",Conn_01x04_Female,J2,Conn_01x04_Female,JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical,1,~,,,
+15,"Solder Jumper, 2-pole, open",SolderJumper_2_Open,JP1,SolderJumper_2_Open,SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm,1,~,,,
+16,Resistor,R,R3 R5,0R11,R_1206_3216Metric_Pad1.42x1.75mm_HandSolder,2,~,,,
+17,Resistor,R,R7 R8 R9 R10,10K,R_0805_2012Metric,4,~,,,
+18,Resistor,R,R1,1M,R_0805_2012Metric_Pad1.15x1.40mm_HandSolder,1,~,,,
+19,Resistor,R,R4,20K,R_0805_2012Metric,1,~,,,
+20,Resistor,R,R6,270R,R_0805_2012Metric,1,~,,,
+21,Resistor,R,R2,2R2,R_0805_2012Metric,1,~,,,
+22,Potentiometer,R_POT,RV1,20K_POT,Potentiometer_Vishay_TS53YJ_Vertical,1,~,,,
+23,"150mA low dropout linear regulator, wide input voltage range, 5.0V fixed positive output, SOT-89-3 package",AP2204R-5.0,U2,AP2204R-5.0,SOT-89-3,1,https://www.diodes.com/assets/Datasheets/AP2204.pdf,,,
+24,"Magnetic position sensor, 14-bit, PWM output, I2C Interface, TSSOP-14",AS5048B,U4,AS5048B,TSSOP-14_4.4x5mm_P0.65mm,1,https://ams.com/documents/20143/36005/AS5048_DS000298_4-00.pdf,,,
+25,"20MHz, 32kB Flash, 2kB SRAM, 1kB EEPROM, TQFP-32",ATmega328P-AU,U1,ATmega328P-AU,TQFP-32_7x7mm_P0.8mm,1,http://ww1.microchip.com/downloads/en/DeviceDoc/ATmega328_P%20AVR%20MCU%20with%20picoPower%20Technology%20Data%20Sheet%2040001984A.pdf,,,
+26,IC MTR DRV BIPOLAR 5.5-36V 28QFN,TMC2130-TA-T,U3,TMC2130-TA-T,TQFP-48_7x7mm,1,https://www.trinamic.com/fileadmin/assets/Products/ICs_Documents/TMC220x_TMC222x_datasheet_Rev1.05.pdf,TMC2130-TA-T,Trinamic Motion Control GmbH,Active
+27,"Three pin crystal, GND on pin 2",Crystal_GND2,Y1,Crystal_GND2,Resonator_SMD_muRata_CSTxExxV-3Pin_3.0x1.1mm_HandSoldering,1,~,,,
+
+
+
+
+
+Component Groups:,27
+Component Count:,44
+Fitted Components:,44
+Number of PCBs:,1
+Total components:,44
+Schematic Version:,
+Schematic Date:,
+PCB Variant:,default
+BoM Date:,08/05/2020 20:28:07
+Schematic Source:,Stepper motor controller.sch
+KiCad Version:,Eeschema (5.1.0)-1
