@@ -1,0 +1,31 @@
+def NewImage(x, y):
+ return Image.new("L", (x, y))
+
+def Draw(picture):
+ return ImageDraw.Draw(picture)
+
+def Filter(picture, f):
+ return picture.filter(ImageFilter.MaxFilter(f))
+
+def DrawLine(picture, p0, p1, shade):
+ picture.line([p0, p1], shade, 1)
+
+def NewImage(x, y):
+ return Image.new("L", (x, y))
+
+def Draw(picture):
+ return ImageDraw.Draw(picture)
+
+def Filter(picture, f):
+ return picture.filter(ImageFilter.MaxFilter(f))
+
+def DrawLine(picture, p0, p1, shade):
+ picture.line([p0, p1], shade, 1)
+
+def SetPixel(picture, x, y, shade):
+  picture.putpixel((x, y), shade)
+
+def SavePicture(picture, fileName):
+ picture.save(fileName)
+
+

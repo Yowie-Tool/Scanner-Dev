@@ -97,6 +97,39 @@ def GaussianLightIntensity(d):
  e = d/lightSD
  return math.exp(-0.5*(e*e))*gaussDivide
 
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Interface to the graphics library (to allow several to be easily substituted)
+
+# New image x by y pixels
+
+def NewImage(x, y):
+ return Image.new("L", (x, y))
+
+# The drawable frame of an image
+
+def Draw(picture):
+ return ImageDraw.Draw(picture)
+
+# Draw a straight line from p0 to p1
+
+def DrawLine(picture, p0, p1, shade):
+ picture.line([p0, p1], shade, 1)
+
+# Set a single pixel to colour shade
+
+def SetPixel(picture, x, y, shade):
+ picture.putpixel((x, y), shade)
+
+# Grow the image by width f
+
+def Filter(picture, f):
+ return picture.filter(ImageFilter.MaxFilter(f))
+
+# Save the image in a file
+
+def SavePicture(picture, fileName):
+ picture.save(fileName)
+
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Small classes for working with 2D vectors
@@ -786,8 +819,8 @@ class ScannerPart:
 # near them.
 
  def PolygonMask(self, polygons):
-  mask = Image.new("L", (self.uPixels, self.vPixels))
-  draw = ImageDraw.Draw(mask)
+  mask = NewImage(self.uPixels, self.vPixels)
+  draw = Draw(mask)
   for polygon in polygons:
    pair = polygon[0]
    p0 = pair[0]
@@ -796,9 +829,9 @@ class ScannerPart:
     p1 = pair[0]
     uv0 = self.ProjectPointIntoCameraPixel(p0)
     uv1 = self.ProjectPointIntoCameraPixel(p1)
-    draw.line([uv0, uv1], 255, 1)
+    DrawLine(draw, uv0, uv1, 255)
     p0 = p1
-  return mask.filter(ImageFilter.MaxFilter(3))
+  return Filter(mask, 3)
 
 # Cast a single ray into the scene and find the bit of polygon it hits.
 # startingPolygonDistance is the closest thing to the camera along the
@@ -848,7 +881,7 @@ class ScannerPart:
   uInc = self.uMM/(self.uPixels - 1)
   vInc = self.vMM/(self.vPixels - 1)
   v = -self.vMM*0.5
-  image = Image.new("L", (self.uPixels, self.vPixels))
+  image = NewImage(self.uPixels, self.vPixels)
   for row in range(0, self.vPixels): 
    u = -self.uMM*0.5
    for column in range(0, self.uPixels):
@@ -861,12 +894,12 @@ class ScannerPart:
       startingPolygonDistance = minRoomDistance + veryShort # We want a surface the light sheet hits to be just behind the line of light in it, so that is seen not the surface.
      hit = self.CastRay(ray, room, polygons, startingPolygonDistance)
      if hit != 0:
-      image.putpixel((column, row), hit)
+      SetPixel(image, column, row, hit)
     u += uInc
    v += vInc
-  image.save(fileName + "-light.png")
+  SavePicture(image, fileName + "-light.png")
   if debug:
-   polygonMask.save(fileName + "-light-mask.png")
+   SavePicture(polygonMask, fileName + "-light-mask.png")
 
 # If we are a camera...
 # Save a ray-traced image of the room.
@@ -878,7 +911,7 @@ class ScannerPart:
   uInc = self.uMM/(self.uPixels - 1)
   vInc = self.vMM/(self.vPixels - 1)
   v = -self.vMM*0.5
-  image = Image.new("L", (self.uPixels, self.vPixels))
+  image = NewImage(self.uPixels, self.vPixels)
   for row in range(0, self.vPixels): 
    u = -self.uMM*0.5
    for column in range(0, self.uPixels):
@@ -886,16 +919,16 @@ class ScannerPart:
     rayHit = RayIntoSolid(ray, room)
     minRoomDistance = rayHit[1]
     if minRoomDistance is None:
-     image.putpixel((column, row), 0)
+     SetPixel(image, column, row, 0)
     else:
      if rayHit[2] is not None:
       i = 125 + int(round(Illumination(rayHit[3], rayHit[2], light)*125.0))
-      image.putpixel((column, row), i)
+      SetPixel(image, column, row, i)
      else:
-      image.putpixel((column, row), 50)
+      SetPutpixel(image, column, row, 50)
     u += uInc
    v += vInc
-  image.save(fileName + "-room.png")
+  SavePicture(image, fileName + "-room.png")
    
 
 # If we are a light source...
@@ -1013,7 +1046,7 @@ Part.show(room)
 polygons = lightSource.GetVisibilityPolygons(room)
 PlotPolygons(polygons)
 camera.SaveCameraImageLights(room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
-camera.SaveCameraImageRoom(room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
+#camera.SaveCameraImageRoom(room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 
 
 
