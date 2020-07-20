@@ -1,5 +1,5 @@
 import math
-Fnumber=[0.7,0.8,0.9,1,1.1,1.2,1.4,1.6,1.8,2,2.2,2.5,2.8,3.2,3.5,4,4.5,5,5.6,6.3,7.1,8,9,10,11,13,14,16,18,20,22]
+Fnumber=[2.8,3.2,3.5,4,4.5,5,5.6,6.3,7.1,8,9,10,11,13,14,16]
 xrescam1=0
 xrescam2=0
 xrescam3=0
@@ -24,6 +24,9 @@ C2Focus=0
 C3Focus=0
 #scantype=input("Enter Scanner type: 1 - 2D or 2 - 3D")
 #scantype=int(scantype)
+print("Calculation type 1 - Old method - Input distance from laser")
+print("Calculation type 2 - New method - Input focal length")
+calctype=int(input("Enter Calculation Type: "))
 cameranum=int(input("Enter proposed number of cameras (1-2): "))
 overinc=input("Include oversampling in calculations (y/n): ")
 if overinc == "y":
@@ -112,8 +115,11 @@ if selectcam1==8:
     cam1fps = 1 / (30 / 2)
 maxres1=float(input("Maximum resolution between measurements camera 1: "))
 #resolution in this case being the the maximum distance between possible measurements, where every pixel is a possible measurement.
-camdist1=int(input("Camera 1 offset from laser: "))
-#The difference between the laser and the centre of the camera
+if calctype==1:
+    camdist1=int(input("Camera 1 offset from laser: "))
+    #The difference between the laser and the centre of the camera
+if calctype==2:
+    focallengthcam1=int(input("Camera 1 focal length: "))
 if cameranum > 1:
     selectcam2=int(input("Select Camera 2 (type 0 for same as camera 1): "))
     if selectcam2 == 0:
@@ -180,189 +186,289 @@ if cameranum > 1:
         sensorv2 = 4.712
         cam2fpsfps = 1 / (30 / 2)
     maxres2 = float(input("Maximum resolution between measurements camera 2: "))
-    camdist2 = int(input("Camera 2 offset from laser: "))
+    if calctype==1:
+        camdist2 = int(input("Camera 2 offset from laser: "))
+    if calctype==2:
+        focallengthcam2=int(input("Camera 2 focal length: "))
     overlap1 = int(input("mm overlap between Camera 1 and Camera 2: "))
     #If both cameras were at the same distance from the laser, this would give an overlap of x degrees.
     # As the cameras have to be offset, at 0 degrees we would end up with a measurement void, so experimentation is needed. Perhaps a better metric could be used.
 minmeasure1=int(input("Minimum Measurement: "))
 #Relatively self explanatory, but obviously there needs to be a minimum distance of more than 0 over which the scanner can measure.
 #We need to take into account the rotation of the unit, and make sure that the minimum distance will allow the unit to rotate without hitting anything.
-
-cam1angled=math.atan(minmeasure1/camdist1)
-#This gives the first cameras angle
-camangle1=0
-camangle2=0
-maxrescam1=0
-maxrescam2=0
-minrescam1=0
-minrescam2=0
-avrescam1=0
-avrescam2=0
-maxrangecam1=0
-maxrangecam2=0
-minrangecam2=0
-camangleddeg=cam1angled*(180/math.pi)
-camout1=[]
-camout2=[]
-camout1diff=[]
-camout2diff=[]
-
-camoutcombdiff=[]
-maxresallcams=0
-minresallcams=0
-avresallcams=0
-while maxrescam1<maxres1:
-    camangle1=camangle1+0.1
-    #Increase camera Horizontal field of view in 0.1 degree increments
-    camanglerad=camangle1/(180/math.pi)
-    camout1.clear()
-    camout1diff.clear()
+if calctype==1:
+    cam1angled=math.atan(minmeasure1/camdist1)
+    #This gives the first cameras angle
+    camangle1=0
+    camangle2=0
+    maxrescam1=0
+    maxrescam2=0
+    minrescam1=0
+    minrescam2=0
+    avrescam1=0
+    avrescam2=0
+    maxrangecam1=0
+    maxrangecam2=0
+    minrangecam2=0
+    camangleddeg=cam1angled*(180/math.pi)
+    camout1=[]
+    camout2=[]
     camout1diff=[]
-    Bcalc=((180-camangle1)/2)
-    #Angle B for the cosine rule, always constant in our calculation
-    Bconst = (Bcalc/(180/math.pi))
-    cosB=math.cos(Bconst)
-    aconst=(xrescam1*(math.sin(Bconst)))/(math.sin(camanglerad))
-    #Length a is also a constant in our calculation
-    aconstsqrd=math.pow(aconst,2)
-    for int1 in range(xrescam1):
-        cosC=((2*aconstsqrd)-(2*aconst*(int1+1)*cosB))/((2*aconst*(math.sqrt((aconstsqrd+((int1+1)*(int1+1))-(2*aconst*(int1+1)*cosB))))))
-        #This is the formula I derived from the cosine rule for calculating the angle across the horizontal part of the frame
-        angle=math.acos(cosC)
-        totalangle=angle+cam1angled
-        oppcalc=camdist1*(math.tan(totalangle))
-        #Here we have the distance output. In the main calculation in the scanner, this is then adjusted for the distance from the origin, and rotation of the unit.
-        camout1.append(oppcalc)
-        if int1>0:
-            diff=oppcalc-camout1[int1-1]
-            camout1diff.append(diff)
-    maxrescam1=camout1diff[-1]
-    minrescam1=camout1diff[0]
-    avrescam1=sum(camout1diff)/len(camout1diff)
-    maxrangecam1=camout1[-1]
-    focallengthcam1=(sensorh1*(2*minmeasure1))/((2*(2*minmeasure1)*(math.tan((camangle1/2)/(180/math.pi))))+sensorh1)
-    #Calculates the focal length of the lens needed to achieve the horizontal field of view specified, based on CCD sensor width and minimum focal distance
-    cam1vanglerad = 2 * math.atan((sensorv1 * (minmeasure1 - focallengthcam1)) / (2 * minmeasure1 * focallengthcam1))
-    #Angle that the camera needs to be mounted at
-    cam1vangle=cam1vanglerad*(180/math.pi)
-    circleofconfusion=sensorf1/1500
-    camera1aperture = (math.pow(focallengthcam1, 2)) / (circleofconfusion * ((minmeasure1 * 2) - focallengthcam1))
-print('X angle: [%f] Y Angle: [%f] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]'%(camangle1,cam1vangle,maxrescam1,minrescam1,avrescam1,minmeasure1,maxrangecam1))
-print ('Camera 1 Angled at :[%f] degrees'%(camangleddeg+(camangle1/2)))
-print ('Camera 1 with ideal focal length of [%f] and minimum aperture of F[%f]'%(focallengthcam1,camera1aperture))
-changecam1=input("To change focal length to standard lens type new focal length or n to keep proposed lens: ")
-if changecam1 != "n":
-    changecam1=float(changecam1)
-    camanglerad=2*math.atan((sensorh1*((2*minmeasure1)-changecam1))/(2*(2*minmeasure1)*changecam1))
-    #Gives horizontal field of view based on focal length (standard equation from the internet...)
-    camangle1=camanglerad*(180/math.pi)
-    camout1.clear()
-    camout1diff.clear()
-    camout1diff = []
-    Bcalc = ((180 - camangle1) / 2)
-    Bconst = (Bcalc / (180 / math.pi))
-    cosB = math.cos(Bconst)
-    aconst = (xrescam1 * (math.sin(Bconst))) / (math.sin(camanglerad))
-    aconstsqrd = math.pow(aconst, 2)
-    for int1 in range(xrescam1):
-        cosC = ((2 * aconstsqrd) - (2 * aconst * (int1 + 1) * cosB)) / (
-        (2 * aconst * (math.sqrt((aconstsqrd + ((int1 + 1) * (int1 + 1)) - (2 * aconst * (int1 + 1) * cosB))))))
-        angle = math.acos(cosC)
-        totalangle = angle + cam1angled
-        oppcalc = camdist1 * (math.tan(totalangle))
-        camout1.append(oppcalc)
-        if int1 > 0:
-            diff = oppcalc - camout1[int1 - 1]
-            camout1diff.append(diff)
-    maxrescam1 = camout1diff[-1]
-    minrescam1 = camout1diff[0]
-    avrescam1 = sum(camout1diff) / len(camout1diff)
-    maxrangecam1 = camout1[-1]
-    cam1vanglerad = 2 * math.atan((sensorv1 * (minmeasure1 - changecam1)) / (2 * minmeasure1 * changecam1))
-    cam1vangle=cam1vanglerad*(180/math.pi)
-    threesixtysteps = round(360 / cam1vangle)
-    #Number of steps in a complete scan - gearing on 2D scan must be adjusted to suit, as only full steps of stepper motor are accurate without a feedback loop.
-    threesixtytime = threesixtysteps * (cam1fps + ((cam1vangle / 1.8) * 3 * 16 * 0.001))
-    #Theoretical fastest 2D scan time, based on number of photo's needed and fps at maximum resolution of camera
-    print('X angle: [%f] Y Angle: [%F] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]\r' % (camangle1,cam1vangle, maxrescam1, minrescam1, avrescam1, minmeasure1, maxrangecam1), end="")
-    print("")
-    print('Camera 1 Angled at :[%f] degrees' % (camangleddeg + (camangle1 / 2)))
-
-if cameranum > 1:
-    while maxrescam2<maxres2:
-        cam2angled = math.atan((maxrangecam1-overlap1) / camdist2)
-        camangle2=camangle2+0.1
-        camanglerad=camangle2/(180/math.pi)
-        camout2.clear()
+    camout2diff=[]
+    
+    camoutcombdiff=[]
+    maxresallcams=0
+    minresallcams=0
+    avresallcams=0
+    while maxrescam1<maxres1:
+        camangle1=camangle1+0.1
+        #Increase camera Horizontal field of view in 0.1 degree increments
+        camanglerad=camangle1/(180/math.pi)
+        camout1.clear()
         camout1diff.clear()
         camout1diff=[]
-        Bcalc=((180-camangle2)/2)
+        Bcalc=((180-camangle1)/2)
+        #Angle B for the cosine rule, always constant in our calculation
         Bconst = (Bcalc/(180/math.pi))
         cosB=math.cos(Bconst)
         aconst=(xrescam1*(math.sin(Bconst)))/(math.sin(camanglerad))
+        #Length a is also a constant in our calculation
         aconstsqrd=math.pow(aconst,2)
-        for int1 in range(xrescam2):
+        for int1 in range(xrescam1):
             cosC=((2*aconstsqrd)-(2*aconst*(int1+1)*cosB))/((2*aconst*(math.sqrt((aconstsqrd+((int1+1)*(int1+1))-(2*aconst*(int1+1)*cosB))))))
+            #This is the formula I derived from the cosine rule for calculating the angle across the horizontal part of the frame
             angle=math.acos(cosC)
-            totalangle=angle+cam2angled
-            oppcalc=camdist2*(math.tan(totalangle))
-            camout2.append(oppcalc)
+            totalangle=angle+cam1angled
+            oppcalc=camdist1*(math.tan(totalangle))
+            #Here we have the distance output. In the main calculation in the scanner, this is then adjusted for the distance from the origin, and rotation of the unit.
+            camout1.append(oppcalc)
             if int1>0:
-                diff=oppcalc-camout2[int1-1]
-                camout2diff.append(diff)
-        maxrescam2=camout2diff[-1]
-        minrescam2=camout2diff[0]
-        avrescam2=sum(camout2diff)/len(camout2diff)
-        maxrangecam2=camout2[-1]
-        minrangecam2=camout2[0]
-        focallengthcam2 = (sensorh2 * minrangecam2*2) / ((4 * minrangecam2 * (math.tan((camangle2 / 2) / (180 / math.pi)))) + sensorh2)
-        cam2vanglerad = 2 * math.atan((sensorv2 * (minrangecam2 - focallengthcam2)) / (2 * minrangecam2 * focallengthcam2))
-        cam2vangle = cam2vanglerad * (180 / math.pi)
-        threesixtysteps = round(360 / cam2vangle)
-        threesixtytime = threesixtysteps * (cam1fps + cam2fps + ((cam2vangle / 1.8) * 3 * 16 * 0.001))
-        circleofconfusion = sensorf2 / 1000
-        camera2aperture = (math.pow(focallengthcam2, 2)) / (circleofconfusion * ((minrangecam2 * 2) - focallengthcam2))
-        camangle2ddeg = cam2angled * (180 / math.pi)
-    print('X angle: [%f] Y Angle: [%F] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]'%(camangle2,cam2vangle,maxrescam2,minrescam2,avrescam2,minrangecam2,maxrangecam2))
-    print('Camera 2 Angled at :[%f] degrees' % (camangle2ddeg + (camangle2/2)))
-    print('Camera 2 with ideal focal length of [%f] and minimum aperture of F[%f]' % (focallengthcam2,camera2aperture))
-    changecam2 = input("To change focal length to standard lens type new focal length or n to keep proposed lens: ")
-    if changecam2 != "n":
-        changecam2 = float(changecam2)
-        camanglerad = 2 * math.atan((sensorh2 * ((2*minrangecam2) - changecam2)) / (4 * minrangecam2 * changecam2))
-        camangle2 = camanglerad * (180 / math.pi)
-        camout2.clear()
+                diff=oppcalc-camout1[int1-1]
+                camout1diff.append(diff)
+        maxrescam1=camout1diff[-1]
+        minrescam1=camout1diff[0]
+        avrescam1=sum(camout1diff)/len(camout1diff)
+        maxrangecam1=camout1[-1]
+        focallengthcam1=(sensorh1*(2*(minmeasure1*2)))/((2*(2*(minmeasure1*2))*(math.tan((camangle1/2)/(180/math.pi))))+sensorh1)
+        #Calculates the focal length of the lens needed to achieve the horizontal field of view specified, based on CCD sensor width and minimum focal distance
+        cam1vanglerad = 2 * math.atan((sensorv1 * ((minmeasure1*2) - focallengthcam1)) / (2 * (minmeasure1*2) * focallengthcam1))
+        #Angle that the camera needs to be mounted at
+        cam1vangle=cam1vanglerad*(180/math.pi)
+        circleofconfusion=sensorf1/1500
+        camera1aperture = (math.pow(focallengthcam1, 2)) / (circleofconfusion * (((minmeasure1*2) * 2) - focallengthcam1))
+    print('X angle: [%f] Y Angle: [%f] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]'%(camangle1,cam1vangle,maxrescam1,minrescam1,avrescam1,minmeasure1,maxrangecam1))
+    print ('Camera 1 Angled at :[%f] degrees'%(camangleddeg+(camangle1/2)))
+    print ('Camera 1 with ideal focal length of [%f] and minimum aperture of F[%f]'%(focallengthcam1,camera1aperture))
+    changecam1=input("To change focal length to standard lens type new focal length or n to keep proposed lens: ")
+    if changecam1 != "n":
+        changecam1=float(changecam1)
+        camanglerad=2*math.atan((sensorh1*((2*minmeasure1)-changecam1))/(2*(2*minmeasure1)*changecam1))
+        #Gives horizontal field of view based on focal length (standard equation from the internet...)
+        camangle1=camanglerad*(180/math.pi)
+        camout1.clear()
         camout1diff.clear()
         camout1diff = []
-        Bcalc = ((180 - camangle2) / 2)
+        Bcalc = ((180 - camangle1) / 2)
         Bconst = (Bcalc / (180 / math.pi))
         cosB = math.cos(Bconst)
         aconst = (xrescam1 * (math.sin(Bconst))) / (math.sin(camanglerad))
         aconstsqrd = math.pow(aconst, 2)
-        for int1 in range(xrescam2):
+        for int1 in range(xrescam1):
             cosC = ((2 * aconstsqrd) - (2 * aconst * (int1 + 1) * cosB)) / (
             (2 * aconst * (math.sqrt((aconstsqrd + ((int1 + 1) * (int1 + 1)) - (2 * aconst * (int1 + 1) * cosB))))))
             angle = math.acos(cosC)
-            totalangle = angle + cam2angled
-            oppcalc = camdist2 * (math.tan(totalangle))
-            camout2.append(oppcalc)
+            totalangle = angle + cam1angled
+            oppcalc = camdist1 * (math.tan(totalangle))
+            camout1.append(oppcalc)
             if int1 > 0:
-                diff = oppcalc - camout2[int1 - 1]
-                camout2diff.append(diff)
-        maxrescam2 = camout2diff[-1]
-        minrescam2 = camout2diff[0]
-        avrescam2 = sum(camout2diff) / len(camout2diff)
-        maxrangecam2 = camout2[-1]
-        minrangecam2 = camout2[0]
-        cam2vanglerad = 2 * math.atan((sensorv2 * ((2*minrangecam2) - changecam2)) / (4 * minrangecam2 * changecam2))
-        cam2vangle = cam2vanglerad * (180 / math.pi)
-        threesixtysteps = round(360 / cam2vangle)
-        threesixtytime = threesixtysteps * (cam1fps + cam2fps + ((cam2vangle / 1.8) * 3 * 16 * 0.001))
-        circleofconfusion = sensorf2 / 1500
-        camangle2ddeg = cam2angled * (180 / math.pi)
-        print('X angle: [%f] Y Angle: [%F] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]' % (camangle2, cam2vangle, maxrescam2, minrescam2, avrescam2, minrangecam2, maxrangecam2))
+                diff = oppcalc - camout1[int1 - 1]
+                camout1diff.append(diff)
+        maxrescam1 = camout1diff[-1]
+        minrescam1 = camout1diff[0]
+        avrescam1 = sum(camout1diff) / len(camout1diff)
+        maxrangecam1 = camout1[-1]
+        cam1vanglerad = 2 * math.atan((sensorv1 * ((minmeasure1*2) - changecam1)) / (2 * (minmeasure1*2) * changecam1))
+        cam1vangle=cam1vanglerad*(180/math.pi)
+        threesixtysteps = round(360 / cam1vangle)
+        #Number of steps in a complete scan - gearing on 2D scan must be adjusted to suit, as only full steps of stepper motor are accurate without a feedback loop.
+        threesixtytime = threesixtysteps * (cam1fps + ((cam1vangle / 1.8) * 3 * 16 * 0.001))
+        #Theoretical fastest 2D scan time, based on number of photo's needed and fps at maximum resolution of camera
+        print('X angle: [%f] Y Angle: [%F] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]\r' % (camangle1,cam1vangle, maxrescam1, minrescam1, avrescam1, minmeasure1, maxrangecam1), end="")
+        print("")
+        print('Camera 1 Angled at :[%f] degrees' % (camangleddeg + (camangle1 / 2)))
+    
+    if cameranum > 1:
+        while maxrescam2<maxres2:
+            cam2angled = math.atan((maxrangecam1-overlap1) / camdist2)
+            camangle2=camangle2+0.1
+            camanglerad=camangle2/(180/math.pi)
+            camout2.clear()
+            camout1diff.clear()
+            camout1diff=[]
+            Bcalc=((180-camangle2)/2)
+            Bconst = (Bcalc/(180/math.pi))
+            cosB=math.cos(Bconst)
+            aconst=(xrescam1*(math.sin(Bconst)))/(math.sin(camanglerad))
+            aconstsqrd=math.pow(aconst,2)
+            for int1 in range(xrescam2):
+                cosC=((2*aconstsqrd)-(2*aconst*(int1+1)*cosB))/((2*aconst*(math.sqrt((aconstsqrd+((int1+1)*(int1+1))-(2*aconst*(int1+1)*cosB))))))
+                angle=math.acos(cosC)
+                totalangle=angle+cam2angled
+                oppcalc=camdist2*(math.tan(totalangle))
+                camout2.append(oppcalc)
+                if int1>0:
+                    diff=oppcalc-camout2[int1-1]
+                    camout2diff.append(diff)
+            maxrescam2=camout2diff[-1]
+            minrescam2=camout2diff[0]
+            avrescam2=sum(camout2diff)/len(camout2diff)
+            maxrangecam2=camout2[-1]
+            minrangecam2=camout2[0]
+            focallengthcam2 = (sensorh2 * minrangecam2*2) / ((4 * minrangecam2 * (math.tan((camangle2 / 2) / (180 / math.pi)))) + sensorh2)
+            cam2vanglerad = 2 * math.atan((sensorv2 * (minrangecam2 - focallengthcam2)) / (2 * minrangecam2 * focallengthcam2))
+            cam2vangle = cam2vanglerad * (180 / math.pi)
+            threesixtysteps = round(360 / cam2vangle)
+            threesixtytime = threesixtysteps * (cam1fps + cam2fps + ((cam2vangle / 1.8) * 3 * 16 * 0.001))
+            circleofconfusion = sensorf2 / 1000
+            camera2aperture = (math.pow(focallengthcam2, 2)) / (circleofconfusion * ((minrangecam2 * 2) - focallengthcam2))
+            camangle2ddeg = cam2angled * (180 / math.pi)
+        print('X angle: [%f] Y Angle: [%F] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]'%(camangle2,cam2vangle,maxrescam2,minrescam2,avrescam2,minrangecam2,maxrangecam2))
         print('Camera 2 Angled at :[%f] degrees' % (camangle2ddeg + (camangle2/2)))
-
+        print('Camera 2 with ideal focal length of [%f] and minimum aperture of F[%f]' % (focallengthcam2,camera2aperture))
+        changecam2 = input("To change focal length to standard lens type new focal length or n to keep proposed lens: ")
+        if changecam2 != "n":
+            changecam2 = float(changecam2)
+            camanglerad = 2 * math.atan((sensorh2 * ((2*minrangecam2) - changecam2)) / (4 * minrangecam2 * changecam2))
+            camangle2 = camanglerad * (180 / math.pi)
+            camout2.clear()
+            camout1diff.clear()
+            camout1diff = []
+            Bcalc = ((180 - camangle2) / 2)
+            Bconst = (Bcalc / (180 / math.pi))
+            cosB = math.cos(Bconst)
+            aconst = (xrescam1 * (math.sin(Bconst))) / (math.sin(camanglerad))
+            aconstsqrd = math.pow(aconst, 2)
+            for int1 in range(xrescam2):
+                cosC = ((2 * aconstsqrd) - (2 * aconst * (int1 + 1) * cosB)) / (
+                (2 * aconst * (math.sqrt((aconstsqrd + ((int1 + 1) * (int1 + 1)) - (2 * aconst * (int1 + 1) * cosB))))))
+                angle = math.acos(cosC)
+                totalangle = angle + cam2angled
+                oppcalc = camdist2 * (math.tan(totalangle))
+                camout2.append(oppcalc)
+                if int1 > 0:
+                    diff = oppcalc - camout2[int1 - 1]
+                    camout2diff.append(diff)
+            maxrescam2 = camout2diff[-1]
+            minrescam2 = camout2diff[0]
+            avrescam2 = sum(camout2diff) / len(camout2diff)
+            maxrangecam2 = camout2[-1]
+            minrangecam2 = camout2[0]
+            cam2vanglerad = 2 * math.atan((sensorv2 * ((2*minrangecam2) - changecam2)) / (4 * minrangecam2 * changecam2))
+            cam2vangle = cam2vanglerad * (180 / math.pi)
+            threesixtysteps = round(360 / cam2vangle)
+            threesixtytime = threesixtysteps * (cam1fps + cam2fps + ((cam2vangle / 1.8) * 3 * 16 * 0.001))
+            circleofconfusion = sensorf2 / 1500
+            camangle2ddeg = cam2angled * (180 / math.pi)
+            print('X angle: [%f] Y Angle: [%F] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]' % (camangle2, cam2vangle, maxrescam2, minrescam2, avrescam2, minrangecam2, maxrangecam2))
+            print('Camera 2 Angled at :[%f] degrees' % (camangle2ddeg + (camangle2/2)))
+if calctype==2:
+    cam1vanglerad = 2 * math.atan((sensorv1 * ((minmeasure1*2) - focallengthcam1)) / (2 * (minmeasure1*2) * focallengthcam1))
+    camanglerad = 2 * math.atan((sensorh1 * ((minmeasure1*2) - focallengthcam1)) / (2 * (minmeasure1*2) * focallengthcam1))
+    camangle1=camanglerad*(180/math.pi)
+    cam1vangle=cam1vanglerad*(180/math.pi)
+    camdist1=0
+    maxrescam1=0
+    maxrescam2=0
+    minrescam1=0
+    minrescam2=0
+    avrescam1=0
+    avrescam2=0
+    maxrangecam1=0
+    maxrangecam2=0
+    minrangecam2=0
+    
+    camout1=[]
+    camout2=[]
+    camout1diff=[]
+    camout2diff=[]
+    
+    camoutcombdiff=[]
+    maxresallcams=0
+    minresallcams=0
+    avresallcams=0
+    while maxrescam1<maxres1:
+        camdist1=camdist1+1
+        cam1angled=math.atan(minmeasure1/camdist1)
+        camangleddeg=cam1angled*(180/math.pi)
+        camout1.clear()
+        camout1diff.clear()
+        camout1diff=[]
+        Bcalc=((180-camangle1)/2)
+        #Angle B for the cosine rule, always constant in our calculation
+        Bconst = (Bcalc/(180/math.pi))
+        cosB=math.cos(Bconst)
+        aconst=(xrescam1*(math.sin(Bconst)))/(math.sin(camanglerad))
+        #Length a is also a constant in our calculation
+        aconstsqrd=math.pow(aconst,2)
+        for int1 in range(xrescam1):
+            cosC=((2*aconstsqrd)-(2*aconst*(int1+1)*cosB))/((2*aconst*(math.sqrt((aconstsqrd+((int1+1)*(int1+1))-(2*aconst*(int1+1)*cosB))))))
+            #This is the formula I derived from the cosine rule for calculating the angle across the horizontal part of the frame
+            angle=math.acos(cosC)
+            totalangle=angle+cam1angled
+            oppcalc=camdist1*(math.tan(totalangle))
+            #Here we have the distance output. In the main calculation in the scanner, this is then adjusted for the distance from the origin, and rotation of the unit.
+            camout1.append(oppcalc)
+            if int1>0:
+                diff=oppcalc-camout1[int1-1]
+                camout1diff.append(diff)
+        maxrescam1=camout1diff[-1]
+        minrescam1=camout1diff[0]
+        avrescam1=sum(camout1diff)/len(camout1diff)
+        maxrangecam1=camout1[-1]
+        circleofconfusion=sensorf1/1500
+        camera1aperture = (math.pow(focallengthcam1, 2)) / (circleofconfusion * ((minmeasure1 * 2) - focallengthcam1))
+    print('X angle: [%f] Y Angle: [%f] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]'%(camangle1,cam1vangle,maxrescam1,minrescam1,avrescam1,minmeasure1,maxrangecam1))
+    print ('Camera 1 Angled at :[%f] degrees'%(camangleddeg+(camangle1/2)))
+    print ('Camera 1 with Distance from laser [%d] and minimum aperture of F[%f]'%(camdist1,camera1aperture))
+    if cameranum > 1:
+        cam2vanglerad = 2 * math.atan((sensorv2 * (maxrangecam1-overlap1 - focallengthcam2)) / (2 * (maxrangecam1-overlap1) * focallengthcam2))
+        camanglerad = 2 * math.atan((sensorh2 * (maxrangecam1-overlap1 - focallengthcam2)) / (2 * (maxrangecam1-overlap1) * focallengthcam2))
+        camangle2=camanglerad*(180/math.pi)
+        cam2vangle=cam2vanglerad*(180/math.pi)
+        camdist2=0
+        while maxrescam2<maxres2:
+            camdist2=camdist1+2
+            cam2angled=math.atan((maxrangecam1-overlap1)/camdist2)
+            cam2angleddeg=cam2angled*(180/math.pi)
+            camout2.clear()
+            camout1diff.clear()
+            camout1diff=[]
+            Bcalc=((180-camangle2)/2)
+            Bconst = (Bcalc/(180/math.pi))
+            cosB=math.cos(Bconst)
+            aconst=(xrescam1*(math.sin(Bconst)))/(math.sin(camanglerad))
+            aconstsqrd=math.pow(aconst,2)
+            for int1 in range(xrescam2):
+                cosC=((2*aconstsqrd)-(2*aconst*(int1+1)*cosB))/((2*aconst*(math.sqrt((aconstsqrd+((int1+1)*(int1+1))-(2*aconst*(int1+1)*cosB))))))
+                angle=math.acos(cosC)
+                totalangle=angle+cam2angled
+                oppcalc=camdist2*(math.tan(totalangle))
+                camout2.append(oppcalc)
+                if int1>0:
+                    diff=oppcalc-camout2[int1-1]
+                    camout2diff.append(diff)
+            maxrescam2=camout2diff[-1]
+            minrescam2=camout2diff[0]
+            avrescam2=sum(camout2diff)/len(camout2diff)
+            maxrangecam2=camout2[-1]
+            minrangecam2=camout2[0]  
+            threesixtysteps = round(360 / cam2vangle)
+            threesixtytime = threesixtysteps * (cam1fps + cam2fps + ((cam2vangle / 1.8) * 3 * 16 * 0.001))
+            circleofconfusion = sensorf2 / 1000
+            camera2aperture = (math.pow(focallengthcam2, 2)) / (circleofconfusion * ((minrangecam2 * 2) - focallengthcam2))  
+        print('X angle: [%f] Y Angle: [%F] Max Res: [%f] Min Res [%f] Av Res [%f] Range [%f] to [%f]'%(camangle2,cam2vangle,maxrescam2,minrescam2,avrescam2,minrangecam2,maxrangecam2))
+        print('Camera 2 Angled at :[%f] degrees' % (cam2angleddeg + (camangle2/2)))
+        print('Camera 2 with Distance from laser [%d] and minimum aperture of F[%f]' % (camdist2,camera2aperture))    
 if (overinc == 'n') or (overinc == 'y' and oversamples == 1 and cameranum == 1):
     #If oversamples are included, but only one camera is included, and oversamples is set to 1, then oversampling is ignored.
     camoutcomb=[]
