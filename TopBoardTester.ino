@@ -1,4 +1,5 @@
-#include <Wire.h> //include Wire.h library
+#include <SoftwareWire.h>
+SoftwareWire myWire(2,3);
   const int outwo = 15; //White Orange Out - cat 5 pin 1
   const int outo = 14; //orange out - cat 5 pin 2
   const int outwg = 16; // White Green Out - cat 5 pin 3
@@ -21,7 +22,7 @@
   int cat6=0;
 void setup()
 {
-  Wire.begin(); // Wire communication begin
+  myWire.begin(); // Wire communication begin
   Serial.begin(9600); // The baudrate of Serial monitor is set in 9600
 
   
@@ -33,51 +34,51 @@ void setup()
   pinMode(outb,OUTPUT);
   pinMode(oe,OUTPUT);
   pinMode(sel,OUTPUT);
-  pinMode(inwb,INPUT);
-  pinMode(inb,INPUT);
-  pinMode(inwo,INPUT);
-  pinMode(ino,INPUT);
-  pinMode(inwg,INPUT);
-  pinMode(ing,INPUT);
-  digitalWrite(outwo,LOW);
-  digitalWrite(outo,LOW);
-  digitalWrite(outwg,LOW);
-  digitalWrite(outg,LOW);
-  digitalWrite(outwb,LOW); 
-  digitalWrite(outb,LOW);
-  digitalWrite(oe,LOW);
-  digitalWrite(sel,LOW);
-}
-
-void loop()
-{
-  digitalWrite(oe,LOW);
-  digitalWrite(sel,LOW);
+  pinMode(inwb,INPUT_PULLUP);
+  pinMode(inb,INPUT_PULLUP);
+  pinMode(inwo,INPUT_PULLUP);
+  pinMode(ino,INPUT_PULLUP);
+  pinMode(inwg,INPUT_PULLUP);
+  pinMode(ing,INPUT_PULLUP);
   digitalWrite(outwo,HIGH);
   digitalWrite(outo,HIGH);
   digitalWrite(outwg,HIGH);
   digitalWrite(outg,HIGH);
   digitalWrite(outwb,HIGH); 
   digitalWrite(outb,HIGH);
+  digitalWrite(oe,HIGH);
+  digitalWrite(sel,HIGH);
+}
+
+void loop()
+{
+  digitalWrite(oe,LOW);
+  digitalWrite(sel,LOW);
+  digitalWrite(outwo,LOW);
+  digitalWrite(outo,LOW);
+  digitalWrite(outwg,LOW);
+  digitalWrite(outg,LOW);
+  digitalWrite(outwb,LOW); 
+  digitalWrite(outb,LOW);
   cat1=digitalRead(inwo);
   cat2=digitalRead(ino);
   cat3=digitalRead(inwg);
   cat4=digitalRead(inb);
-  cat5=digitalRead(ino);
+  cat5=digitalRead(inwb);
   cat6=digitalRead(ing);
   Serial.println("OE1 and SEL LOW");
-  if (cat1==HIGH) Serial.println("pin 1 High");
-  else Serial.println("pin 1 low");
-  if (cat2==HIGH) Serial.println("pin 2 High");
-  else Serial.println("pin 2 low");
-  if (cat3==HIGH) Serial.println("pin 3 High");
-  else Serial.println("pin 3 low");
-  if (cat4==HIGH) Serial.println("pin 4 High");
-  else Serial.println("pin 4 low");
-  if (cat5==HIGH) Serial.println("pin 5 High");
-  else Serial.println("pin 5 low");
-  if (cat6==HIGH) Serial.println("pin 6 High");
-  else Serial.println("pin 6 low");
+Serial.print("pin 1 ");
+Serial.println(cat1);
+Serial.print("pin 2 ");
+Serial.println(cat2);
+Serial.print("pin 3 ");
+Serial.println(cat3);
+Serial.print("pin 4 ");
+Serial.println(cat4);
+Serial.print("pin 5 ");
+Serial.println(cat5);
+Serial.print("pin 6 ");
+Serial.println(cat6);
   Serial.println("OE1 LOW and SEL HIGH");
   digitalWrite(oe,LOW);
   digitalWrite(sel,HIGH);
@@ -85,20 +86,20 @@ void loop()
   cat2=digitalRead(ino);
   cat3=digitalRead(inwg);
   cat4=digitalRead(inb);
-  cat5=digitalRead(ino);
+  cat5=digitalRead(inwb);
   cat6=digitalRead(ing);
-  if (cat1==HIGH) Serial.println("pin 1 High");
-  else Serial.println("pin 1 low");
-  if (cat2==HIGH) Serial.println("pin 2 High");
-  else Serial.println("pin 2 low");
-  if (cat3==HIGH) Serial.println("pin 3 High");
-  else Serial.println("pin 3 low");
-  if (cat4==HIGH) Serial.println("pin 4 High");
-  else Serial.println("pin 4 low");
-  if (cat5==HIGH) Serial.println("pin 5 High");
-  else Serial.println("pin 5 low");
-  if (cat6==HIGH) Serial.println("pin 6 High");
-  else Serial.println("pin 6 low");
+Serial.print("pin 1 ");
+Serial.println(cat1);
+Serial.print("pin 2 ");
+Serial.println(cat2);
+Serial.print("pin 3 ");
+Serial.println(cat3);
+Serial.print("pin 4 ");
+Serial.println(cat4);
+Serial.print("pin 5 ");
+Serial.println(cat5);
+Serial.print("pin 6 ");
+Serial.println(cat6);
   Serial.println("OE1 HIGH and SEL LOW");
   digitalWrite(oe,HIGH);
   digitalWrite(sel,LOW);
@@ -106,20 +107,20 @@ void loop()
   cat2=digitalRead(ino);
   cat3=digitalRead(inwg);
   cat4=digitalRead(inb);
-  cat5=digitalRead(ino);
+  cat5=digitalRead(inwb);
   cat6=digitalRead(ing);
-  if (cat1==HIGH) Serial.println("pin 1 High");
-  else Serial.println("pin 1 low");
-  if (cat2==HIGH) Serial.println("pin 2 High");
-  else Serial.println("pin 2 low");
-  if (cat3==HIGH) Serial.println("pin 3 High");
-  else Serial.println("pin 3 low");
-  if (cat4==HIGH) Serial.println("pin 4 High");
-  else Serial.println("pin 4 low");
-  if (cat5==HIGH) Serial.println("pin 5 High");
-  else Serial.println("pin 5 low");
-  if (cat6==HIGH) Serial.println("pin 6 High");
-  else Serial.println("pin 6 low");
+Serial.print("pin 1 ");
+Serial.println(cat1);
+Serial.print("pin 2 ");
+Serial.println(cat2);
+Serial.print("pin 3 ");
+Serial.println(cat3);
+Serial.print("pin 4 ");
+Serial.println(cat4);
+Serial.print("pin 5 ");
+Serial.println(cat5);
+Serial.print("pin 6 ");
+Serial.println(cat6);
   Serial.println("OE1 and SEL HIGH");
   digitalWrite(oe,HIGH);
   digitalWrite(sel,HIGH);
@@ -127,28 +128,28 @@ void loop()
   cat2=digitalRead(ino);
   cat3=digitalRead(inwg);
   cat4=digitalRead(inb);
-  cat5=digitalRead(ino);
+  cat5=digitalRead(inwb);
   cat6=digitalRead(ing);
-  if (cat1==HIGH) Serial.println("pin 1 High");
-  else Serial.println("pin 1 low");
-  if (cat2==HIGH) Serial.println("pin 2 High");
-  else Serial.println("pin 2 low");
-  if (cat3==HIGH) Serial.println("pin 3 High");
-  else Serial.println("pin 3 low");
-  if (cat4==HIGH) Serial.println("pin 4 High");
-  else Serial.println("pin 4 low");
-  if (cat5==HIGH) Serial.println("pin 5 High");
-  else Serial.println("pin 5 low");
-  if (cat6==HIGH) Serial.println("pin 6 High");
-  else Serial.println("pin 6 low");
+Serial.print("pin 1 ");
+Serial.println(cat1);
+Serial.print("pin 2 ");
+Serial.println(cat2);
+Serial.print("pin 3 ");
+Serial.println(cat3);
+Serial.print("pin 4 ");
+Serial.println(cat4);
+Serial.print("pin 5 ");
+Serial.println(cat5);
+Serial.print("pin 6 ");
+Serial.println(cat6);
     digitalWrite(oe,LOW);
   digitalWrite(sel,LOW);
-  digitalWrite(outwo,LOW);
-  digitalWrite(outo,LOW);
-  digitalWrite(outwg,LOW);
-  digitalWrite(outg,LOW);
-  digitalWrite(outwb,LOW); 
-  digitalWrite(outb,LOW);
+  digitalWrite(outwo,HIGH);
+  digitalWrite(outo,HIGH);
+  digitalWrite(outwg,HIGH);
+  digitalWrite(outg,HIGH);
+  digitalWrite(outwb,HIGH); 
+  digitalWrite(outb,HIGH);
     byte error, address; //variable for error and I2C address
   int nDevices;
 
@@ -160,8 +161,8 @@ void loop()
     // The i2c_scanner uses the return value of
     // the Write.endTransmisstion to see if
     // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
+    myWire.beginTransmission(address);
+    error = myWire.endTransmission();
 
     if (error == 0)
     {
