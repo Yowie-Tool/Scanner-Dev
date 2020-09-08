@@ -1,0 +1,21 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP 28086
+D ADDRESS LED MODULE SER RGB 10PK
+K 28086-ND
+F https://www.parallax.com/sites/default/files/downloads/28085-WS2812B-RGB-LED-Datasheet.pdf
+$ENDCMP
+#
+$CMP COM-12999
+D ADDRESS LED DISC SER RGB 5MM 5PC
+K 1568-1214-ND
+F https://cdn.sparkfun.com/datasheets/Components/LED/COM-12877.pdf
+$ENDCMP
+#
+$CMP C_Network
+D Unpolarized capacitor
+K cap capacitor
+F ~
+$ENDCMP
+#
+#End Doc Library

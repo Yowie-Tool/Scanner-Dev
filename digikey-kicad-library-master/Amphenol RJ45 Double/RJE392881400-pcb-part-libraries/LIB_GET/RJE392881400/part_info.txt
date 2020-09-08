@@ -1,0 +1,9 @@
+Manufacturer=Amphenol
+PartNumber=RJE392881400
+PartCategory=Integrated Circuit
+PackageCategory=Other
+PinCount=18
+Version=1.2
+Released=2019-09-30 09:55:00
+Downloaded=2020-05-02 16:20:41
+3D=Y

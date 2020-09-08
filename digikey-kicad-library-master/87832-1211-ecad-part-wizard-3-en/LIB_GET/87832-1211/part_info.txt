@@ -1,0 +1,9 @@
+Manufacturer=Molex
+PartNumber=87832-1211
+PartCategory=Connector
+PackageCategory=Other
+PinCount=12
+Version=1.2
+Released=2020-04-07 17:41:01
+Downloaded=2020-04-07 20:34:59
+3D=Y

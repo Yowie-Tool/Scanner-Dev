@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART '87832_1211'
+CLASS = IO
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "RS_PART_NUMBER", "RS_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Molex", "87832-1211" (!) = "", "878321211", "Other", "6701065P", "http://uk.rs-online.com/web/p/products/6701065P", "Molex MILLI-GRID 87832, 2mm Pitch, 12 Way, 2 Row, Straight PCB Header, Surface Mount", "http://uk.rs-online.com/web/p/products/6701065P", "6.6 mm"
+END_PART
+
+END.

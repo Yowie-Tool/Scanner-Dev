@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'RJE392881400'
+CLASS = IC
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Amphenol", "RJE392881400" (!) = "", "RJE392881400", "Other", "523-RJE392881400", "https://www.mouser.com/Search/Refine.aspx?Keyword=523-RJE392881400", "Modular Connectors / Ethernet Connectors RA Two Port With Shield, no LED", "https://componentsearchengine.com/Datasheets/1/RJE392881400.pdf", "13.2 mm"
+END_PART
+
+END.

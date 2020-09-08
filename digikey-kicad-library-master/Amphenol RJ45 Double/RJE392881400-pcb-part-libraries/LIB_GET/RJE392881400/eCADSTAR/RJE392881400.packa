@@ -1,0 +1,13 @@
+(unit MM)
+
+(package "RJE392881400"
+    (type UNDEF)
+    (uver 2)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (utime 2019-09-30-09:55:00)
+    (mountForm default
+        (footprintRef "RJE392881400")
+        (spec "System")
+    )
+)

@@ -1,0 +1,33 @@
+EESchema-LIBRARY Version 2.3
+#encoding utf-8
+#(c) SnapEDA 2016 (snapeda.com)
+#This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA) with Design Exception 1.0
+#
+# L1I0-0850090000000
+#
+DEF L1I0-0850090000000 D 0 40 N N 1 L N
+F0 "D" -150 201 50 H V L BNN
+F1 "L1I0-0850090000000" -150 -200 50 H V L BNN
+F2 "LUMILED_L1I0-0850090000000" 0 0 50 H I L BNN
+F3 "Manufacturer Recommendation" 0 0 50 H I L BNN
+F4 "Lumileds" 0 0 50 H I L BNN
+DRAW
+P 2 0 0 10 -50 50 50 0 N
+P 2 0 0 10 50 0 -50 -50 N
+P 2 0 0 10 50 50 50 0 N
+P 2 0 0 10 50 0 50 -50 N
+P 2 0 0 10 -50 50 -50 0 N
+P 2 0 0 10 -50 0 -50 -50 N
+P 2 0 0 6 -20 80 35 135 N
+P 2 0 0 6 25 75 80 130 N
+P 3 0 0 6 35 135 0 120 20 100 F
+P 3 0 0 6 80 130 45 115 65 95 F
+P 2 0 0 10 100 0 50 0 N
+P 2 0 0 10 -50 0 -100 0 N
+X C C 200 0 100 L 40 40 0 0 P 
+X A A1 -200 0 100 R 40 40 0 0 P 
+X A A2 -200 0 100 R 40 40 0 0 P 
+ENDDRAW
+ENDDEF
+#
+# End Library

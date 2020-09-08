@@ -1,0 +1,67 @@
+
+(module SOT26 (layer F.Cu) (tedit 5E15A187)
+  (descr "")
+  (fp_text reference REF** (at 2.215075 1.145625 900) (layer F.SilkS)
+    (effects (font (size 0.801834645669 0.801834645669) (thickness 0.015)))
+  )
+  (fp_text value SOT26 (at -2.17027 1.14631 900) (layer F.Fab)
+    (effects (font (size 0.80231496063 0.80231496063) (thickness 0.015)))
+  )
+  (fp_line (start 1.422 0.781) (end -1.423 0.781) (layer F.Fab) (width 0.1524))
+  (fp_line (start -1.423 -0.781) (end 1.422 -0.781) (layer F.Fab) (width 0.1524))
+  (fp_poly
+    (pts
+      (xy -1.20344 0.8)
+      (xy -0.7 0.8)
+      (xy -0.7 1.40401)
+      (xy -1.20344 1.40401)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -0.25048 0.8)
+      (xy 0.25 0.8)
+      (xy 0.25 1.40269)
+      (xy -0.25048 1.40269)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 0.701181 0.8)
+      (xy 1.2 0.8)
+      (xy 1.2 1.40236)
+      (xy 0.701181 1.40236)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 0.701565 -1.4)
+      (xy 1.2 -1.4)
+      (xy 1.2 -0.801789)
+      (xy 0.701565 -0.801789)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -0.250313 -1.4)
+      (xy 0.25 -1.4)
+      (xy 0.25 -0.801002)
+      (xy -0.250313 -0.801002)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -1.20225 -1.4)
+      (xy -0.7 -1.4)
+      (xy -0.7 -0.801501)
+      (xy -1.20225 -0.801501)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_circle (center -1.27 -1.778) (end -1.143 -1.778) (layer F.SilkS) (width 0.127))
+  (pad 1 smd rect (at -1.15 -0.95) (size 0.9 0.6) (layers F.Cu F.Mask F.Paste))
+  (pad 2 smd rect (at -1.15 0.0) (size 0.9 0.6) (layers F.Cu F.Mask F.Paste))
+  (pad 3 smd rect (at -1.15 0.95) (size 0.9 0.6) (layers F.Cu F.Mask F.Paste))
+  (pad 4 smd rect (at 1.15 0.95) (size 0.9 0.6) (layers F.Cu F.Mask F.Paste))
+  (pad 5 smd rect (at 1.15 0.0) (size 0.9 0.6) (layers F.Cu F.Mask F.Paste))
+  (pad 6 smd rect (at 1.15 -0.95) (size 0.9 0.6) (layers F.Cu F.Mask F.Paste))
+)
