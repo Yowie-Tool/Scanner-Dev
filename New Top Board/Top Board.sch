@@ -309,7 +309,7 @@ $EndComp
 NoConn ~ 10050 4425
 NoConn ~ 10050 5925
 $Comp
-L dk_Logic-Signal-Switches-Multiplexers-Decoders:FSA642 U7
+L Top-Board-rescue:FSA642-dk_Logic-Signal-Switches-Multiplexers-Decoders U7
 U 1 1 5E3D8DE0
 P 10350 4725
 F 0 "U7" H 10578 4628 60  0000 L CNN
@@ -362,7 +362,7 @@ $EndComp
 NoConn ~ 8400 4425
 NoConn ~ 8400 5925
 $Comp
-L dk_Logic-Signal-Switches-Multiplexers-Decoders:FSA642 U3
+L Top-Board-rescue:FSA642-dk_Logic-Signal-Switches-Multiplexers-Decoders U3
 U 1 1 5E3DCDB0
 P 8700 4725
 F 0 "U3" H 8928 4628 60  0000 L CNN
@@ -644,7 +644,7 @@ F 3 "" H 7450 3575 50  0001 C CNN
 $EndComp
 Connection ~ 7450 3875
 $Comp
-L dk_Logic-Signal-Switches-Multiplexers-Decoders:LTC4314 U2
+L Top-Board-rescue:LTC4314-dk_Logic-Signal-Switches-Multiplexers-Decoders U2
 U 1 1 5E41218A
 P 7100 4975
 F 0 "U2" H 7528 5153 60  0000 L CNN
@@ -1131,7 +1131,7 @@ Connection ~ 6500 5175
 Wire Wire Line
 	6500 5175 6800 5175
 $Comp
-L MC14555BCPG:MC14555BCPG U5
+L Top-Board-rescue:MC14555BCPG-MC14555BCPG U5
 U 1 1 5E4D62A0
 P 9675 2275
 F 0 "U5" H 9675 3145 50  0000 C CNN
@@ -1321,7 +1321,7 @@ Wire Wire Line
 	6125 7650 5950 7650
 NoConn ~ 1375 3000
 $Comp
-L 68611514122:68611514122 J2
+L Top-Board-rescue:68611514122-68611514122 J2
 U 1 1 5EC3F9CE
 P 3600 1600
 F 0 "J2" H 3564 1640 50  0000 L CNN
@@ -1358,7 +1358,7 @@ $EndComp
 Wire Wire Line
 	1275 1500 1375 1500
 $Comp
-L RJE392881400:RJE392881400 J13
+L Top-Board-rescue:RJE392881400-RJE392881400 J13
 U 1 1 5ECBCF3A
 P 4425 800
 F 0 "J13" H 4875 1065 50  0000 C CNN
@@ -1375,7 +1375,7 @@ F 9 "RJE392881400" H 5175 200 50  0001 L CNN "Manufacturer_Part_Number"
 	1    0    0    -1  
 $EndComp
 $Comp
-L RJE392881400:RJE392881400 J14
+L Top-Board-rescue:RJE392881400-RJE392881400 J14
 U 1 1 5ECBF9F6
 P 6875 775
 F 0 "J14" H 7325 1040 50  0000 C CNN
