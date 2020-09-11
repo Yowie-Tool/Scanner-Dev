@@ -642,41 +642,10 @@ F 3 "" H 7450 3575 50  0001 C CNN
 	1    7450 3575
 	1    0    0    -1  
 $EndComp
-Connection ~ 7450 3875
-$Comp
-L Top-Board-rescue:LTC4314-dk_Logic-Signal-Switches-Multiplexers-Decoders U2
-U 1 1 5E41218A
-P 7100 4975
-F 0 "U2" H 7528 5153 60  0000 L CNN
-F 1 "LTC4314" V 7400 4975 60  0000 L CNN
-F 2 "digikey-footprints:SOP65P777X199-20N" H 7550 5275 60  0001 L CNN
-F 3 "http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftca9548a" H 7550 5375 60  0001 L CNN
-F 4 "LTC4314" H 7550 5475 60  0001 L CNN "MPN"
-F 5 "Integrated Circuits (ICs)" H 7550 5575 60  0001 L CNN "Category"
-F 6 "Logic - Signal Switches, Multiplexers, Decoders" H 7550 5675 60  0001 L CNN "Family"
-F 7 "Pin Selectable, 4 Channel, 2 wire multiplexer" H 7550 5775 60  0001 L CNN "Description"
-F 8 "Linear Technology" H 7550 5875 60  0001 L CNN "Manufacturer"
-F 9 "Active" H 7550 5975 60  0001 L CNN "Status"
-	1    7100 4975
-	1    0    0    -1  
-$EndComp
 Text GLabel 5725 4475 0    50   Input ~ 10
 CAMERASCL
 Text GLabel 5725 4375 0    50   Input ~ 10
 CAMERASDA
-Wire Wire Line
-	7400 5900 7400 5825
-$Comp
-L power:GND #PWR0121
-U 1 1 5E3187FE
-P 7400 5900
-F 0 "#PWR0121" H 7400 5650 50  0001 C CNN
-F 1 "GND" V 7400 5675 50  0000 C CNN
-F 2 "" H 7400 5900 50  0000 C CNN
-F 3 "" H 7400 5900 50  0000 C CNN
-	1    7400 5900
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	3825 7400 4000 7400
 Wire Wire Line
@@ -1868,4 +1837,35 @@ Wire Wire Line
 	3825 7100 4000 7100
 Wire Wire Line
 	4000 7500 3825 7500
+$Comp
+L dk_Logic-Signal-Switches-Multiplexers-Decoders:LTC4314 U2
+U 1 1 5F64C318
+P 7100 4975
+F 0 "U2" H 7528 5153 60  0000 L CNN
+F 1 "LTC4314" V 7575 4700 60  0000 L CNN
+F 2 "digikey-footprints:SOP65P777X199-20N" H 7550 5275 60  0001 L CNN
+F 3 "http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Ftca9548a" H 7550 5375 60  0001 L CNN
+F 4 "LTC4314" H 7550 5475 60  0001 L CNN "MPN"
+F 5 "Integrated Circuits (ICs)" H 7550 5575 60  0001 L CNN "Category"
+F 6 "Logic - Signal Switches, Multiplexers, Decoders" H 7550 5675 60  0001 L CNN "Family"
+F 7 "Pin Selectable, 4 Channel, 2 wire multiplexer" H 7550 5775 60  0001 L CNN "Description"
+F 8 "Linear Technology" H 7550 5875 60  0001 L CNN "Manufacturer"
+F 9 "Active" H 7550 5975 60  0001 L CNN "Status"
+	1    7100 4975
+	1    0    0    -1  
+$EndComp
+Connection ~ 7450 3875
+$Comp
+L power:GND #PWR0121
+U 1 1 5F64D888
+P 7400 5900
+F 0 "#PWR0121" H 7400 5650 50  0001 C CNN
+F 1 "GND" H 7405 5727 50  0000 C CNN
+F 2 "" H 7400 5900 50  0001 C CNN
+F 3 "" H 7400 5900 50  0001 C CNN
+	1    7400 5900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7400 5825 7400 5900
 $EndSCHEMATC

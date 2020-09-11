@@ -375,44 +375,6 @@ X GND 9 150 -1400 100 U 50 50 1 1 W
 ENDDRAW
 ENDDEF
 #
-# Top-Board-rescue_LTC4314-dk_Logic-Signal-Switches-Multiplexers-Decoders
-#
-DEF Top-Board-rescue_LTC4314-dk_Logic-Signal-Switches-Multiplexers-Decoders U 0 40 Y Y 1 F N
-F0 "U" -150 1050 60 H V C CNN
-F1 "Top-Board-rescue_LTC4314-dk_Logic-Signal-Switches-Multiplexers-Decoders" 250 300 60 V V C CNN
-F2 "digikey-footprints:SOP65P777X199-20N" 450 300 60 H I L CNN
-F3 "https://www.analog.com/media/en/technical-documentation/data-sheets/4314f.pdf" 450 400 60 H I L CNN
-F4 "LTC4314" 450 500 60 H I L CNN "MPN"
-F5 "Integrated Circuits (ICs)" 450 600 60 H I L CNN "Category"
-F6 "Logic - Signal Switches, Multiplexers, Decoders" 450 700 60 H I L CNN "Family"
-F7 "Pin Selectable, 4 Channel, 2 wire multiplexer" 450 800 60 H I L CNN "Description"
-F8 "Linear Technology" 450 900 60 H I L CNN "Manufacturer"
-F9 "Active" 450 1000 60 H I L CNN "Status"
-DRAW
-S -200 1000 400 -750 0 1 0 f
-X DISCEN 1 -300 900 100 R 50 50 1 1 B
-X ENABLE3 10 -300 100 100 R 50 50 1 1 I
-X ENABLE2 11 -300 0 100 R 50 50 1 1 I
-X ENABLE1 12 -300 -100 100 R 50 50 1 1 I
-X SCLOUT3 13 -300 -200 100 R 50 50 1 1 O
-X SDAOUT3 14 -300 -300 100 R 50 50 1 1 O
-X ~FAULT 15 -300 -400 100 R 50 50 1 1 I
-X VCC2 16 250 1100 100 D 50 50 1 1 W
-X SCLOUT4 17 -300 -500 100 R 50 50 1 1 O
-X SDAOUT4 18 -300 -600 100 R 50 50 1 1 B
-X VCC 2 350 1100 100 D 50 50 1 1 W
-X ~ACC 20 -300 -700 100 R 50 50 1 1 W
-X SCLOUT1 3 -300 800 100 R 50 50 1 1 O
-X SDAOUT1 4 -300 700 100 R 50 50 1 1 O
-X SDAIN 5 -300 600 100 R 50 50 1 1 I
-X SCLIN 6 -300 500 100 R 50 50 1 1 I
-X SCLOUT2 7 -300 400 100 R 50 50 1 1 O
-X SDAOUT2 8 -300 300 100 R 50 50 1 1 O
-X ENABLE4 9 -300 200 100 R 50 50 1 1 I
-X GND 9 300 -850 100 U 50 50 1 1 W
-ENDDRAW
-ENDDEF
-#
 # Top-Board-rescue_MC14555BCPG-MC14555BCPG
 #
 DEF Top-Board-rescue_MC14555BCPG-MC14555BCPG U 0 40 Y Y 1 L N
@@ -477,6 +439,44 @@ X 8 8 0 -700 200 R 50 50 0 0 U
 X 9 9 0 -800 200 R 50 50 0 0 U
 X MH1 MH1 900 -700 200 L 50 50 0 0 U
 X MH2 MH2 900 -800 200 L 50 50 0 0 U
+ENDDRAW
+ENDDEF
+#
+# dk_Logic-Signal-Switches-Multiplexers-Decoders_LTC4314
+#
+DEF dk_Logic-Signal-Switches-Multiplexers-Decoders_LTC4314 U 0 40 Y Y 1 F N
+F0 "U" -150 1050 60 H V C CNN
+F1 "dk_Logic-Signal-Switches-Multiplexers-Decoders_LTC4314" 250 300 60 V V C CNN
+F2 "digikey-footprints:SOP65P777X199-20N" 450 300 60 H I L CNN
+F3 "https://www.analog.com/media/en/technical-documentation/data-sheets/4314f.pdf" 450 400 60 H I L CNN
+F4 "LTC4314" 450 500 60 H I L CNN "MPN"
+F5 "Integrated Circuits (ICs)" 450 600 60 H I L CNN "Category"
+F6 "Logic - Signal Switches, Multiplexers, Decoders" 450 700 60 H I L CNN "Family"
+F7 "Pin Selectable, 4 Channel, 2 wire multiplexer" 450 800 60 H I L CNN "Description"
+F8 "Linear Technology" 450 900 60 H I L CNN "Manufacturer"
+F9 "Active" 450 1000 60 H I L CNN "Status"
+DRAW
+S -200 1000 400 -750 0 1 0 f
+X DISCEN 1 -300 900 100 R 50 50 1 1 B
+X ENABLE3 10 -300 100 100 R 50 50 1 1 I
+X ENABLE2 11 -300 0 100 R 50 50 1 1 I
+X ENABLE1 12 -300 -100 100 R 50 50 1 1 I
+X SCLOUT3 13 -300 -200 100 R 50 50 1 1 O
+X SDAOUT3 14 -300 -300 100 R 50 50 1 1 O
+X ~FAULT 15 -300 -400 100 R 50 50 1 1 I
+X VCC2 16 250 1100 100 D 50 50 1 1 W
+X SCLOUT4 17 -300 -500 100 R 50 50 1 1 O
+X SDAOUT4 18 -300 -600 100 R 50 50 1 1 B
+X GND 19 300 -850 100 U 50 50 1 1 W
+X VCC 2 350 1100 100 D 50 50 1 1 W
+X ~ACC 20 -300 -700 100 R 50 50 1 1 W
+X SCLOUT1 3 -300 800 100 R 50 50 1 1 O
+X SDAOUT1 4 -300 700 100 R 50 50 1 1 O
+X SDAIN 5 -300 600 100 R 50 50 1 1 I
+X SCLIN 6 -300 500 100 R 50 50 1 1 I
+X SCLOUT2 7 -300 400 100 R 50 50 1 1 O
+X SDAOUT2 8 -300 300 100 R 50 50 1 1 O
+X ENABLE4 9 -300 200 100 R 50 50 1 1 I
 ENDDRAW
 ENDDEF
 #
