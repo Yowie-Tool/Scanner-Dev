@@ -155,6 +155,6 @@
   (lib (name NCV1117DT33T5G)(type Legacy)(uri "D:/Users/James B/Documents/Beech Projects/PCB Design/digikey-kicad-library-master/NCV1117DT33T5G/NCV1117DT33T5G.lib")(options "")(descr ""))
   (lib (name IRFML8244TRPBF)(type Legacy)(uri "D:/Users/James B/Documents/Beech Projects/PCB Design/digikey-kicad-library-master/IRFML8244TRPBF/IRFML8244TRPBF.lib")(options "")(descr ""))
   (lib (name MC14081BDG)(type Legacy)(uri "D:/Users/James B/Documents/Beech Projects/PCB Design/digikey-kicad-library-master/MC14081BDG/MC14081BDG.lib")(options "")(descr ""))
-  (lib (name MC14555BCPG)(type Legacy)(uri "D:/Users/James B/Documents/Beech Projects/PCB Design/digikey-kicad-library-master/MC1455BDG/MC14555BCPG.lib")(options "")(descr ""))
+  (lib (name MC14555BCPG)(type Legacy)(uri C:/Users/james/git/ScannerV3/Scanner-Dev/digikey-kicad-library-master/MC1455BDG/MC14555BCPG.lib)(options "")(descr ""))
   (lib (name Top-Board-rescue)(type Legacy)(uri "${KIPRJMOD}/Top Board-rescue.lib")(options "")(descr ""))
 )
