@@ -703,15 +703,17 @@ class ScannerPart:
 # Create the ray from a pixel in a camera's [u, v] plane through the centre of the lens.
 
  def GetCameraRay(self, pixelU, pixelV):
-   u = copy.deepcopy(self.u)
-   u.multiply(pixelU)
-   v = copy.deepcopy(self.v)
-   v.multiply(pixelV)
-   pixel = self.AbsoluteOffset().add(u).add(v)  
-   w = copy.deepcopy(self.w)
-   w.multiply(self.focalLength)
-   lens = self.AbsoluteOffset().add(w)
-   return (pixel, lens)
+  if self.focalLength <= 0:
+   print("Attempt to get a pixel ray from a scanner part that is not a camera.")
+  u = copy.deepcopy(self.u)
+  u.multiply(pixelU)
+  v = copy.deepcopy(self.v)
+  v.multiply(pixelV)
+  pixel = self.AbsoluteOffset().add(u).add(v)  
+  w = copy.deepcopy(self.w)
+  w.multiply(self.focalLength)
+  lens = self.AbsoluteOffset().add(w)
+  return (pixel, lens)
 
 # As above, but so that parameter values along the ray measure real distance
 
@@ -734,6 +736,40 @@ class ScannerPart:
   u = int(round((u + 0.5*self.uMM)*(self.uPixels - 1)/self.uMM))
   v = int(round((v + 0.5*self.vMM)*(self.vPixels - 1)/self.vMM))
   return (u, v)
+
+# Find the implicit plane equation of the light sheet, returned as the normal vector and the origin offset constant
+
+ def GetLightPlane(self):
+  if self.lightAngle <= 0:
+   print("Attempt to get a light plane from a scanner part that is not a light source.")
+  uu = copy.deepcopy(self.u)
+  pointInPlane = self.AbsoluteOffset()
+  offset = -uu.dot(pointInPlane)
+  return (uu, offset)
+
+# Find the point in space where the ray from a camera pixel (mm coordinates) hits the light sheet from this light source
+
+ def CameraPixelIsPointInMyPlane(self, camera, pixelU, pixelV):
+  plane = self.GetLightPlane()
+  normal = plane[0]
+  d = plane[1]
+  ray = camera.GetCameraRay(pixelU, pixelV)
+  t0Point = ray[0]
+  rayDirection = ray[1].sub(ray[0])
+  sp = rayDirection.dot(normal)
+  if abs(sp) < veryShort2:
+   print("Ray is parallel to plane.")
+   return Base.Vector(0, 0, 0)
+  t = -d/sp
+  tPoint = rayDirection.multiply(t).add(t0Point)
+  return tPoint
+
+# Find the point in space where the ray from a camera pixel (pixel indices) hits the light sheet from this light source
+
+ def CameraPixelIndicesArePointInMyPlane(self, camera, pixelUIndex, pixelVIndex):
+  pixelU = pixelUIndex*self.uMM
+  pixelV = pixelVIndex*self.vMM
+  return self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
 
 # Make a 3D model of the tree recursively and plot it to check
 # what we've got.
@@ -1041,11 +1077,15 @@ roomLight = ScannerPart(offset = Base.Vector(200, 200, 1000), parent = world)
 
 Part.show(room)
 
+# Find the point in the light sheet corresponding to the pixel indices (3, 17) in the camera
+
+print(lightSource.CameraPixelIndicesArePointInMyPlane(camera, 3, 17))
+
 # Run a scan and save the image
 
-polygons = lightSource.GetVisibilityPolygons(room)
-PlotPolygons(polygons)
-camera.SaveCameraImageLights(room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
+#polygons = lightSource.GetVisibilityPolygons(room)
+#PlotPolygons(polygons)
+#camera.SaveCameraImageLights(room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 #camera.SaveCameraImageRoom(room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 
 
