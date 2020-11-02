@@ -7,6 +7,7 @@ from FreeCAD import Base
 import PySide
 from PySide import QtGui, QtCore
 from PIL import Image, ImageDraw, ImageFilter
+import numpy as np
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -580,11 +581,64 @@ def RayPoint(ray, s):
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+# The simulator needs its own vector algebra and rotation matrix classes so it can stand alone independently of FreeCad
+
+class Vector3:
+ def __init__(self, x = 0, y = 0, z = 0):
+  self.vec = np.array([x, y, z])
+
+ def multiply(self, a):
+  return self.vec*a
+
+ def length2(self):
+  return self.vec.dot(self.vec)
+
+ def normalize(self):
+  d = self.length2()
+  if d <= 0.0:
+   print("Attempt to normalize zero-length vector")
+  return self.multiply(1.0/d)
+
+#---
+
+class RotationM:
+ def __init__(self):
+  self.r = np.array(
+   [1, 0, 0],
+   [0, 1, 0],
+   [0, 0, 1]
+  )
+
+ def __init__(self, vec, ang):
+  v = vec.normalize()
+  c = math.cos(ang)
+  c1 = 1.0 - c
+  s = math.sin(ang)
+  self.r = np.array( #FIXME
+   [1, 0, 0],
+   [0, 1, 0],
+   [0, 0, 1]
+  )
+
+ def multiply(self, v):
+  return self.r*v.vec
+
+
+
 # The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
+#
+# offset is the vector in the parent's space that gives our position in that space. If there is no parent the offset is in World coordinates.
+# u, v, and w are three orthogonal vectors that define our coordinate system
+# parent is the ScannerPart above us in the tree (if any)
+# lightAngle is the width of the beam in radians if we are a sheet light source; negative if we aren't
+# uPixels, vPixels are the image plane pixel counts if we are a camera
+# uMM, vMM are the size of the image rectangle if we are a camera
+# focalLength is our focal length if we are a camera, negative if we aren't
+#
 # ------------------------------------------------------------------------------------------------------------------------------
 
 class ScannerPart:
- def __init__(self, offset = Base.Vector(0, 0, 0), u = Base.Vector(1, 0, 0), v = Base.Vector(0, 1, 0), w = Base.Vector(0, 0, 1), parent = None,\
+ def __init__(self, offset = Vector3(0, 0, 0), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = None,\
   lightAngle = -1, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1):
 
   # Offset from the parent in the parent's coordinate system
@@ -598,7 +652,7 @@ class ScannerPart:
   self.v = v.normalize()
   self.w = w.normalize()
 
-  # If we are a light source (i.e. lightAngle >= 0)
+  # If we are a light source (i.e. lightAngle >= 0) check we're not projecting backwards
 
   if lightAngle > math.pi:
    print("Light source with angle > pi: ", lightAngle)
@@ -627,7 +681,7 @@ class ScannerPart:
   # Used for lazy evaluation of position
 
   self.notMoved = False
-  self.position = Base.Vector(0, 0, 0)
+  self.position = Vector3(0, 0, 0)
 
 #-----------------
 
@@ -674,21 +728,21 @@ class ScannerPart:
 
  def RotateU(self, angle):
   self.notMoved = False
-  r = Base.Rotation(self.u, angle*180/math.pi)
+  r = RotationM(self.u, angle)
   self.Rotate(r)
 
 # Rotate about the v axis. angle is in radians
 
  def RotateV(self, angle):
   self.notMoved = False
-  r = Base.Rotation(self.v, angle*180/math.pi)
+  r = RotationM(self.v, angle)
   self.Rotate(r)
 
 # Rotate about the w axis. angle is in radians
 
  def RotateW(self, angle):
   self.notMoved = False
-  r = Base.Rotation(self.w, angle*180/math.pi)
+  r = RotationM(self.w, angle)
   self.Rotate(r)
 
 # Draw a line to represent the camera ray from the pixel through the lens
@@ -771,49 +825,6 @@ class ScannerPart:
   pixelV = pixelVIndex*self.vMM
   return self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
 
-# Make a 3D model of the tree recursively and plot it to check
-# what we've got.
-
- def Display(self, showLight = False, showCamera = False):
-  p1 = self.AbsoluteOffset()
-  uc = Part.makeCylinder(0.2, 5, p1, self.u, 360)
-  DisplayShape(uc, (1.0, 0.0, 0.0))
-  vc = Part.makeCylinder(0.2, 5, p1, self.v, 360)
-  DisplayShape(vc, (0.0, 1.0, 0.0))
-  wc = Part.makeCylinder(0.2, 5, p1, self.w, 360)
-  DisplayShape(wc, (0.0, 0.0, 1.0))
-  
-  # Light source - display the light sheet
-
-  if self.lightAngle > 0 and showLight:
-   vv = copy.deepcopy(self.v)
-   ww = copy.deepcopy(self.w)
-   vv.multiply(veryLong*math.sin(self.lightAngle*0.5))
-   ww.multiply(veryLong*math.cos(self.lightAngle*0.5))
-   p2 = p1.add(vv).add(ww)
-   p3 = p1.sub(vv).add(ww)
-   e1 = Part.makeLine(p1, p2)
-   e2 = Part.makeLine(p2, p3)
-   e3 = Part.makeLine(p3, p1)
-   DisplayShape(Part.Wire([e1,e2,e3]), (0.5, 0.0, 0.0))
-
-  # Camera - display the view pyramid
-
-  if self.focalLength > 0 and showCamera:
-   for u in (-1, 1):
-    for v in (-1, 1):
-     ray = self.GetCameraRay(self.uMM*0.5*u, self.vMM*0.5*v)
-     self.DisplayCameraRay(ray)
-
-  if self.parent is not None:
-   p0 = self.parent.AbsoluteOffset()
-  else:
-   p0 = Base.Vector(0, 0, 0)
-  twig = Cylinder(p0, p1, 0.1)
-  DisplayShape(twig, (1.0, 1.0, 0.0))
-  for child in self.children:
-   child.Display(showLight, showCamera)
-
 # Convert a point p in the [v, w] plane into a point in absolute 3D space.
 # The [v, w] plane is the light sheet for a light source.  Remember that
 # w is the plane's x axis because w is the centre of the beam.  
@@ -869,103 +880,159 @@ class ScannerPart:
     p0 = p1
   return Filter(mask, 3)
 
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Functions that work with the main ScannerPart simulator class and FreeCAD, but are not part of the class.  This allows that class to stand alone
+# without FreeCAD for other uses.
+
+#-----------------
+
+# Turn a ScannerPart vector into a FreeCAD vector
+
+def FreeCADv(v):
+ return Base.Vector(v.x, v.y, v.z)
+
+# Make a 3D model of the tree recursively and plot it to check
+# what we've got.
+
+def Display(scannerPart, showLight = False, showCamera = False):
+ p1 = scannerPart.AbsoluteOffset()
+ uc = Part.makeCylinder(0.2, 5, p1, scannerPart.u, 360)
+ DisplayShape(uc, (1.0, 0.0, 0.0))
+ vc = Part.makeCylinder(0.2, 5, p1, scannerPart.v, 360)
+ DisplayShape(vc, (0.0, 1.0, 0.0))
+ wc = Part.makeCylinder(0.2, 5, p1, scannerPart.w, 360)
+ DisplayShape(wc, (0.0, 0.0, 1.0))
+  
+  # Light source - display the light sheet
+
+ if scannerPart.lightAngle > 0 and showLight:
+  vv = copy.deepcopy(scannerPart.v)
+  ww = copy.deepcopy(scannerPart.w)
+  vv.multiply(veryLong*math.sin(scannerPart.lightAngle*0.5))
+  ww.multiply(veryLong*math.cos(scannerPart.lightAngle*0.5))
+  p2 = p1.add(vv).add(ww)
+  p3 = p1.sub(vv).add(ww)
+  e1 = Part.makeLine(p1, p2)
+  e2 = Part.makeLine(p2, p3)
+  e3 = Part.makeLine(p3, p1)
+  DisplayShape(Part.Wire([e1,e2,e3]), (0.5, 0.0, 0.0))
+
+  # Camera - display the view pyramid
+
+ if scannerPart.focalLength > 0 and showCamera:
+  for u in (-1, 1):
+   for v in (-1, 1):
+    ray = scannerPart.GetCameraRay(scannerPart.uMM*0.5*u, scannerPart.vMM*0.5*v)
+    scannerPart.DisplayCameraRay(ray)
+
+ if scannerPart.parent is not None:
+  p0 = scannerPart.parent.AbsoluteOffset()
+ else:
+  p0 = Base.Vector(0, 0, 0)
+ twig = Cylinder(p0, p1, 0.1)
+ DisplayShape(twig, (1.0, 1.0, 0.0))
+ for child in scannerPart.children:
+  Display(child, showLight, showCamera)
+
 # Cast a single ray into the scene and find the bit of polygon it hits.
 # startingPolygonDistance is the closest thing to the camera along the
 # ray already found in the room; anything behind that is invisible.
 
- def CastRay(self, ray, room, polygons, startingPolygonDistance):
-  minPolygonDistance = startingPolygonDistance
-  rayHitPolygon = False
-  for polygon in polygons:
-   pair = polygon[0]
-   firstPoint = pair[0]
-   for i in range(1, len(polygon)):
-    pair = polygon[i]
-    secondPoint = pair[0]
-    polygonLine = (firstPoint, secondPoint)
-    s, t = ClosestPointsParameters(ray, polygonLine)
-    if s is not None:
-     if s > 0:
-      if t < 0:
-       t = 0
-      elif t > 1:
-       t = 1
-      rayPoint = RayPoint(ray, s)
-      uv0 = self.ProjectPointIntoCameraPixel(rayPoint)
-      testObstructionRay = self.GetCameraRayNormalised(uv0[0], uv0[1])
-      testObstruction = RayIntoSolid(testObstructionRay, room)[1]
-      if testObstruction is None or testObstruction + veryShort > s: # NB - relies on OR operator not bothering with second argument if first is True
-       polygonPoint = RayPoint(polygonLine, t)
-       rayLightDistance = rayPoint.sub(polygonPoint).Length
-       if s < minPolygonDistance and rayLightDistance < 3*lightSD:
-        minRayLightDistance = rayLightDistance
-        rayHitPolygon = True
-        minPolygonDistance = s
-    firstPoint = secondPoint
-  if rayHitPolygon:
-    return int(round(255.0*GaussianLightIntensity(minRayLightDistance)))
-  return 0
+def CastRay(scannerPart, ray, room, polygons, startingPolygonDistance):
+ minPolygonDistance = startingPolygonDistance
+ rayHitPolygon = False
+ for polygon in polygons:
+  pair = polygon[0]
+  firstPoint = pair[0]
+  for i in range(1, len(polygon)):
+   pair = polygon[i]
+   secondPoint = pair[0]
+   polygonLine = (firstPoint, secondPoint)
+   s, t = ClosestPointsParameters(ray, polygonLine)
+   if s is not None:
+    if s > 0:
+     if t < 0:
+      t = 0
+     elif t > 1:
+      t = 1
+     rayPoint = RayPoint(ray, s)
+     uv0 = scannerPart.ProjectPointIntoCameraPixel(rayPoint)
+     testObstructionRay = scannerPart.GetCameraRayNormalised(uv0[0], uv0[1])
+     testObstruction = RayIntoSolid(testObstructionRay, room)[1]
+     if testObstruction is None or testObstruction + veryShort > s: # NB - relies on OR operator not bothering with second argument if first is True
+      polygonPoint = RayPoint(polygonLine, t)
+      rayLightDistance = rayPoint.sub(polygonPoint).Length
+      if s < minPolygonDistance and rayLightDistance < 3*lightSD:
+       minRayLightDistance = rayLightDistance
+       rayHitPolygon = True
+       minPolygonDistance = s
+   firstPoint = secondPoint
+ if rayHitPolygon:
+   return int(round(255.0*GaussianLightIntensity(minRayLightDistance)))
+ return 0
   
+
 
 # If we are a camera...
 # Take a visibilityPolygon from a light source and find what it looks like.
 
- def SaveCameraImageLights(self, room, polygons, fileName):
-  if self.focalLength <= 0:
-   print("Light image requested for non camera.")
-  polygonMask = self.PolygonMask(polygons)
-  uInc = self.uMM/(self.uPixels - 1)
-  vInc = self.vMM/(self.vPixels - 1)
-  v = -self.vMM*0.5
-  image = NewImage(self.uPixels, self.vPixels)
-  for row in range(0, self.vPixels): 
-   u = -self.uMM*0.5
-   for column in range(0, self.uPixels):
-    if polygonMask.getpixel((column, row)) != 0:
-     ray = self.GetCameraRayNormalised(u, v)
-     minRoomDistance = RayIntoSolid(ray, room)[1]
-     if minRoomDistance is None:
-      startingPolygonDistance = sys.float_info.max
-     else:
-      startingPolygonDistance = minRoomDistance + veryShort # We want a surface the light sheet hits to be just behind the line of light in it, so that is seen not the surface.
-     hit = self.CastRay(ray, room, polygons, startingPolygonDistance)
-     if hit != 0:
-      SetPixel(image, column, row, hit)
-    u += uInc
-   v += vInc
-  SavePicture(image, fileName + "-light.png")
-  if debug:
-   SavePicture(polygonMask, fileName + "-light-mask.png")
+def SaveCameraImageLights(scannerPart, room, polygons, fileName):
+ if scannerPart.focalLength <= 0:
+  print("Light image requested for non camera.")
+ polygonMask = scannerPart.PolygonMask(polygons)
+ uInc = scannerPart.uMM/(scannerPart.uPixels - 1)
+ vInc = scannerPart.vMM/(scannerPart.vPixels - 1)
+ v = -scannerPart.vMM*0.5
+ image = NewImage(scannerPart.uPixels, scannerPart.vPixels)
+ for row in range(0, scannerPart.vPixels): 
+  u = -scannerPart.uMM*0.5
+  for column in range(0, scannerPart.uPixels):
+   if polygonMask.getpixel((column, row)) != 0:
+    ray = scannerPart.GetCameraRayNormalised(u, v)
+    minRoomDistance = RayIntoSolid(ray, room)[1]
+    if minRoomDistance is None:
+     startingPolygonDistance = sys.float_info.max
+    else:
+     startingPolygonDistance = minRoomDistance + veryShort # We want a surface the light sheet hits to be just behind the line of light in it, so that is seen not the surface.
+    hit = CastRay(scannerPart, ray, room, polygons, startingPolygonDistance)
+    if hit != 0:
+     SetPixel(image, column, row, hit)
+   u += uInc
+  v += vInc
+ SavePicture(image, fileName + "-light.png")
+ if debug:
+  SavePicture(polygonMask, fileName + "-light-mask.png")
 
 # If we are a camera...
 # Save a ray-traced image of the room.
 
- def SaveCameraImageRoom(self, room, light, fileName):
-  if self.focalLength <= 0:
-   print("Room image requested for non camera.")
-  polygonMask = self.PolygonMask(polygons)
-  uInc = self.uMM/(self.uPixels - 1)
-  vInc = self.vMM/(self.vPixels - 1)
-  v = -self.vMM*0.5
-  image = NewImage(self.uPixels, self.vPixels)
-  for row in range(0, self.vPixels): 
-   u = -self.uMM*0.5
-   for column in range(0, self.uPixels):
-    ray = self.GetCameraRayNormalised(u, v)
-    rayHit = RayIntoSolid(ray, room)
-    minRoomDistance = rayHit[1]
-    if minRoomDistance is None:
-     SetPixel(image, column, row, 0)
+def SaveCameraImageRoom(scannerPart, room, light, fileName):
+ if scannerPart.focalLength <= 0:
+  print("Room image requested for non camera.")
+ polygonMask = scannerPart.PolygonMask(polygons)
+ uInc = scannerPart.uMM/(scannerPart.uPixels - 1)
+ vInc = scannerPart.vMM/(scannerPart.vPixels - 1)
+ v = -scannerPart.vMM*0.5
+ image = NewImage(scannerPart.uPixels, scannerPart.vPixels)
+ for row in range(0, scannerPart.vPixels): 
+  u = -scannerPart.uMM*0.5
+  for column in range(0, scannerPart.uPixels):
+   ray = scannerPart.GetCameraRayNormalised(u, v)
+   rayHit = RayIntoSolid(ray, room)
+   minRoomDistance = rayHit[1]
+   if minRoomDistance is None:
+    SetPixel(image, column, row, 0)
+   else:
+    if rayHit[2] is not None:
+     i = 125 + int(round(Illumination(rayHit[3], rayHit[2], light)*125.0))
+     SetPixel(image, column, row, i)
     else:
-     if rayHit[2] is not None:
-      i = 125 + int(round(Illumination(rayHit[3], rayHit[2], light)*125.0))
-      SetPixel(image, column, row, i)
-     else:
-      SetPutpixel(image, column, row, 50)
-    u += uInc
-   v += vInc
-  SavePicture(image, fileName + "-room.png")
-   
+     SetPutpixel(image, column, row, 50)
+   u += uInc
+  v += vInc
+ SavePicture(image, fileName + "-room.png")
 
 # If we are a light source...
 # Turn on the light and make a cross section of a shape, s.
@@ -973,9 +1040,9 @@ class ScannerPart:
 # sheet (the [v, w] plane) and return that as a FreeCAD object in 3D.
 # (See: https://en.wikipedia.org/wiki/Visibility_polygon)
 
- def GetVisibilityPolygons(self, room):
-  if self.lightAngle <= 0:
-   print("Illuminated polygon requested for non light source.")
+def GetVisibilityPolygons(scannerPart, room):
+ if scannerPart.lightAngle <= 0:
+  print("Illuminated polygon requested for non light source.")
 
   # The edges of the beam - not used, but left here as may be useful
   """
@@ -996,30 +1063,30 @@ class ScannerPart:
   # of the light source in 3D into the light source's [v, w] plane.  We use (x, y) for
   # coordinates in the plane to avoid confuusion with the u, v, and w vectors.
 
-  p0 = self.AbsoluteOffset()
+ p0 = scannerPart.AbsoluteOffset()
 
-  origin2D = self.xyPoint(p0)
-  lines = []
+ origin2D = scannerPart.xyPoint(p0)
+ lines = []
 
  # We have to visit each face of object s in turn and compute the line of
  # intersection of the light sheet plane with it because the FreeCAD CrossSection
  # function for whole objects creates internal triangulations in cross-section polygons,
  # which we don't want.
 
-  faces = room.Faces
+ faces = room.Faces
 
-  for face in faces:
+ for face in faces:
 
    # Where does the plane cut the face? Note that line may have
    # more than one section if the face has a hole in it.
 
-   faceLines = CrossSection(face, p0, self.u)
+  faceLines = CrossSection(face, p0, scannerPart.u)
 
-   for line in faceLines:
-    vertexes = line.Vertexes
-    if len(vertexes) is not 2:
-     print("Line without 2 ends!", len(vertexes))
-    else:
+  for line in faceLines:
+   vertexes = line.Vertexes
+   if len(vertexes) is not 2:
+    print("Line without 2 ends!", len(vertexes))
+   else:
 
     # Find the projection of line into the light sheet plane.
     # The projection of the light source point is the origin
@@ -1028,16 +1095,16 @@ class ScannerPart:
     # We keep track of the face each line came from, though (perhaps surprisingly)
     # that is not much use.
 
-     v2D0 = self.xyPoint(vertexes[0].Point).Sub(origin2D)
-     v2D1 = self.xyPoint(vertexes[1].Point).Sub(origin2D)     
+    v2D0 = scannerPart.xyPoint(vertexes[0].Point).Sub(origin2D)
+    v2D1 = scannerPart.xyPoint(vertexes[1].Point).Sub(origin2D)     
 
-     line = Line2D(v2D0, v2D1, face)
-     lines.append(line)
+    line = Line2D(v2D0, v2D1, face)
+    lines.append(line)
 
   # Cast a ray from the light source through each line end in turn and add what it hits
   # to the visibility polygons.  Process those polygons back into 3D.
 
-  return RayCast2D(lines, faces, self)
+ return RayCast2D(lines, faces, scannerPart)
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1048,9 +1115,9 @@ ClearAll()
 # Make the scanner
 
 world = ScannerPart()
-scanner = ScannerPart(offset = Base.Vector(38, 12, 10), parent = world)
-lightSource = ScannerPart(offset = Base.Vector(0, 10, 0), parent = scanner, lightAngle = 1)
-camera = ScannerPart(offset = Base.Vector(0, -10, 0), parent = scanner, uPixels = 75, vPixels = 100, uMM = 1.5, vMM = 2, focalLength = 5) 
+scanner = ScannerPart(offset = Vector3(38, 12, 10), parent = world)
+lightSource = ScannerPart(offset = Vector3(0, 10, 0), parent = scanner, lightAngle = 1)
+camera = ScannerPart(offset = Vector3(0, -10, 0), parent = scanner, uPixels = 75, vPixels = 100, uMM = 1.5, vMM = 2, focalLength = 5) 
 lightSource.RotateV(-0.5*math.pi)
 lightSource.RotateW(0.5*math.pi)
 lightSource.RotateV(-0.5)
@@ -1058,7 +1125,7 @@ camera.RotateV(-0.5*math.pi)
 camera.RotateU(-0.1)
 camera.RotateW(-0.5*math.pi)
 
-world.Display(showCamera = True)
+Display(world, showCamera = True)
 
 # Make the room
 
@@ -1083,10 +1150,10 @@ print(lightSource.CameraPixelIndicesArePointInMyPlane(camera, 3, 17))
 
 # Run a scan and save the image
 
-#polygons = lightSource.GetVisibilityPolygons(room)
-#PlotPolygons(polygons)
-#camera.SaveCameraImageLights(room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
-#camera.SaveCameraImageRoom(room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
+polygons = GetVisibilityPolygons(lightSource, room)
+PlotPolygons(polygons)
+#SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
+#SaveCameraImageRoom(camera, room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 
 
 
