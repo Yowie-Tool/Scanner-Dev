@@ -528,6 +528,15 @@ def RayIntoSolid(ray, solid):
  else:
   return (None, None, None, None)
 
+# Draw a line to represent the camera ray from the pixel through the lens
+
+def DisplayCameraRay(ray):
+ pixel = ray[0]
+ lens = ray[1]
+ direction = lens.sub(pixel)
+ direction.multiply(veryLong)
+ DisplayShape(Part.LineSegment(pixel, pixel.add(direction)).toShape(), (0.0, 0.0, 0.5))
+
 # Work out Lambert's Law illumination intensity at point with surface normal
 # normal from a light soutce at lightSource. Answer is in [0.0, 1.0].
 
@@ -581,14 +590,22 @@ def RayPoint(ray, s):
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# The simulator needs its own vector algebra and rotation matrix classes so it can stand alone independently of FreeCad
+# The simulator needs its own 3D vector algebra and rotation matrix classes so it can stand alone independently of FreeCad
 
 class Vector3:
  def __init__(self, x = 0, y = 0, z = 0):
-  self.vec = np.array([x, y, z])
+  self.x = x
+  self.y = y
+  self.z = z
 
  def multiply(self, a):
-  return self.vec*a
+  return Vector3(self.x*a, self.y*a, self.z*a)
+
+ def add(self, v):
+  return Vector3(self.x + v.x, self.y + v.y, self.z + v.z)
+
+ def dot(self, v):
+  return self.x*v.x + self.y*v.y + self.z*v.z
 
  def length2(self):
   return self.vec.dot(self.vec)
@@ -597,31 +614,51 @@ class Vector3:
   d = self.length2()
   if d <= 0.0:
    print("Attempt to normalize zero-length vector")
-  return self.multiply(1.0/d)
+  return self.multiply(1.0/math.sqrt(d))
 
 #---
 
 class RotationM:
  def __init__(self):
-  self.r = np.array(
+  self.r = (
    [1, 0, 0],
    [0, 1, 0],
    [0, 0, 1]
   )
+
+# Rotation from axis vector and angle (see https://en.wikipedia.org/wiki/Rotation_matrix#Axis_and_angle)
 
  def __init__(self, vec, ang):
   v = vec.normalize()
   c = math.cos(ang)
   c1 = 1.0 - c
   s = math.sin(ang)
-  self.r = np.array( #FIXME
-   [1, 0, 0],
-   [0, 1, 0],
-   [0, 0, 1]
+  x = v.x
+  y = v.y
+  z = v.z
+  self.r = ( 
+   [x*x*c1 + c, x*y*c1 - z*s, z*z*c1 + y*s],
+   [y*x*c1 + z*s, y*y*c1 + c, y*z*c1 - x*s],
+   [z*x*c1 - y*s, z*y*c1 + x*s, z*z*c1 + c]
   )
 
- def multiply(self, v):
-  return self.r*v.vec
+ def multVec(self, v):
+  return Vector3(
+   self.r[0][0]*v.x + self.r[1][0]*v.y + self.r[2][0]*v.z,
+   self.r[0][1]*v.x + self.r[1][1]*v.y + self.r[2][1]*v.z,
+   self.r[0][2]*v.x + self.r[1][2]*v.y + self.r[2][2]*v.z
+  )
+
+ def multiply(self, rot):
+  result = RotationM()
+  for i in range(2):
+   for j in range(2):
+    s = 0.0
+    for k in range(2):
+     s += self.r[i][k]*rot.r[k][j]
+    result.r[i][j] = s
+  return result
+
 
 
 
@@ -632,7 +669,7 @@ class RotationM:
 # parent is the ScannerPart above us in the tree (if any)
 # lightAngle is the width of the beam in radians if we are a sheet light source; negative if we aren't
 # uPixels, vPixels are the image plane pixel counts if we are a camera
-# uMM, vMM are the size of the image rectangle if we are a camera
+# uMM, vMM are the distance between one pixel and the next if we are a camera
 # focalLength is our focal length if we are a camera, negative if we aren't
 #
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -669,7 +706,7 @@ class ScannerPart:
 
   # Orientation
 
-  self.orientation = Base.Placement()
+  self.orientation = RotationM()
 
   # Parent and children in the tree
 
@@ -713,16 +750,9 @@ class ScannerPart:
   self.u = r.multVec(self.u).normalize()
   self.v = r.multVec(self.v).normalize()
   self.w = r.multVec(self.w).normalize()
-  p = Base.Placement(Base.Vector(0, 0, 0), r)
-  self.orientation = p.multiply(self.orientation)
+  self.orientation = r.multiply(self.orientation)
   for child in self.children:
    child.Rotate(r)
-
-# Take any piece of FreeCAD geometry, s, in the World coordinate system and put it in my coordinate system.
-
- def PutShapeInMyCoordinates(self, s):
-  s.transformShape(self.orientation.toMatrix())
-  s.translate(self.AbsoluteOffset())
 
 # Rotate about the u axis. angle is in radians
 
@@ -744,15 +774,6 @@ class ScannerPart:
   self.notMoved = False
   r = RotationM(self.w, angle)
   self.Rotate(r)
-
-# Draw a line to represent the camera ray from the pixel through the lens
-
- def DisplayCameraRay(self, ray):
-  pixel = ray[0]
-  lens = ray[1]
-  direction = lens.sub(pixel)
-  direction.multiply(veryLong)
-  DisplayShape(Part.LineSegment(pixel, pixel.add(direction)).toShape(), (0.0, 0.0, 0.5))
 
 # Create the ray from a pixel in a camera's [u, v] plane through the centre of the lens.
 
@@ -813,7 +834,7 @@ class ScannerPart:
   sp = rayDirection.dot(normal)
   if abs(sp) < veryShort2:
    print("Ray is parallel to plane.")
-   return Base.Vector(0, 0, 0)
+   return Vector3(0, 0, 0)
   t = -d/sp
   tPoint = rayDirection.multiply(t).add(t0Point)
   return tPoint
@@ -856,6 +877,22 @@ class ScannerPart:
   v.multiply(p.y)
   return self.AbsoluteOffset().add(u).add(v)
 
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Functions that work with the main ScannerPart simulator class and FreeCAD, but are not part of the class.  This allows that class to stand alone
+# without FreeCAD for other uses.
+
+#-----------------
+
+# Turn a ScannerPart vector or matrix into a FreeCAD vector or matrix
+
+def FreeCADv(v):
+ return Base.Vector(v.x, v.y, v.z)
+
+def FreeCADm(m):
+ return m.toMatrix() #FIXME
+
 # Generate the polygon mask - the projection of the polygons into the
 # image plane of the camera dilated by an appropriate width to allow for
 # the width of the light sheet.  We only need to raytrace
@@ -865,8 +902,8 @@ class ScannerPart:
 # camera pixels will not in general intersect the polygons; they will just run
 # near them.
 
- def PolygonMask(self, polygons):
-  mask = NewImage(self.uPixels, self.vPixels)
+ def PolygonMask(scannerPart, polygons):
+  mask = NewImage(scannerPart.uPixels, scannerPart.vPixels)
   draw = Draw(mask)
   for polygon in polygons:
    pair = polygon[0]
@@ -874,24 +911,17 @@ class ScannerPart:
    for i in range(1, len(polygon)):
     pair = polygon[i]
     p1 = pair[0]
-    uv0 = self.ProjectPointIntoCameraPixel(p0)
-    uv1 = self.ProjectPointIntoCameraPixel(p1)
+    uv0 = scannerPart.ProjectPointIntoCameraPixel(p0)
+    uv1 = scannerPart.ProjectPointIntoCameraPixel(p1)
     DrawLine(draw, uv0, uv1, 255)
     p0 = p1
   return Filter(mask, 3)
 
+# Take any piece of FreeCAD geometry, s, in the World coordinate system and put it in my coordinate system.
 
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-# Functions that work with the main ScannerPart simulator class and FreeCAD, but are not part of the class.  This allows that class to stand alone
-# without FreeCAD for other uses.
-
-#-----------------
-
-# Turn a ScannerPart vector into a FreeCAD vector
-
-def FreeCADv(v):
- return Base.Vector(v.x, v.y, v.z)
+ def PutShapeInMyCoordinates(scannerPart, s):
+  s.transformShape(FreeCADm(scannerPart.orientation))
+  s.translate(scannerPart.AbsoluteOffset())
 
 # Make a 3D model of the tree recursively and plot it to check
 # what we've got.
