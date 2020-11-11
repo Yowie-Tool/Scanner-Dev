@@ -64,9 +64,9 @@ def Cylinder(p0, p1, r):
 # The plane passes through point p0 and has normal n
 
 def CrossSection(s, p0, n):
- nn = copy.deepcopy(n)
+ nn = FreeCADv(n)
  nn.normalize()
- d = nn.dot(p0)
+ d = nn.dot(FreeCADv(p0))
  wires=[]
  for i in s.slice(nn, d):
   wires.append(i)
@@ -535,7 +535,7 @@ def DisplayCameraRay(ray):
  lens = ray[1]
  direction = lens.sub(pixel)
  direction.multiply(veryLong)
- DisplayShape(Part.LineSegment(pixel, pixel.add(direction)).toShape(), (0.0, 0.0, 0.5))
+ DisplayShape(Part.LineSegment(FreeCADv(pixel), FreeCADv(pixel.add(direction))).toShape(), (0.0, 0.0, 0.5))
 
 # Work out Lambert's Law illumination intensity at point with surface normal
 # normal from a light soutce at lightSource. Answer is in [0.0, 1.0].
@@ -604,11 +604,14 @@ class Vector3:
  def add(self, v):
   return Vector3(self.x + v.x, self.y + v.y, self.z + v.z)
 
+ def sub(self, v):
+  return Vector3(self.x - v.x, self.y - v.y, self.z - v.z)
+
  def dot(self, v):
   return self.x*v.x + self.y*v.y + self.z*v.z
 
  def length2(self):
-  return self.vec.dot(self.vec)
+  return self.dot(self)
 
  def normalize(self):
   d = self.length2()
@@ -616,15 +619,12 @@ class Vector3:
    print("Attempt to normalize zero-length vector")
   return self.multiply(1.0/math.sqrt(d))
 
+ def __str__(self):
+  return 'Vector3(' + str(self.x) + ', ' +  str(self.y) + ', ' +  str(self.z) + ')' 
+
 #---
 
 class RotationM:
- def __init__(self):
-  self.r = (
-   [1, 0, 0],
-   [0, 1, 0],
-   [0, 0, 1]
-  )
 
 # Rotation from axis vector and angle (see https://en.wikipedia.org/wiki/Rotation_matrix#Axis_and_angle)
 
@@ -650,7 +650,7 @@ class RotationM:
   )
 
  def multiply(self, rot):
-  result = RotationM()
+  result = RotationM(Vector3(0,0,1), 0)
   for i in range(2):
    for j in range(2):
     s = 0.0
@@ -706,7 +706,7 @@ class ScannerPart:
 
   # Orientation
 
-  self.orientation = RotationM()
+  self.orientation = RotationM(Vector3(0,0,1), 0)
 
   # Parent and children in the tree
 
@@ -891,7 +891,27 @@ def FreeCADv(v):
  return Base.Vector(v.x, v.y, v.z)
 
 def FreeCADm(m):
- return m.toMatrix() #FIXME
+ result = FreeCAD.Matrix()
+ result.A11 = m.r[0][0]
+ result.A21 = m.r[1][0]
+ result.A31 = m.r[2][0]
+ result.A41 = 0
+
+ result.A12 = m.r[0][1]
+ result.A22 = m.r[1][1]
+ result.A32 = m.r[2][1]
+ result.A42 = 0
+
+ result.A13 = m.r[0][2]
+ result.A23 = m.r[1][2]
+ result.A33 = m.r[2][2]
+ result.A43 = 0
+
+ result.A14 = 0
+ result.A24 = 0
+ result.A34 = 0
+ result.A44 = 1 
+ return result
 
 # Generate the polygon mask - the projection of the polygons into the
 # image plane of the camera dilated by an appropriate width to allow for
@@ -927,19 +947,19 @@ def FreeCADm(m):
 # what we've got.
 
 def Display(scannerPart, showLight = False, showCamera = False):
- p1 = scannerPart.AbsoluteOffset()
- uc = Part.makeCylinder(0.2, 5, p1, scannerPart.u, 360)
+ p1 = FreeCADv(scannerPart.AbsoluteOffset())
+ uc = Part.makeCylinder(0.2, 5, p1, FreeCADv(scannerPart.u), 360)
  DisplayShape(uc, (1.0, 0.0, 0.0))
- vc = Part.makeCylinder(0.2, 5, p1, scannerPart.v, 360)
+ vc = Part.makeCylinder(0.2, 5, p1, FreeCADv(scannerPart.v), 360)
  DisplayShape(vc, (0.0, 1.0, 0.0))
- wc = Part.makeCylinder(0.2, 5, p1, scannerPart.w, 360)
+ wc = Part.makeCylinder(0.2, 5, p1, FreeCADv(scannerPart.w), 360)
  DisplayShape(wc, (0.0, 0.0, 1.0))
   
   # Light source - display the light sheet
 
  if scannerPart.lightAngle > 0 and showLight:
-  vv = copy.deepcopy(scannerPart.v)
-  ww = copy.deepcopy(scannerPart.w)
+  vv = FreeCADv(scannerPart.v)
+  ww = FreeCADv(scannerPart.w)
   vv.multiply(veryLong*math.sin(scannerPart.lightAngle*0.5))
   ww.multiply(veryLong*math.cos(scannerPart.lightAngle*0.5))
   p2 = p1.add(vv).add(ww)
@@ -955,10 +975,10 @@ def Display(scannerPart, showLight = False, showCamera = False):
   for u in (-1, 1):
    for v in (-1, 1):
     ray = scannerPart.GetCameraRay(scannerPart.uMM*0.5*u, scannerPart.vMM*0.5*v)
-    scannerPart.DisplayCameraRay(ray)
+    DisplayCameraRay(ray)
 
  if scannerPart.parent is not None:
-  p0 = scannerPart.parent.AbsoluteOffset()
+  p0 = FreeCADv(scannerPart.parent.AbsoluteOffset())
  else:
   p0 = Base.Vector(0, 0, 0)
  twig = Cylinder(p0, p1, 0.1)
@@ -1093,7 +1113,7 @@ def GetVisibilityPolygons(scannerPart, room):
   # of the light source in 3D into the light source's [v, w] plane.  We use (x, y) for
   # coordinates in the plane to avoid confuusion with the u, v, and w vectors.
 
- p0 = scannerPart.AbsoluteOffset()
+ p0 = FreeCADv(scannerPart.AbsoluteOffset())
 
  origin2D = scannerPart.xyPoint(p0)
  lines = []
