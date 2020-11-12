@@ -637,7 +637,7 @@ class RotationM:
   y = v.y
   z = v.z
   self.r = ( 
-   [x*x*c1 + c, x*y*c1 - z*s, z*z*c1 + y*s],
+   [x*x*c1 + c, x*y*c1 - z*s, x*z*c1 + y*s],
    [y*x*c1 + z*s, y*y*c1 + c, y*z*c1 - x*s],
    [z*x*c1 - y*s, z*y*c1 + x*s, z*z*c1 + c]
   )
@@ -659,8 +659,11 @@ class RotationM:
     result.r[i][j] = s
   return result
 
-
-
+ def __str__(self):
+  return 'RotationM(\n     ' + \
+   str(self.r[0][0]) + ' ' +  str(self.r[0][1]) + ' ' +  str(self.r[0][2]) + '\n     ' +\
+   str(self.r[1][0]) + ' ' +  str(self.r[1][1]) + ' ' +  str(self.r[1][2]) + '\n     ' +\
+   str(self.r[2][0]) + ' ' +  str(self.r[2][1]) + ' ' +  str(self.r[2][2]) + '\n     )'
 
 # The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
 #
@@ -1175,7 +1178,7 @@ camera.RotateV(-0.5*math.pi)
 camera.RotateU(-0.1)
 camera.RotateW(-0.5*math.pi)
 
-Display(world, showCamera = True)
+Display(world, showLight = True, showCamera = True)
 
 # Make the room
 
@@ -1204,6 +1207,22 @@ polygons = GetVisibilityPolygons(lightSource, room)
 PlotPolygons(polygons)
 #SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 #SaveCameraImageRoom(camera, room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
+'''
+m = RotationM(Vector3(0,0,1), 0.25*math.pi)
+mf = FreeCADm(m)
+f1 = Base.Placement(Base.Vector(0, 0, 0), Base.Vector(0,0,1), 45)
+
+print(m)
+print(mf)
+print(f1.toMatrix())
+
+m2 = RotationM(Vector3(1,0,0), math.pi*0.5)
+m = m2.multiply(m1)
+#print(m)
+v = Vector3(1, 0, 0)
+v = m.multVec(v)
+print(v)
+'''
 
 
 
