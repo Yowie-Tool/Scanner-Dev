@@ -1,0 +1,28 @@
+self.orientation = Base.Placement()
+
+ def Rotate(self, r):
+  self.notMoved = False
+  self.u = r.multVec(self.u).normalize()
+  self.v = r.multVec(self.v).normalize()
+  self.w = r.multVec(self.w).normalize()
+  p = Base.Placement(Base.Vector(0, 0, 0), r)
+  self.orientation = p.multiply(self.orientation)
+  for child in self.children:
+   child.Rotate(r)
+
+ def PutShapeInMyCoordinates(self, s):
+  s.transformShape(self.orientation.toMatrix())
+  s.translate(self.AbsoluteOffset())
+
+
+ def RotateU(self, angle):
+  self.notMoved = False
+  r = Base.Rotation(self.u, angle*180/math.pi)
+  self.Rotate(r)
+
+
+
+
+ray intersect:
+
+Vector (36.08160517370375, 2.1924815158268594, 10.0)

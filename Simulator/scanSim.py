@@ -145,8 +145,8 @@ class Point2D:
  def __repr__(self):
   return "<Point2D x:%s y:%s>" % (self.x, self.y)
 
- def Print(self):
-  print(self.x, ',' , self.y)
+# def Print(self):
+#  print(self.x, ',' , self.y)
 
  # Vector addition and subtraction
 
@@ -288,7 +288,7 @@ def ExtremePoint(p1, ray, lineWithEnds, otherLine, r, lines):
 # Find out if p is in a face of the 3D model
 
 def PointIsInAFace(p, faces):
- v = Part.Vertex(p)
+ v = Part.Vertex(FreeCADv(p))
  for face in faces:
   if face.distToShape(v)[0] < veryShort:
    return face
@@ -310,11 +310,11 @@ def Make3DPolygons(angleTripples, faces, lightSource):
 
  allPolygons = []
  tripple1 = angleTripples[0] 
- p3D1 = lightSource.vwPoint(tripple1[1])
+ p3D1 = FreeCADv(lightSource.vwPoint(tripple1[1]))
  allPolygons.append((p3D1, None))
  for i in range(1, len(angleTripples)):
   tripple2 = angleTripples[i] 
-  p3D2 = lightSource.vwPoint(tripple2[1])
+  p3D2 = FreeCADv(lightSource.vwPoint(tripple2[1]))
   halfWayPoint = copy.deepcopy(p3D1)
   halfWayPoint = halfWayPoint.add(p3D2)
   halfWayPoint.multiply(0.5)
@@ -533,9 +533,9 @@ def RayIntoSolid(ray, solid):
 def DisplayCameraRay(ray):
  pixel = ray[0]
  lens = ray[1]
- direction = lens.sub(pixel)
- direction.multiply(veryLong)
- DisplayShape(Part.LineSegment(FreeCADv(pixel), FreeCADv(pixel.add(direction))).toShape(), (0.0, 0.0, 0.5))
+ direction = lens.Sub(pixel)
+ direction.Multiply(veryLong)
+ DisplayShape(Part.LineSegment(FreeCADv(pixel), FreeCADv(pixel.Add(direction))).toShape(), (0.0, 0.0, 0.5))
 
 # Work out Lambert's Law illumination intensity at point with surface normal
 # normal from a light soutce at lightSource. Answer is in [0.0, 1.0].
@@ -598,26 +598,26 @@ class Vector3:
   self.y = y
   self.z = z
 
- def multiply(self, a):
+ def Multiply(self, a):
   return Vector3(self.x*a, self.y*a, self.z*a)
 
- def add(self, v):
+ def Add(self, v):
   return Vector3(self.x + v.x, self.y + v.y, self.z + v.z)
 
- def sub(self, v):
+ def Sub(self, v):
   return Vector3(self.x - v.x, self.y - v.y, self.z - v.z)
 
- def dot(self, v):
+ def Dot(self, v):
   return self.x*v.x + self.y*v.y + self.z*v.z
 
- def length2(self):
-  return self.dot(self)
+ def Length2(self):
+  return self.Dot(self)
 
- def normalize(self):
-  d = self.length2()
+ def Normalize(self):
+  d = self.Length2()
   if d <= 0.0:
    print("Attempt to normalize zero-length vector")
-  return self.multiply(1.0/math.sqrt(d))
+  return self.Multiply(1.0/math.sqrt(d))
 
  def __str__(self):
   return 'Vector3(' + str(self.x) + ', ' +  str(self.y) + ', ' +  str(self.z) + ')' 
@@ -627,12 +627,13 @@ class Vector3:
 class RotationM:
 
 # Rotation from axis vector and angle (see https://en.wikipedia.org/wiki/Rotation_matrix#Axis_and_angle)
+# Note we need minus the angle as the Wikipedia entry is using left handed coordinates (dunno why).
 
  def __init__(self, vec, ang):
-  v = vec.normalize()
-  c = math.cos(ang)
+  v = vec.Normalize()
+  c = math.cos(-ang)
   c1 = 1.0 - c
-  s = math.sin(ang)
+  s = math.sin(-ang)
   x = v.x
   y = v.y
   z = v.z
@@ -642,14 +643,14 @@ class RotationM:
    [z*x*c1 - y*s, z*y*c1 + x*s, z*z*c1 + c]
   )
 
- def multVec(self, v):
+ def MultVec(self, v):
   return Vector3(
    self.r[0][0]*v.x + self.r[1][0]*v.y + self.r[2][0]*v.z,
    self.r[0][1]*v.x + self.r[1][1]*v.y + self.r[2][1]*v.z,
    self.r[0][2]*v.x + self.r[1][2]*v.y + self.r[2][2]*v.z
   )
 
- def multiply(self, rot):
+ def Multiply(self, rot):
   result = RotationM(Vector3(0,0,1), 0)
   for i in range(3):
    for j in range(3):
@@ -673,9 +674,6 @@ class RotationM:
     else:
      result += ')'
   result += ')'
-#   str(self.r[0][0]) + ' ' +  str(self.r[0][1]) + ' ' +  str(self.r[0][2]) + '\n     ' +\
-#   str(self.r[1][0]) + ' ' +  str(self.r[1][1]) + ' ' +  str(self.r[1][2]) + '\n     ' +\
-#   str(self.r[2][0]) + ' ' +  str(self.r[2][1]) + ' ' +  str(self.r[2][2]) + '\n     )'
   return result
 
 # The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
@@ -701,9 +699,9 @@ class ScannerPart:
 
   # Local Cartesian coordinates
  
-  self.u = u.normalize()
-  self.v = v.normalize()
-  self.w = w.normalize()
+  self.u = u.Normalize()
+  self.v = v.Normalize()
+  self.w = w.Normalize()
 
   # If we are a light source (i.e. lightAngle >= 0) check we're not projecting backwards
 
@@ -751,11 +749,11 @@ class ScannerPart:
    parentUO = copy.deepcopy(self.parent.u)
    parentVO = copy.deepcopy(self.parent.v)
    parentWO = copy.deepcopy(self.parent.w)
-   parentUO = parentUO.multiply(self.offset.x)
-   parentVO = parentVO.multiply(self.offset.y)
-   parentWO = parentWO.multiply(self.offset.z)
-   o = parentUO.add(parentVO.add(parentWO))
-   self.position = o.add(self.parent.AbsoluteOffset())
+   parentUO = parentUO.Multiply(self.offset.x)
+   parentVO = parentVO.Multiply(self.offset.y)
+   parentWO = parentWO.Multiply(self.offset.z)
+   o = parentUO.Add(parentVO.Add(parentWO))
+   self.position = o.Add(self.parent.AbsoluteOffset())
   self.notMoved = True
   return self.position
 
@@ -763,10 +761,10 @@ class ScannerPart:
 
  def Rotate(self, r):
   self.notMoved = False
-  self.u = r.multVec(self.u).normalize()
-  self.v = r.multVec(self.v).normalize()
-  self.w = r.multVec(self.w).normalize()
-  self.orientation = r.multiply(self.orientation)
+  self.u = r.MultVec(self.u).Normalize()
+  self.v = r.MultVec(self.v).Normalize()
+  self.w = r.MultVec(self.w).Normalize()
+  self.orientation = r.Multiply(self.orientation)
   for child in self.children:
    child.Rotate(r)
 
@@ -797,13 +795,13 @@ class ScannerPart:
   if self.focalLength <= 0:
    print("Attempt to get a pixel ray from a scanner part that is not a camera.")
   u = copy.deepcopy(self.u)
-  u.multiply(pixelU)
+  u.Multiply(pixelU)
   v = copy.deepcopy(self.v)
-  v.multiply(pixelV)
-  pixel = self.AbsoluteOffset().add(u).add(v)  
+  v.Multiply(pixelV)
+  pixel = self.AbsoluteOffset().Add(u).Add(v)  
   w = copy.deepcopy(self.w)
-  w.multiply(self.focalLength)
-  lens = self.AbsoluteOffset().add(w)
+  w.Multiply(self.focalLength)
+  lens = self.AbsoluteOffset().Add(w)
   return (pixel, lens)
 
 # As above, but so that parameter values along the ray measure real distance
@@ -835,7 +833,7 @@ class ScannerPart:
    print("Attempt to get a light plane from a scanner part that is not a light source.")
   uu = copy.deepcopy(self.u)
   pointInPlane = self.AbsoluteOffset()
-  offset = -uu.dot(pointInPlane)
+  offset = -uu.Dot(pointInPlane)
   return (uu, offset)
 
 # Find the point in space where the ray from a camera pixel (mm coordinates) hits the light sheet from this light source
@@ -846,13 +844,13 @@ class ScannerPart:
   d = plane[1]
   ray = camera.GetCameraRay(pixelU, pixelV)
   t0Point = ray[0]
-  rayDirection = ray[1].sub(ray[0])
-  sp = rayDirection.dot(normal)
+  rayDirection = ray[1].Sub(ray[0])
+  sp = rayDirection.Dot(normal)
   if abs(sp) < veryShort2:
    print("Ray is parallel to plane.")
    return Vector3(0, 0, 0)
   t = -d/sp
-  tPoint = rayDirection.multiply(t).add(t0Point)
+  tPoint = rayDirection.Multiply(t).Add(t0Point)
   return tPoint
 
 # Find the point in space where the ray from a camera pixel (pixel indices) hits the light sheet from this light source
@@ -869,16 +867,16 @@ class ScannerPart:
 
  def vwPoint(self, p):
   w = copy.deepcopy(self.w)
-  w.multiply(p.x)
+  w.Multiply(p.x)
   v = copy.deepcopy(self.v)
-  v.multiply(p.y)
-  return self.AbsoluteOffset().add(v).add(w)
+  v.Multiply(p.y)
+  return self.AbsoluteOffset().Add(v).Add(w)
 
 # Project a 3D point into the [v, w] plane.  Again w is the x axis.
 
  def xyPoint(self, p3D):
-  x = self.w.dot(p3D)
-  y = self.v.dot(p3D)
+  x = self.w.Dot(p3D)
+  y = self.v.Dot(p3D)
   p = Point2D(x, y)
   return p
 
@@ -1175,7 +1173,7 @@ def GetVisibilityPolygons(scannerPart, room):
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Testing, testing...
-'''
+
 ClearAll()
 
 # Make the scanner
@@ -1220,30 +1218,34 @@ polygons = GetVisibilityPolygons(lightSource, room)
 PlotPolygons(polygons)
 #SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 #SaveCameraImageRoom(camera, room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
+
 '''
+
+
 m1 = RotationM(Vector3(0,0,1), 0.1*math.pi)
-m2 = RotationM(Vector3(0,1,0), 0.2*math.pi)
-f1 = Base.Placement(Base.Vector(0, 0, 0), Base.Vector(0,0,1), 18)
+r1 = Base.Rotation(Base.Vector(0,0,1), 18)
+f1 = Base.Placement(Base.Vector(0, 0, 0), r1)
 fm1 = f1.toMatrix()
-f2 = Base.Placement(Base.Vector(0, 0, 0), Base.Vector(0,1,0), 36)
+
+m2 = RotationM(Vector3(0,1,0), 0.2*math.pi)
+r2 = Base.Rotation(Base.Vector(0,1,0), 36)
+f2 = Base.Placement(Base.Vector(0, 0, 0), r2)
 fm2 = f2.toMatrix()
 
 print(m1)
 print(fm1)
 print(m2)
 print(fm2)
-print(m1.multiply(m2).multiply(m1))
-print(fm1.multiply(fm2).multiply(fm1))
-'''
-m2 = RotationM(Vector3(1,0,0), math.pi*0.5)
-m = m2.multiply(m1)
-#print(m)
-v = Vector3(1, 0, 0)
-v = m.multVec(v)
-print(v)
-'''
+print(m1.multiply(m2))
+print(f1.multiply(f2).toMatrix())
 
 
+ClearAll()
+world = ScannerPart()
+scanner = ScannerPart(offset = Vector3(10, 20, 30), parent = world)
+scanner.RotateW(0.5*math.pi)
+Display(world, showLight = True, showCamera = True)
+'''
 
 
 
