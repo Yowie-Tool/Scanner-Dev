@@ -651,19 +651,32 @@ class RotationM:
 
  def multiply(self, rot):
   result = RotationM(Vector3(0,0,1), 0)
-  for i in range(2):
-   for j in range(2):
+  for i in range(3):
+   for j in range(3):
     s = 0.0
-    for k in range(2):
+    for k in range(3):
      s += self.r[i][k]*rot.r[k][j]
     result.r[i][j] = s
   return result
 
  def __str__(self):
-  return 'RotationM(\n     ' + \
-   str(self.r[0][0]) + ' ' +  str(self.r[0][1]) + ' ' +  str(self.r[0][2]) + '\n     ' +\
-   str(self.r[1][0]) + ' ' +  str(self.r[1][1]) + ' ' +  str(self.r[1][2]) + '\n     ' +\
-   str(self.r[2][0]) + ' ' +  str(self.r[2][1]) + ' ' +  str(self.r[2][2]) + '\n     )'
+  result = 'RotationM('
+  for i in range(3):
+   if i is not 0:
+    result += ',('
+   else:
+    result += '('
+   for j in range(3):
+    result += '%.6f' %self.r[i][j]
+    if j is not 2:
+     result += ','
+    else:
+     result += ')'
+  result += ')'
+#   str(self.r[0][0]) + ' ' +  str(self.r[0][1]) + ' ' +  str(self.r[0][2]) + '\n     ' +\
+#   str(self.r[1][0]) + ' ' +  str(self.r[1][1]) + ' ' +  str(self.r[1][2]) + '\n     ' +\
+#   str(self.r[2][0]) + ' ' +  str(self.r[2][1]) + ' ' +  str(self.r[2][2]) + '\n     )'
+  return result
 
 # The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
 #
@@ -1162,7 +1175,7 @@ def GetVisibilityPolygons(scannerPart, room):
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Testing, testing...
-
+'''
 ClearAll()
 
 # Make the scanner
@@ -1208,14 +1221,20 @@ PlotPolygons(polygons)
 #SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 #SaveCameraImageRoom(camera, room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 '''
-m = RotationM(Vector3(0,0,1), 0.25*math.pi)
-mf = FreeCADm(m)
-f1 = Base.Placement(Base.Vector(0, 0, 0), Base.Vector(0,0,1), 45)
+m1 = RotationM(Vector3(0,0,1), 0.1*math.pi)
+m2 = RotationM(Vector3(0,1,0), 0.2*math.pi)
+f1 = Base.Placement(Base.Vector(0, 0, 0), Base.Vector(0,0,1), 18)
+fm1 = f1.toMatrix()
+f2 = Base.Placement(Base.Vector(0, 0, 0), Base.Vector(0,1,0), 36)
+fm2 = f2.toMatrix()
 
-print(m)
-print(mf)
-print(f1.toMatrix())
-
+print(m1)
+print(fm1)
+print(m2)
+print(fm2)
+print(m1.multiply(m2).multiply(m1))
+print(fm1.multiply(fm2).multiply(fm1))
+'''
 m2 = RotationM(Vector3(1,0,0), math.pi*0.5)
 m = m2.multiply(m1)
 #print(m)
