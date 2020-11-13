@@ -41,57 +41,6 @@ def UniqueNumber():
  objectCount += 1
  return str(objectCount)
 
-# There must be an easier way to make the FreeCAD null set...
-
-def Null():
- n1 = Part.makeBox(1, 1, 1)
- n2 = Part.makeBox(1, 1, 1)
- n2.translate(Base.Vector(10, 10, 10))
- return(n1.common(n2))
-
-
-# Make a cylinder between two points of a given radius
-
-def Cylinder(p0, p1, r):
- p2 = p1.sub(p0)
- length = p2.Length
- if length < 0.001:
-  return Null()
- c = Part.makeCylinder(r, length, p0, p2, 360)
- return c
-
-# Make a plane cross section of FreeCAD geometry s, and return it as a list of wires
-# The plane passes through point p0 and has normal n
-
-def CrossSection(s, p0, n):
- nn = FreeCADv(n)
- nn.normalize()
- d = nn.dot(FreeCADv(p0))
- wires=[]
- for i in s.slice(nn, d):
-  wires.append(i)
- return wires
-
-# Display a FreeCAD shape with a given colour as an RGB tripple like (0.0, 1.0, 0.0)
-
-def DisplayShape(shape, colour):
- obj = FreeCAD.ActiveDocument.addObject("Part::Feature" ,"Shape"+UniqueNumber())
- obj.Shape = shape
- obj.ViewObject.ShapeColor = colour
- obj.ViewObject.LineColor = colour
-
-# Clean out the active document and the text windows
-
-def ClearAll():
- doc = FreeCAD.ActiveDocument
- for obj in doc.Objects:
-  doc.removeObject(obj.Name)
- mw=Gui.getMainWindow()
- c=mw.findChild(QtGui.QPlainTextEdit, "Python console")
- c.clear()
- r=mw.findChild(QtGui.QTextEdit, "Report view")
- r.clear()
-
 # The intensity of the light sheet at distance d from where its centre hits a surface
 
 def GaussianLightIntensity(d):
@@ -241,7 +190,418 @@ class Line2D:
  def Length2(self):
   return self.direction.Length2()
 
+
+
+
+
+# The simulator needs its own 3D vector algebra and rotation matrix classes so it can stand alone independently of FreeCad
+
+class Vector3:
+ def __init__(self, x = 0, y = 0, z = 0):
+  self.x = x
+  self.y = y
+  self.z = z
+
+ def Multiply(self, a):
+  return Vector3(self.x*a, self.y*a, self.z*a)
+
+ def Add(self, v):
+  return Vector3(self.x + v.x, self.y + v.y, self.z + v.z)
+
+ def Sub(self, v):
+  return Vector3(self.x - v.x, self.y - v.y, self.z - v.z)
+
+ def Dot(self, v):
+  return self.x*v.x + self.y*v.y + self.z*v.z
+
+ def Length2(self):
+  return self.Dot(self)
+
+ def Normalize(self):
+  d = self.Length2()
+  if d <= 0.0:
+   print("Attempt to normalize zero-length vector")
+  return self.Multiply(1.0/math.sqrt(d))
+
+ def __str__(self):
+  return 'Vector3(' + str(self.x) + ', ' +  str(self.y) + ', ' +  str(self.z) + ')' 
+
+#---
+
+class RotationM:
+
+# Rotation from axis vector and angle (see https://en.wikipedia.org/wiki/Rotation_matrix#Axis_and_angle)
+# Note we need minus the angle as the Wikipedia entry is using left handed coordinates (dunno why).
+
+ def __init__(self, vec, ang):
+  v = vec.Normalize()
+  c = math.cos(-ang)
+  c1 = 1.0 - c
+  s = math.sin(-ang)
+  x = v.x
+  y = v.y
+  z = v.z
+  self.r = ( 
+   [x*x*c1 + c, x*y*c1 - z*s, x*z*c1 + y*s],
+   [y*x*c1 + z*s, y*y*c1 + c, y*z*c1 - x*s],
+   [z*x*c1 - y*s, z*y*c1 + x*s, z*z*c1 + c]
+  )
+
+ def MultVec(self, v):
+  return Vector3(
+   self.r[0][0]*v.x + self.r[1][0]*v.y + self.r[2][0]*v.z,
+   self.r[0][1]*v.x + self.r[1][1]*v.y + self.r[2][1]*v.z,
+   self.r[0][2]*v.x + self.r[1][2]*v.y + self.r[2][2]*v.z
+  )
+
+ def Multiply(self, rot):
+  result = RotationM(Vector3(0,0,1), 0)
+  for i in range(3):
+   for j in range(3):
+    s = 0.0
+    for k in range(3):
+     s += self.r[i][k]*rot.r[k][j]
+    result.r[i][j] = s
+  return result
+
+ def __str__(self):
+  result = 'RotationM('
+  for i in range(3):
+   if i is not 0:
+    result += ',('
+   else:
+    result += '('
+   for j in range(3):
+    result += '%.6f' %self.r[i][j]
+    if j is not 2:
+     result += ','
+    else:
+     result += ')'
+  result += ')'
+  return result
+
+# The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
+#
+# offset is the vector in the parent's space that gives our position in that space. If there is no parent the offset is in World coordinates.
+# u, v, and w are three orthogonal vectors that define our coordinate system
+# parent is the ScannerPart above us in the tree (if any)
+# lightAngle is the width of the beam in radians if we are a sheet light source; negative if we aren't
+# uPixels, vPixels are the image plane pixel counts if we are a camera
+# uMM, vMM are the distance between one pixel and the next if we are a camera
+# focalLength is our focal length if we are a camera, negative if we aren't
+#
+# ------------------------------------------------------------------------------------------------------------------------------
+
+class ScannerPart:
+ def __init__(self, offset = Vector3(0, 0, 0), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = None,\
+  lightAngle = -1, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1):
+
+  # Offset from the parent in the parent's coordinate system
+  # If the parent is None these are absolute cartesian coordinates
+
+  self.offset = offset
+
+  # Local Cartesian coordinates
+ 
+  self.u = u.Normalize()
+  self.v = v.Normalize()
+  self.w = w.Normalize()
+
+  # If we are a light source (i.e. lightAngle >= 0) check we're not projecting backwards
+
+  if lightAngle > math.pi:
+   print("Light source with angle > pi: ", lightAngle)
+
+  self.lightAngle = lightAngle
+
+  # If we are a camera (i.e. focalLength >= 0)
+
+  self.uPixels = uPixels
+  self.vPixels = vPixels
+  self.uMM = uMM
+  self.vMM = vMM
+  self.focalLength = focalLength
+
+  # Orientation
+
+  self.orientation = RotationM(Vector3(0,0,1), 0)
+
+  # Parent and children in the tree
+
+  self.parent = parent
+  self.children = []
+  if parent is not None:
+   parent.children.append(self)
+
+  # Used for lazy evaluation of position
+
+  self.notMoved = False
+  self.position = Vector3(0, 0, 0)
+
+#-----------------
+
+# Compute my absolute offset from the origin recursively
+# Use lazy evaluation if I haven't moved.
+
+ def AbsoluteOffset(self):
+  if self.notMoved:
+   return self.position
+
+  if self.parent is None:
+   self.position = self.offset
+  else:
+   parentUO = self.parent.u.Multiply(self.offset.x)
+   parentVO = self.parent.v.Multiply(self.offset.y)
+   parentWO = self.parent.w.Multiply(self.offset.z)
+   o = parentUO.Add(parentVO.Add(parentWO))
+   self.position = o.Add(self.parent.AbsoluteOffset())
+  self.notMoved = True
+  return self.position
+
+# Rotate my coordinates, and the coordinates of all my descendents recursively
+
+ def Rotate(self, r):
+  self.notMoved = False
+  self.u = r.MultVec(self.u).Normalize()
+  self.v = r.MultVec(self.v).Normalize()
+  self.w = r.MultVec(self.w).Normalize()
+  self.orientation = r.Multiply(self.orientation)
+  for child in self.children:
+   child.Rotate(r)
+
+# Rotate about the u axis. angle is in radians
+
+ def RotateU(self, angle):
+  self.notMoved = False
+  r = RotationM(self.u, angle)
+  self.Rotate(r)
+
+# Rotate about the v axis. angle is in radians
+
+ def RotateV(self, angle):
+  self.notMoved = False
+  r = RotationM(self.v, angle)
+  self.Rotate(r)
+
+# Rotate about the w axis. angle is in radians
+
+ def RotateW(self, angle):
+  self.notMoved = False
+  r = RotationM(self.w, angle)
+  self.Rotate(r)
+
+# Create the ray from a pixel in a camera's [u, v] plane through the centre of the lens.
+
+ def GetCameraRay(self, pixelU, pixelV):
+  if self.focalLength <= 0:
+   print("Attempt to get a pixel ray from a scanner part that is not a camera.")
+  u = self.u.Multiply(pixelU)
+  v = self.v.Multiply(pixelV)
+  pixel = self.AbsoluteOffset().Add(u).Add(v)  
+  w = self.w.Multiply(self.focalLength)
+  lens = self.AbsoluteOffset().Add(w)
+  return (pixel, lens)
+
+# As above, but so that parameter values along the ray measure real distance
+
+ def GetCameraRayNormalised(self, pixelU, pixelV):
+  ray = self.GetCameraRay(pixelU, pixelV)
+  direction = ray[1].Sub(ray[0])
+  direction.Normalize()
+  newRay = (ray[0], ray[0].Add(direction))
+  return newRay
+
+# Find the pixel (u, v) in the camera's image plane that the point p projects into
+
+ def ProjectPointIntoCameraPixel(self, p):
+  w = self.w.Multiply(self.focalLength)
+  pRelativeInv = self.focalLength/p.Sub(self.AbsoluteOffset().Add(w)).Dot(self.w)
+  pd = self.AbsoluteOffset().Sub(p)
+  u = pd.Dot(self.u)*pRelativeInv
+  v = pd.Dot(self.v)*pRelativeInv
+  u = int(round((u + 0.5*self.uMM)*(self.uPixels - 1)/self.uMM))
+  v = int(round((v + 0.5*self.vMM)*(self.vPixels - 1)/self.vMM))
+  return (u, v)
+
+# Find the implicit plane equation of the light sheet, returned as the normal vector and the origin offset constant
+
+ def GetLightPlane(self):
+  if self.lightAngle <= 0:
+   print("Attempt to get a light plane from a scanner part that is not a light source.")
+  uu = copy.deepcopy(self.u)
+  pointInPlane = self.AbsoluteOffset()
+  offset = -uu.Dot(pointInPlane)
+  return (uu, offset)
+
+# Find the point in space where the ray from a camera pixel (mm coordinates) hits the light sheet from this light source
+
+ def CameraPixelIsPointInMyPlane(self, camera, pixelU, pixelV):
+  plane = self.GetLightPlane()
+  normal = plane[0]
+  d = plane[1]
+  ray = camera.GetCameraRay(pixelU, pixelV)
+  t0Point = ray[0]
+  rayDirection = ray[1].Sub(ray[0])
+  sp = rayDirection.Dot(normal)
+  if abs(sp) < veryShort2:
+   print("Ray is parallel to plane.")
+   return Vector3(0, 0, 0)
+  t = -d/sp
+  tPoint = rayDirection.Multiply(t).Add(t0Point)
+  return tPoint
+
+# Find the point in space where the ray from a camera pixel (pixel indices) hits the light sheet from this light source
+
+ def CameraPixelIndicesArePointInMyPlane(self, camera, pixelUIndex, pixelVIndex):
+  pixelU = pixelUIndex*self.uMM
+  pixelV = pixelVIndex*self.vMM
+  return self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
+
+# Convert a point p in the [v, w] plane into a point in absolute 3D space.
+# The [v, w] plane is the light sheet for a light source.  Remember that
+# w is the plane's x axis because w is the centre of the beam.  
+# This and the next function are for the light sheet simulation.
+
+ def vwPoint(self, p):
+  w = self.w.Multiply(p.x)
+  v = self.v.Multiply(p.y)
+  return self.AbsoluteOffset().Add(v).Add(w)
+
+# Project a 3D point into the [v, w] plane.  Again w is the x axis.
+
+ def xyPoint(self, p3D):
+  x = self.w.Dot(p3D)
+  y = self.v.Dot(p3D)
+  p = Point2D(x, y)
+  return p
+
+# Convert a point p in the [u, v] plane into a point in absolute 3D space.
+# The [u, v] plane is the focal plane of a camera, which points along the
+# w axis.  The lens (or pinhole) is self.focalLength along w.  
+
+ def uvPoint(self, p):
+  u = copy.deepcopy(self.u)
+  u.multiply(p.x)
+  v = copy.deepcopy(self.v)
+  v.multiply(p.y)
+  return self.AbsoluteOffset().add(u).add(v)
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Functions that work with the main ScannerPart simulator class and FreeCAD, but are not part of the class.  This allows that class to stand alone
+# without FreeCAD for other uses.
+
+#-----------------
+
+# Turn a ScannerPart vector or matrix into a FreeCAD vector or homogeneous matrix, and vectors the other way
+
+def FreeCADv(v):
+ if not isinstance(v, Vector3):
+  raise Exception('Converting ' + str(type(v)) + ' to Base.Vector!')
+ return Base.Vector(v.x, v.y, v.z)
+
+def Simv(v):
+ if not isinstance(v, Base.Vector):
+  raise Exception('Converting ' + str(type(v)) + ' to Vector3!')
+ return Vector3(v.x, v.y, v.z)
+
+def FreeCADm(m):
+ if not isinstance(v, Base.Vector):
+  raise Exception('Converting ' + str(type(v)) + ' to Vector3!')
+ result = FreeCAD.Matrix()
+ result.A11 = m.r[0][0]
+ result.A21 = m.r[1][0]
+ result.A31 = m.r[2][0]
+ result.A41 = 0
+
+ result.A12 = m.r[0][1]
+ result.A22 = m.r[1][1]
+ result.A32 = m.r[2][1]
+ result.A42 = 0
+
+ result.A13 = m.r[0][2]
+ result.A23 = m.r[1][2]
+ result.A33 = m.r[2][2]
+ result.A43 = 0
+
+ result.A14 = 0
+ result.A24 = 0
+ result.A34 = 0
+ result.A44 = 1 
+ return result
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Useful general FreeCAD functions
+# There must be an easier way to make the FreeCAD null set...
+
+def Null():
+ n1 = Part.makeBox(1, 1, 1)
+ n2 = Part.makeBox(1, 1, 1)
+ n2.translate(Base.Vector(10, 10, 10))
+ return(n1.common(n2))
+
+
+# Make a cylinder between two points of a given radius
+
+def Cylinder(p0, p1, r):
+ p2 = p1.Sub(p0)
+ length = p2.Length2()
+ if length < 0.0001:
+  return Null()
+ c = Part.makeCylinder(r, length, FreeCADv(p0), FreeCADv(p2), 360)
+ return c
+
+# Make a plane cross section of FreeCAD geometry s, and return it as a list of 2d line segments
+# The plane passes through point p0 and has normal n
+
+def CrossSection(scannerPart, s, p0, n):
+ nn = n.Normalize()
+ d = nn.Dot(p0)
+ wires=[]
+ for wire in s.slice(FreeCADv(nn), d):
+  wires.append(wire)
+ lineEnds = []
+ for line in wires:
+  vertexes = line.Vertexes
+  if len(vertexes) is not 2:
+   print("Line without 2 ends!", len(vertexes))
+  else:
+
+   # Find the projection of line into the light sheet plane.
+   # The projection of the light source point is the origin
+   # of coordinates.
+
+   # We keep track of the face each line came from, though (perhaps surprisingly)
+   # that is not much use.
+
+   v2D0 = scannerPart.xyPoint(Simv(vertexes[0].Point))
+   v2D1 = scannerPart.xyPoint(Simv(vertexes[1].Point))
+   lineEnds.append(Line2D(v2D0, v2D1, s))
+ return lineEnds
+
+# Display a FreeCAD shape with a given colour as an RGB tripple like (0.0, 1.0, 0.0)
+
+def DisplayShape(shape, colour):
+ obj = FreeCAD.ActiveDocument.addObject("Part::Feature" ,"Shape"+UniqueNumber())
+ obj.Shape = shape
+ obj.ViewObject.ShapeColor = colour
+ obj.ViewObject.LineColor = colour
+
+# Clean out the active document and the text windows
+
+def ClearAll():
+ doc = FreeCAD.ActiveDocument
+ for obj in doc.Objects:
+  doc.removeObject(obj.Name)
+ mw=Gui.getMainWindow()
+ c=mw.findChild(QtGui.QPlainTextEdit, "Python console")
+ c.clear()
+ r=mw.findChild(QtGui.QTextEdit, "Report view")
+ r.clear()
+
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # 2D functions for dealing with visibility polygons for the light sheet.
 # --------------------------------------------------------------------------------------
@@ -310,14 +670,14 @@ def Make3DPolygons(angleTripples, faces, lightSource):
 
  allPolygons = []
  tripple1 = angleTripples[0] 
- p3D1 = FreeCADv(lightSource.vwPoint(tripple1[1]))
+ p3D1 = lightSource.vwPoint(tripple1[1])
  allPolygons.append((p3D1, None))
  for i in range(1, len(angleTripples)):
   tripple2 = angleTripples[i] 
-  p3D2 = FreeCADv(lightSource.vwPoint(tripple2[1]))
+  p3D2 = lightSource.vwPoint(tripple2[1])
   halfWayPoint = copy.deepcopy(p3D1)
-  halfWayPoint = halfWayPoint.add(p3D2)
-  halfWayPoint.multiply(0.5)
+  halfWayPoint = halfWayPoint.Add(p3D2)
+  halfWayPoint.Multiply(0.5)
   face = PointIsInAFace(halfWayPoint, faces)
   allPolygons.append((p3D2, face))
   p3D1 = p3D2
@@ -534,7 +894,7 @@ def DisplayCameraRay(ray):
  pixel = ray[0]
  lens = ray[1]
  direction = lens.Sub(pixel)
- direction.Multiply(veryLong)
+ direction = direction.Multiply(veryLong)
  DisplayShape(Part.LineSegment(FreeCADv(pixel), FreeCADv(pixel.Add(direction))).toShape(), (0.0, 0.0, 0.5))
 
 # Work out Lambert's Law illumination intensity at point with surface normal
@@ -588,344 +948,6 @@ def RayPoint(ray, s):
  direction.multiply(s)
  return ray[0].add(direction) 
 
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-# The simulator needs its own 3D vector algebra and rotation matrix classes so it can stand alone independently of FreeCad
-
-class Vector3:
- def __init__(self, x = 0, y = 0, z = 0):
-  self.x = x
-  self.y = y
-  self.z = z
-
- def Multiply(self, a):
-  return Vector3(self.x*a, self.y*a, self.z*a)
-
- def Add(self, v):
-  return Vector3(self.x + v.x, self.y + v.y, self.z + v.z)
-
- def Sub(self, v):
-  return Vector3(self.x - v.x, self.y - v.y, self.z - v.z)
-
- def Dot(self, v):
-  return self.x*v.x + self.y*v.y + self.z*v.z
-
- def Length2(self):
-  return self.Dot(self)
-
- def Normalize(self):
-  d = self.Length2()
-  if d <= 0.0:
-   print("Attempt to normalize zero-length vector")
-  return self.Multiply(1.0/math.sqrt(d))
-
- def __str__(self):
-  return 'Vector3(' + str(self.x) + ', ' +  str(self.y) + ', ' +  str(self.z) + ')' 
-
-#---
-
-class RotationM:
-
-# Rotation from axis vector and angle (see https://en.wikipedia.org/wiki/Rotation_matrix#Axis_and_angle)
-# Note we need minus the angle as the Wikipedia entry is using left handed coordinates (dunno why).
-
- def __init__(self, vec, ang):
-  v = vec.Normalize()
-  c = math.cos(-ang)
-  c1 = 1.0 - c
-  s = math.sin(-ang)
-  x = v.x
-  y = v.y
-  z = v.z
-  self.r = ( 
-   [x*x*c1 + c, x*y*c1 - z*s, x*z*c1 + y*s],
-   [y*x*c1 + z*s, y*y*c1 + c, y*z*c1 - x*s],
-   [z*x*c1 - y*s, z*y*c1 + x*s, z*z*c1 + c]
-  )
-
- def MultVec(self, v):
-  return Vector3(
-   self.r[0][0]*v.x + self.r[1][0]*v.y + self.r[2][0]*v.z,
-   self.r[0][1]*v.x + self.r[1][1]*v.y + self.r[2][1]*v.z,
-   self.r[0][2]*v.x + self.r[1][2]*v.y + self.r[2][2]*v.z
-  )
-
- def Multiply(self, rot):
-  result = RotationM(Vector3(0,0,1), 0)
-  for i in range(3):
-   for j in range(3):
-    s = 0.0
-    for k in range(3):
-     s += self.r[i][k]*rot.r[k][j]
-    result.r[i][j] = s
-  return result
-
- def __str__(self):
-  result = 'RotationM('
-  for i in range(3):
-   if i is not 0:
-    result += ',('
-   else:
-    result += '('
-   for j in range(3):
-    result += '%.6f' %self.r[i][j]
-    if j is not 2:
-     result += ','
-    else:
-     result += ')'
-  result += ')'
-  return result
-
-# The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
-#
-# offset is the vector in the parent's space that gives our position in that space. If there is no parent the offset is in World coordinates.
-# u, v, and w are three orthogonal vectors that define our coordinate system
-# parent is the ScannerPart above us in the tree (if any)
-# lightAngle is the width of the beam in radians if we are a sheet light source; negative if we aren't
-# uPixels, vPixels are the image plane pixel counts if we are a camera
-# uMM, vMM are the distance between one pixel and the next if we are a camera
-# focalLength is our focal length if we are a camera, negative if we aren't
-#
-# ------------------------------------------------------------------------------------------------------------------------------
-
-class ScannerPart:
- def __init__(self, offset = Vector3(0, 0, 0), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = None,\
-  lightAngle = -1, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1):
-
-  # Offset from the parent in the parent's coordinate system
-  # If the parent is None these are absolute cartesian coordinates
-
-  self.offset = offset
-
-  # Local Cartesian coordinates
- 
-  self.u = u.Normalize()
-  self.v = v.Normalize()
-  self.w = w.Normalize()
-
-  # If we are a light source (i.e. lightAngle >= 0) check we're not projecting backwards
-
-  if lightAngle > math.pi:
-   print("Light source with angle > pi: ", lightAngle)
-
-  self.lightAngle = lightAngle
-
-  # If we are a camera (i.e. focalLength >= 0)
-
-  self.uPixels = uPixels
-  self.vPixels = vPixels
-  self.uMM = uMM
-  self.vMM = vMM
-  self.focalLength = focalLength
-
-  # Orientation
-
-  self.orientation = RotationM(Vector3(0,0,1), 0)
-
-  # Parent and children in the tree
-
-  self.parent = parent
-  self.children = []
-  if parent is not None:
-   parent.children.append(self)
-
-  # Used for lazy evaluation of position
-
-  self.notMoved = False
-  self.position = Vector3(0, 0, 0)
-
-#-----------------
-
-# Compute my absolute offset from the origin recursively
-# Use lazy evaluation if I haven't moved.
-
- def AbsoluteOffset(self):
-  if self.notMoved:
-   return self.position
-
-  if self.parent is None:
-   self.position = self.offset
-  else:
-   parentUO = copy.deepcopy(self.parent.u)
-   parentVO = copy.deepcopy(self.parent.v)
-   parentWO = copy.deepcopy(self.parent.w)
-   parentUO = parentUO.Multiply(self.offset.x)
-   parentVO = parentVO.Multiply(self.offset.y)
-   parentWO = parentWO.Multiply(self.offset.z)
-   o = parentUO.Add(parentVO.Add(parentWO))
-   self.position = o.Add(self.parent.AbsoluteOffset())
-  self.notMoved = True
-  return self.position
-
-# Rotate my coordinates, and the coordinates of all my descendents recursively
-
- def Rotate(self, r):
-  self.notMoved = False
-  self.u = r.MultVec(self.u).Normalize()
-  self.v = r.MultVec(self.v).Normalize()
-  self.w = r.MultVec(self.w).Normalize()
-  self.orientation = r.Multiply(self.orientation)
-  for child in self.children:
-   child.Rotate(r)
-
-# Rotate about the u axis. angle is in radians
-
- def RotateU(self, angle):
-  self.notMoved = False
-  r = RotationM(self.u, angle)
-  self.Rotate(r)
-
-# Rotate about the v axis. angle is in radians
-
- def RotateV(self, angle):
-  self.notMoved = False
-  r = RotationM(self.v, angle)
-  self.Rotate(r)
-
-# Rotate about the w axis. angle is in radians
-
- def RotateW(self, angle):
-  self.notMoved = False
-  r = RotationM(self.w, angle)
-  self.Rotate(r)
-
-# Create the ray from a pixel in a camera's [u, v] plane through the centre of the lens.
-
- def GetCameraRay(self, pixelU, pixelV):
-  if self.focalLength <= 0:
-   print("Attempt to get a pixel ray from a scanner part that is not a camera.")
-  u = copy.deepcopy(self.u)
-  u.Multiply(pixelU)
-  v = copy.deepcopy(self.v)
-  v.Multiply(pixelV)
-  pixel = self.AbsoluteOffset().Add(u).Add(v)  
-  w = copy.deepcopy(self.w)
-  w.Multiply(self.focalLength)
-  lens = self.AbsoluteOffset().Add(w)
-  return (pixel, lens)
-
-# As above, but so that parameter values along the ray measure real distance
-
- def GetCameraRayNormalised(self, pixelU, pixelV):
-  ray = self.GetCameraRay(pixelU, pixelV)
-  direction = ray[1].sub(ray[0])
-  direction.normalize()
-  newRay = (ray[0], ray[0].add(direction))
-  return newRay
-
-# Find the pixel (u, v) in the camera's image plane that the point p projects into
-
- def ProjectPointIntoCameraPixel(self, p):
-  w = copy.deepcopy(self.w)
-  w.multiply(self.focalLength)
-  pRelativeInv = self.focalLength/p.sub(self.AbsoluteOffset().add(w)).dot(self.w)
-  pd = self.AbsoluteOffset().sub(p)
-  u = pd.dot(self.u)*pRelativeInv
-  v = pd.dot(self.v)*pRelativeInv
-  u = int(round((u + 0.5*self.uMM)*(self.uPixels - 1)/self.uMM))
-  v = int(round((v + 0.5*self.vMM)*(self.vPixels - 1)/self.vMM))
-  return (u, v)
-
-# Find the implicit plane equation of the light sheet, returned as the normal vector and the origin offset constant
-
- def GetLightPlane(self):
-  if self.lightAngle <= 0:
-   print("Attempt to get a light plane from a scanner part that is not a light source.")
-  uu = copy.deepcopy(self.u)
-  pointInPlane = self.AbsoluteOffset()
-  offset = -uu.Dot(pointInPlane)
-  return (uu, offset)
-
-# Find the point in space where the ray from a camera pixel (mm coordinates) hits the light sheet from this light source
-
- def CameraPixelIsPointInMyPlane(self, camera, pixelU, pixelV):
-  plane = self.GetLightPlane()
-  normal = plane[0]
-  d = plane[1]
-  ray = camera.GetCameraRay(pixelU, pixelV)
-  t0Point = ray[0]
-  rayDirection = ray[1].Sub(ray[0])
-  sp = rayDirection.Dot(normal)
-  if abs(sp) < veryShort2:
-   print("Ray is parallel to plane.")
-   return Vector3(0, 0, 0)
-  t = -d/sp
-  tPoint = rayDirection.Multiply(t).Add(t0Point)
-  return tPoint
-
-# Find the point in space where the ray from a camera pixel (pixel indices) hits the light sheet from this light source
-
- def CameraPixelIndicesArePointInMyPlane(self, camera, pixelUIndex, pixelVIndex):
-  pixelU = pixelUIndex*self.uMM
-  pixelV = pixelVIndex*self.vMM
-  return self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
-
-# Convert a point p in the [v, w] plane into a point in absolute 3D space.
-# The [v, w] plane is the light sheet for a light source.  Remember that
-# w is the plane's x axis because w is the centre of the beam.  
-# This and the next function are for the light sheet simulation.
-
- def vwPoint(self, p):
-  w = copy.deepcopy(self.w)
-  w.Multiply(p.x)
-  v = copy.deepcopy(self.v)
-  v.Multiply(p.y)
-  return self.AbsoluteOffset().Add(v).Add(w)
-
-# Project a 3D point into the [v, w] plane.  Again w is the x axis.
-
- def xyPoint(self, p3D):
-  x = self.w.Dot(p3D)
-  y = self.v.Dot(p3D)
-  p = Point2D(x, y)
-  return p
-
-# Convert a point p in the [u, v] plane into a point in absolute 3D space.
-# The [u, v] plane is the focal plane of a camera, which points along the
-# w axis.  The lens (or pinhole) is self.focalLength along w.  
-
- def uvPoint(self, p):
-  u = copy.deepcopy(self.u)
-  u.multiply(p.x)
-  v = copy.deepcopy(self.v)
-  v.multiply(p.y)
-  return self.AbsoluteOffset().add(u).add(v)
-
-
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-# Functions that work with the main ScannerPart simulator class and FreeCAD, but are not part of the class.  This allows that class to stand alone
-# without FreeCAD for other uses.
-
-#-----------------
-
-# Turn a ScannerPart vector or matrix into a FreeCAD vector or matrix
-
-def FreeCADv(v):
- return Base.Vector(v.x, v.y, v.z)
-
-def FreeCADm(m):
- result = FreeCAD.Matrix()
- result.A11 = m.r[0][0]
- result.A21 = m.r[1][0]
- result.A31 = m.r[2][0]
- result.A41 = 0
-
- result.A12 = m.r[0][1]
- result.A22 = m.r[1][1]
- result.A32 = m.r[2][1]
- result.A42 = 0
-
- result.A13 = m.r[0][2]
- result.A23 = m.r[1][2]
- result.A33 = m.r[2][2]
- result.A43 = 0
-
- result.A14 = 0
- result.A24 = 0
- result.A34 = 0
- result.A44 = 1 
- return result
 
 # Generate the polygon mask - the projection of the polygons into the
 # image plane of the camera dilated by an appropriate width to allow for
@@ -936,51 +958,51 @@ def FreeCADm(m):
 # camera pixels will not in general intersect the polygons; they will just run
 # near them.
 
- def PolygonMask(scannerPart, polygons):
-  mask = NewImage(scannerPart.uPixels, scannerPart.vPixels)
-  draw = Draw(mask)
-  for polygon in polygons:
-   pair = polygon[0]
-   p0 = pair[0]
-   for i in range(1, len(polygon)):
-    pair = polygon[i]
-    p1 = pair[0]
-    uv0 = scannerPart.ProjectPointIntoCameraPixel(p0)
-    uv1 = scannerPart.ProjectPointIntoCameraPixel(p1)
-    DrawLine(draw, uv0, uv1, 255)
-    p0 = p1
-  return Filter(mask, 3)
+def PolygonMask(scannerPart, polygons):
+ mask = NewImage(scannerPart.uPixels, scannerPart.vPixels)
+ draw = Draw(mask)
+ for polygon in polygons:
+  pair = polygon[0]
+  p0 = pair[0]
+  for i in range(1, len(polygon)):
+   pair = polygon[i]
+   p1 = pair[0]
+   uv0 = scannerPart.ProjectPointIntoCameraPixel(p0)
+   uv1 = scannerPart.ProjectPointIntoCameraPixel(p1)
+   DrawLine(draw, uv0, uv1, 255)
+   p0 = p1
+ return Filter(mask, 3)
 
 # Take any piece of FreeCAD geometry, s, in the World coordinate system and put it in my coordinate system.
 
- def PutShapeInMyCoordinates(scannerPart, s):
-  s.transformShape(FreeCADm(scannerPart.orientation))
-  s.translate(scannerPart.AbsoluteOffset())
+def PutShapeInMyCoordinates(scannerPart, s):
+ s.transformShape(FreeCADm(scannerPart.orientation))
+ s.translate(scannerPart.AbsoluteOffset())
 
 # Make a 3D model of the tree recursively and plot it to check
 # what we've got.
 
 def Display(scannerPart, showLight = False, showCamera = False):
- p1 = FreeCADv(scannerPart.AbsoluteOffset())
- uc = Part.makeCylinder(0.2, 5, p1, FreeCADv(scannerPart.u), 360)
+ p1 = scannerPart.AbsoluteOffset()
+ uc = Part.makeCylinder(0.2, 5, FreeCADv(p1), FreeCADv(scannerPart.u), 360)
  DisplayShape(uc, (1.0, 0.0, 0.0))
- vc = Part.makeCylinder(0.2, 5, p1, FreeCADv(scannerPart.v), 360)
+ vc = Part.makeCylinder(0.2, 5, FreeCADv(p1), FreeCADv(scannerPart.v), 360)
  DisplayShape(vc, (0.0, 1.0, 0.0))
- wc = Part.makeCylinder(0.2, 5, p1, FreeCADv(scannerPart.w), 360)
+ wc = Part.makeCylinder(0.2, 5, FreeCADv(p1), FreeCADv(scannerPart.w), 360)
  DisplayShape(wc, (0.0, 0.0, 1.0))
   
   # Light source - display the light sheet
 
  if scannerPart.lightAngle > 0 and showLight:
-  vv = FreeCADv(scannerPart.v)
-  ww = FreeCADv(scannerPart.w)
-  vv.multiply(veryLong*math.sin(scannerPart.lightAngle*0.5))
-  ww.multiply(veryLong*math.cos(scannerPart.lightAngle*0.5))
-  p2 = p1.add(vv).add(ww)
-  p3 = p1.sub(vv).add(ww)
-  e1 = Part.makeLine(p1, p2)
-  e2 = Part.makeLine(p2, p3)
-  e3 = Part.makeLine(p3, p1)
+  vv = scannerPart.v
+  ww = scannerPart.w
+  vv = vv.Multiply(veryLong*math.sin(scannerPart.lightAngle*0.5))
+  ww = ww.Multiply(veryLong*math.cos(scannerPart.lightAngle*0.5))
+  p2 = p1.Add(vv).Add(ww)
+  p3 = p1.Sub(vv).Add(ww)
+  e1 = Part.makeLine(FreeCADv(p1), FreeCADv(p2))
+  e2 = Part.makeLine(FreeCADv(p2), FreeCADv(p3))
+  e3 = Part.makeLine(FreeCADv(p3), FreeCADv(p1))
   DisplayShape(Part.Wire([e1,e2,e3]), (0.5, 0.0, 0.0))
 
   # Camera - display the view pyramid
@@ -992,9 +1014,9 @@ def Display(scannerPart, showLight = False, showCamera = False):
     DisplayCameraRay(ray)
 
  if scannerPart.parent is not None:
-  p0 = FreeCADv(scannerPart.parent.AbsoluteOffset())
+  p0 = scannerPart.parent.AbsoluteOffset()
  else:
-  p0 = Base.Vector(0, 0, 0)
+  p0 = Vector3(0, 0, 0)
  twig = Cylinder(p0, p1, 0.1)
  DisplayShape(twig, (1.0, 1.0, 0.0))
  for child in scannerPart.children:
@@ -1045,7 +1067,7 @@ def CastRay(scannerPart, ray, room, polygons, startingPolygonDistance):
 def SaveCameraImageLights(scannerPart, room, polygons, fileName):
  if scannerPart.focalLength <= 0:
   print("Light image requested for non camera.")
- polygonMask = scannerPart.PolygonMask(polygons)
+ polygonMask = PolygonMask(scannerPart, polygons)
  uInc = scannerPart.uMM/(scannerPart.uPixels - 1)
  vInc = scannerPart.vMM/(scannerPart.vPixels - 1)
  v = -scannerPart.vMM*0.5
@@ -1127,7 +1149,7 @@ def GetVisibilityPolygons(scannerPart, room):
   # of the light source in 3D into the light source's [v, w] plane.  We use (x, y) for
   # coordinates in the plane to avoid confuusion with the u, v, and w vectors.
 
- p0 = FreeCADv(scannerPart.AbsoluteOffset())
+ p0 = scannerPart.AbsoluteOffset()
 
  origin2D = scannerPart.xyPoint(p0)
  lines = []
@@ -1144,31 +1166,12 @@ def GetVisibilityPolygons(scannerPart, room):
    # Where does the plane cut the face? Note that line may have
    # more than one section if the face has a hole in it.
 
-  faceLines = CrossSection(face, p0, scannerPart.u)
-
-  for line in faceLines:
-   vertexes = line.Vertexes
-   if len(vertexes) is not 2:
-    print("Line without 2 ends!", len(vertexes))
-   else:
-
-    # Find the projection of line into the light sheet plane.
-    # The projection of the light source point is the origin
-    # of coordinates.
-
-    # We keep track of the face each line came from, though (perhaps surprisingly)
-    # that is not much use.
-
-    v2D0 = scannerPart.xyPoint(vertexes[0].Point).Sub(origin2D)
-    v2D1 = scannerPart.xyPoint(vertexes[1].Point).Sub(origin2D)     
-
-    line = Line2D(v2D0, v2D1, face)
-    lines.append(line)
+  faceLines = CrossSection(scannerPart, face, p0, scannerPart.u)
 
   # Cast a ray from the light source through each line end in turn and add what it hits
   # to the visibility polygons.  Process those polygons back into 3D.
 
- return RayCast2D(lines, faces, scannerPart)
+ return RayCast2D(faceLines, faces, scannerPart)
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1219,33 +1222,7 @@ PlotPolygons(polygons)
 #SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 #SaveCameraImageRoom(camera, room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 
-'''
 
-
-m1 = RotationM(Vector3(0,0,1), 0.1*math.pi)
-r1 = Base.Rotation(Base.Vector(0,0,1), 18)
-f1 = Base.Placement(Base.Vector(0, 0, 0), r1)
-fm1 = f1.toMatrix()
-
-m2 = RotationM(Vector3(0,1,0), 0.2*math.pi)
-r2 = Base.Rotation(Base.Vector(0,1,0), 36)
-f2 = Base.Placement(Base.Vector(0, 0, 0), r2)
-fm2 = f2.toMatrix()
-
-print(m1)
-print(fm1)
-print(m2)
-print(fm2)
-print(m1.multiply(m2))
-print(f1.multiply(f2).toMatrix())
-
-
-ClearAll()
-world = ScannerPart()
-scanner = ScannerPart(offset = Vector3(10, 20, 30), parent = world)
-scanner.RotateW(0.5*math.pi)
-Display(world, showLight = True, showCamera = True)
-'''
 
 
 
