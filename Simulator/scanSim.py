@@ -92,7 +92,7 @@ class Point2D:
   self.face = f
 
  def __repr__(self):
-  return "<Point2D x:%s y:%s>" % (self.x, self.y)
+  return "(Point2D x:%s y:%s)" % (self.x, self.y)
 
 # def Print(self):
 #  print(self.x, ',' , self.y)
@@ -801,6 +801,7 @@ def SortByAngle(visibiltyPolygon, lightSource):
 # in 2D except for the very last line.
 
 def RayCast2D(lines, faces, lightSource):
+ print(lines)
  visibilityPolygon = []
  for lineWithEnds in lines:
   for r in (0, 1): 
@@ -809,6 +810,7 @@ def RayCast2D(lines, faces, lightSource):
  # Find the other line at this point
 
    otherLine = FindOtherLineAtPoint(p1, lineWithEnds, lines)
+   print(otherLine)
    ray = Line2D(Point2D(0, 0), p1)
 
  # s is the ray's parameter. We need to know the closest hit to 
@@ -857,6 +859,7 @@ def RayCast2D(lines, faces, lightSource):
     p3.SetFace(behindFace)
     visibilityPolygon.append(p3)
  angleTripples = SortByAngle(visibilityPolygon, lightSource)
+ print(angleTripples)
  return Make3DPolygons(angleTripples, faces, lightSource) 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1166,12 +1169,15 @@ def GetVisibilityPolygons(scannerPart, room):
    # Where does the plane cut the face? Note that line may have
    # more than one section if the face has a hole in it.
 
-  faceLines = CrossSection(scannerPart, face, p0, scannerPart.u)
+  crossLines = CrossSection(scannerPart, face, p0, scannerPart.u)
+  for line in crossLines:
+   lines.append(line)
+
 
   # Cast a ray from the light source through each line end in turn and add what it hits
   # to the visibility polygons.  Process those polygons back into 3D.
 
- return RayCast2D(faceLines, faces, scannerPart)
+ return RayCast2D(lines, faces, scannerPart)
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
