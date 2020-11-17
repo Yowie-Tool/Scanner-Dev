@@ -7,7 +7,6 @@ from FreeCAD import Base
 import PySide
 from PySide import QtGui, QtCore
 from PIL import Image, ImageDraw, ImageFilter
-import numpy as np
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -85,6 +84,8 @@ def SavePicture(picture, fileName):
 # Small classes for working with 2D vectors
 # -----------------------------------------------------
 
+# Each point optionally stores the face of the FreeCAD model in which it lies.
+
 class Point2D:
  def __init__(self, x = 0, y = 0, f = None):
   self.x = x
@@ -94,40 +95,28 @@ class Point2D:
  def __repr__(self):
   return "(Point2D x:%s y:%s)" % (self.x, self.y)
 
-# def Print(self):
-#  print(self.x, ',' , self.y)
-
  # Vector addition and subtraction
 
  def Add(self, p):
-  result = copy.deepcopy(self)
-  result.x = result.x + p.x
-  result.y = result.y + p.y
-  return result
+  return Point2D(self.x + p.x, self.y + p.y)
 
  def Sub(self, p):
-  result = copy.deepcopy(self)
-  result.x = result.x - p.x
-  result.y = result.y - p.y
-  return result
-
- # Squared magnitude
-
- def Length2(self):
-  return self.x*self.x + self.y*self.y
-
- # Multiplication by a scalar
-
- def Multiply(self, m):
-  result = copy.deepcopy(self)
-  result.x = result.x*m
-  result.y = result.y*m
-  return result  
+  return Point2D(self.x - p.x, self.y - p.y)
 
  # Inner product
 
  def Dot(self, p):
   return self.x*p.x + self.y*p.y
+
+ # Squared magnitude
+
+ def Length2(self):
+  return self.Dot(self)
+
+ # Multiplication by a scalar
+
+ def Multiply(self, m):
+  return Point2D(self.x*m, self.y*m)
 
  # Outer product
 
@@ -164,7 +153,7 @@ class Line2D:
   p = self.direction.Multiply(t)
   return self.p0.Add(p)
 
- # Fine the parameter value at which another line crosses me (s) and I cross it (t)
+ # Find the parameter value at which another line crosses me (s) and I cross it (t)
 
  def Cross(self, otherLine):
   determinant = otherLine.direction.Cross(self.direction)
@@ -189,10 +178,6 @@ class Line2D:
 
  def Length2(self):
   return self.direction.Length2()
-
-
-
-
 
 # The simulator needs its own 3D vector algebra and rotation matrix classes so it can stand alone independently of FreeCad
 
@@ -223,7 +208,7 @@ class Vector3:
    print("Attempt to normalize zero-length vector")
   return self.Multiply(1.0/math.sqrt(d))
 
- def __str__(self):
+ def __repr__(self):
   return 'Vector3(' + str(self.x) + ', ' +  str(self.y) + ', ' +  str(self.z) + ')' 
 
 #---
@@ -231,7 +216,7 @@ class Vector3:
 class RotationM:
 
 # Rotation from axis vector and angle (see https://en.wikipedia.org/wiki/Rotation_matrix#Axis_and_angle)
-# Note we need minus the angle as the Wikipedia entry is using left handed coordinates (dunno why).
+# Note we need minus the angle as the Wikipedia entry is using left-handed coordinates (dunno why).
 
  def __init__(self, vec, ang):
   v = vec.Normalize()
@@ -247,12 +232,16 @@ class RotationM:
    [z*x*c1 - y*s, z*y*c1 + x*s, z*z*c1 + c]
   )
 
+# Rotate a vector
+
  def MultVec(self, v):
   return Vector3(
    self.r[0][0]*v.x + self.r[1][0]*v.y + self.r[2][0]*v.z,
    self.r[0][1]*v.x + self.r[1][1]*v.y + self.r[2][1]*v.z,
    self.r[0][2]*v.x + self.r[1][2]*v.y + self.r[2][2]*v.z
   )
+
+# Product of two matrices
 
  def Multiply(self, rot):
   result = RotationM(Vector3(0,0,1), 0)
@@ -264,7 +253,7 @@ class RotationM:
     result.r[i][j] = s
   return result
 
- def __str__(self):
+ def __repr__(self):
   result = 'RotationM('
   for i in range(3):
    if i is not 0:
@@ -280,6 +269,8 @@ class RotationM:
   result += ')'
   return result
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # The main simulator class - this represents a part of the scanner.  The parts are arranged in a tree.
 #
 # offset is the vector in the parent's space that gives our position in that space. If there is no parent the offset is in World coordinates.
@@ -290,7 +281,6 @@ class RotationM:
 # uMM, vMM are the distance between one pixel and the next if we are a camera
 # focalLength is our focal length if we are a camera, negative if we aren't
 #
-# ------------------------------------------------------------------------------------------------------------------------------
 
 class ScannerPart:
  def __init__(self, offset = Vector3(0, 0, 0), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = None,\
@@ -507,8 +497,8 @@ def Simv(v):
  return Vector3(v.x, v.y, v.z)
 
 def FreeCADm(m):
- if not isinstance(v, Base.Vector):
-  raise Exception('Converting ' + str(type(v)) + ' to Vector3!')
+ if not isinstance(m, RotationM):
+  raise Exception('Converting ' + str(type(m)) + ' to FreeCAD.Matrix!')
  result = FreeCAD.Matrix()
  result.A11 = m.r[0][0]
  result.A21 = m.r[1][0]
@@ -547,7 +537,7 @@ def Null():
 
 def Cylinder(p0, p1, r):
  p2 = p1.Sub(p0)
- length = p2.Length2()
+ length = math.sqrt(p2.Length2())
  if length < 0.0001:
   return Null()
  c = Part.makeCylinder(r, length, FreeCADv(p0), FreeCADv(p2), 360)
@@ -573,7 +563,7 @@ def CrossSection(scannerPart, s, p0, n):
    # The projection of the light source point is the origin
    # of coordinates.
 
-   # We keep track of the face each line came from, though (perhaps surprisingly)
+   # We keep track of the FreeCAD geometry each line came from, though (perhaps surprisingly)
    # that is not much use.
 
    v2D0 = scannerPart.xyPoint(Simv(vertexes[0].Point))
@@ -675,31 +665,30 @@ def Make3DPolygons(angleTripples, faces, lightSource):
  for i in range(1, len(angleTripples)):
   tripple2 = angleTripples[i] 
   p3D2 = lightSource.vwPoint(tripple2[1])
-  halfWayPoint = copy.deepcopy(p3D1)
-  halfWayPoint = halfWayPoint.Add(p3D2)
-  halfWayPoint.Multiply(0.5)
+  halfWayPoint = p3D1.Add(p3D2)
+  halfWayPoint = halfWayPoint.Multiply(0.5)
   face = PointIsInAFace(halfWayPoint, faces)
   allPolygons.append((p3D2, face))
   p3D1 = p3D2
 
 # Go through and split the list at lines in free space that so have face set to None
 
-  polygon = []
-  polygons = []
-  pair1 = allPolygons[0]
-  polygon.append(pair1)
-  for i in range (1, len(allPolygons)):
-   pair2 = allPolygons[i]
-   if pair2[1] is not None:
-     polygon.append(pair2)
-   else:
-    if len(polygon) >= 2:
-     polygons.append(polygon)
-    polygon = []
+ polygon = []
+ polygons = []
+ pair1 = allPolygons[0]
+ polygon.append(pair1)
+ for i in range (1, len(allPolygons)):
+  pair2 = allPolygons[i]
+  if pair2[1] is not None:
     polygon.append(pair2)
-   pair1 = pair2
-  if len(polygon) >= 2:
-   polygons.append(polygon)
+  else:
+   if len(polygon) >= 2:
+    polygons.append(polygon)
+   polygon = []
+   polygon.append(pair2)
+  pair1 = pair2
+ if len(polygon) >= 2:
+  polygons.append(polygon)
 
 # Now correct the faces of points with faces still set to None
 
@@ -752,11 +741,15 @@ def CrossingPoint(previous, current, angle):
 def SortByAngle(visibiltyPolygon, lightSource):
  angleTripples = []
  halfAngle = 0.5*lightSource.lightAngle
+ print(halfAngle)
  for p in visibiltyPolygon:
   line = Line2D(Point2D(0, 0), p)
   angle = math.atan2(line.direction.y, line.direction.x)
+  print(angle)
+  print(p)
   inside = angle >= -halfAngle and angle <= halfAngle
   angleTripples.append((angle, p, inside))
+ #print("\nat1 " + str(angleTripples))
  if len(angleTripples) <= 0:
   return angleTripples
  angleTripples.sort(key=lambda tup: tup[0])
@@ -775,6 +768,7 @@ def SortByAngle(visibiltyPolygon, lightSource):
    oldTripple = tripple
 
 # Eliminate everything outside the angle of the light sheet
+ print("\nnat1 " + str(newAngleTripples))
 
  angleTripples = []
  beenInside = False
@@ -792,7 +786,7 @@ def SortByAngle(visibiltyPolygon, lightSource):
     previous = newAngleTripples[i - 1]
     if previous[2]:
      angleTripples.append(CrossingPoint(previous, tripple, halfAngle))  
- 
+ print("\nat2 " + str(angleTripples))
  return angleTripples  
      
 # Cast rays from the origin (where the light is) through the points lineWithEnds(r), find
@@ -801,7 +795,7 @@ def SortByAngle(visibiltyPolygon, lightSource):
 # in 2D except for the very last line.
 
 def RayCast2D(lines, faces, lightSource):
- print(lines)
+ #print(lines)
  visibilityPolygon = []
  for lineWithEnds in lines:
   for r in (0, 1): 
@@ -810,7 +804,7 @@ def RayCast2D(lines, faces, lightSource):
  # Find the other line at this point
 
    otherLine = FindOtherLineAtPoint(p1, lineWithEnds, lines)
-   print(otherLine)
+   #print(otherLine)
    ray = Line2D(Point2D(0, 0), p1)
 
  # s is the ray's parameter. We need to know the closest hit to 
@@ -858,8 +852,9 @@ def RayCast2D(lines, faces, lightSource):
     p3 = ray.Point(minBehind)
     p3.SetFace(behindFace)
     visibilityPolygon.append(p3)
+ print("vp " + str(visibilityPolygon))
  angleTripples = SortByAngle(visibilityPolygon, lightSource)
- print(angleTripples)
+ print("at " + str(angleTripples))
  return Make3DPolygons(angleTripples, faces, lightSource) 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
