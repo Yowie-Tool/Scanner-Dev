@@ -312,7 +312,7 @@ class ScannerPart:
   self.vMM = vMM
   self.focalLength = focalLength
 
-  # Orientation
+  # Orientation - start with the identity matrix
 
   self.orientation = RotationM(Vector3(0,0,1), 0)
 
@@ -397,7 +397,7 @@ class ScannerPart:
  def GetCameraRayNormalised(self, pixelU, pixelV):
   ray = self.GetCameraRay(pixelU, pixelV)
   direction = ray[1].Sub(ray[0])
-  direction.Normalize()
+  direction = direction.Normalize()
   newRay = (ray[0], ray[0].Add(direction))
   return newRay
 
