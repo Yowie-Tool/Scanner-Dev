@@ -59,7 +59,7 @@ The control program moves the scanner and bar about using the same instructions 
 
 In one position the light sheet is turned on and the intersection with its light plane and the room is calculated.  This will be a series of straight lines in the plane of the sheet.
 
-The camera takes a ray-traced image.  Each ray comes from a pixel and passes through the centre of the lens.  The light lines nearest to where the ray passes will be found.  "Nearest" means within 2 standard deviations of a pre-defined gaussian light intensity function.  The value of the gaussians at the ray will be added to find the brightness of the corresponding pixel.
+The camera takes a ray-traced image.  Each ray comes from a pixel and passes through the centre of the lens.  The light lines nearest to where the ray passes will be found.  "Nearest" means within some multiple of standard deviations of a pre-defined gaussian light intensity function.  The value of the gaussians at the ray will be added to find the brightness of the corresponding pixel.
 
 Note that this is a simplification of the physics that we may need to correct. When the light sheet hits a wall of the room at a shallow angle, the gaussian will smear out across that wall becoming wider and dimmer.  We could add that to the model if needs be.
 
