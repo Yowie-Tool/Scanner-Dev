@@ -460,8 +460,9 @@ class ScannerPart:
 # Project a 3D point into the [v, w] plane.  Again w is the x axis.
 
  def xyPoint(self, p3D):
-  x = self.w.Dot(p3D)
-  y = self.v.Dot(p3D)
+  p3 = p3D.Sub(self.AbsoluteOffset())
+  x = self.w.Dot(p3)
+  y = self.v.Dot(p3)
   p = Point2D(x, y)
   return p
 
@@ -470,10 +471,8 @@ class ScannerPart:
 # w axis.  The lens (or pinhole) is self.focalLength along w.  
 
  def uvPoint(self, p):
-  u = copy.deepcopy(self.u)
-  u.multiply(p.x)
-  v = copy.deepcopy(self.v)
-  v.multiply(p.y)
+  u = self.u.Multiply(p.x)
+  v = self.v.Multiply(p.y)
   return self.AbsoluteOffset().add(u).add(v)
 
 
@@ -550,7 +549,9 @@ def CrossSection(scannerPart, s, p0, n):
  nn = n.Normalize()
  d = nn.Dot(p0)
  wires=[]
- for wire in s.slice(FreeCADv(nn), d):
+ sl = s.slice(FreeCADv(nn), d)
+ for wire in sl:
+  #DisplayShape(wire, (1.0,1.0,1.0))
   wires.append(wire)
  lineEnds = []
  for line in wires:
@@ -568,7 +569,9 @@ def CrossSection(scannerPart, s, p0, n):
 
    v2D0 = scannerPart.xyPoint(Simv(vertexes[0].Point))
    v2D1 = scannerPart.xyPoint(Simv(vertexes[1].Point))
-   lineEnds.append(Line2D(v2D0, v2D1, s))
+   ln = Line2D(v2D0, v2D1, s)
+   print(ln)
+   lineEnds.append(ln)
  return lineEnds
 
 # Display a FreeCAD shape with a given colour as an RGB tripple like (0.0, 1.0, 0.0)
@@ -721,7 +724,7 @@ def PlotPolygons(polygons):
  for polygon in polygons:
   wire = []
   for pair in polygon:
-   wire.append(pair[0])
+   wire.append(FreeCADv(pair[0]))
   DisplayShape(Part.makePolygon(wire), (1.0, 0.0, 0.0))
 
 # Find the point on the line from previous to current where a line at angle crosses
@@ -741,12 +744,12 @@ def CrossingPoint(previous, current, angle):
 def SortByAngle(visibiltyPolygon, lightSource):
  angleTripples = []
  halfAngle = 0.5*lightSource.lightAngle
- print(halfAngle)
+ #print(halfAngle)
  for p in visibiltyPolygon:
   line = Line2D(Point2D(0, 0), p)
   angle = math.atan2(line.direction.y, line.direction.x)
-  print(angle)
-  print(p)
+  #print(angle)
+  #print(p)
   inside = angle >= -halfAngle and angle <= halfAngle
   angleTripples.append((angle, p, inside))
  #print("\nat1 " + str(angleTripples))
@@ -768,7 +771,7 @@ def SortByAngle(visibiltyPolygon, lightSource):
    oldTripple = tripple
 
 # Eliminate everything outside the angle of the light sheet
- print("\nnat1 " + str(newAngleTripples))
+ #print("\nnat1 " + str(newAngleTripples))
 
  angleTripples = []
  beenInside = False
@@ -786,7 +789,7 @@ def SortByAngle(visibiltyPolygon, lightSource):
     previous = newAngleTripples[i - 1]
     if previous[2]:
      angleTripples.append(CrossingPoint(previous, tripple, halfAngle))  
- print("\nat2 " + str(angleTripples))
+ #print("\nat2 " + str(angleTripples))
  return angleTripples  
      
 # Cast rays from the origin (where the light is) through the points lineWithEnds(r), find
@@ -795,8 +798,9 @@ def SortByAngle(visibiltyPolygon, lightSource):
 # in 2D except for the very last line.
 
 def RayCast2D(lines, faces, lightSource):
- #print(lines)
+ print(lines)
  visibilityPolygon = []
+ #print(str(lines))
  for lineWithEnds in lines:
   for r in (0, 1): 
    p1 = lineWithEnds.Point(r)
@@ -852,9 +856,9 @@ def RayCast2D(lines, faces, lightSource):
     p3 = ray.Point(minBehind)
     p3.SetFace(behindFace)
     visibilityPolygon.append(p3)
- print("vp " + str(visibilityPolygon))
+ #print("vp " + str(visibilityPolygon))
  angleTripples = SortByAngle(visibilityPolygon, lightSource)
- print("at " + str(angleTripples))
+ #print("at " + str(angleTripples))
  return Make3DPolygons(angleTripples, faces, lightSource) 
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1161,7 +1165,7 @@ def GetVisibilityPolygons(scannerPart, room):
 
  for face in faces:
 
-   # Where does the plane cut the face? Note that line may have
+   # Where does the [v, w] plane cut the face? Note that line may have
    # more than one section if the face has a hole in it.
 
   crossLines = CrossSection(scannerPart, face, p0, scannerPart.u)
