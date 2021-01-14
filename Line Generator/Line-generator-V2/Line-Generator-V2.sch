@@ -95,22 +95,11 @@ L Device:D_Schottky D?
 U 1 1 6001883B
 P 3175 1450
 F 0 "D?" V 3200 1525 50  0000 L CNN
-F 1 "MMSZ4679T1G 2V" V 3325 750 50  0000 L CNN
+F 1 "MMSZ4679T1G 2V" H 2825 1350 50  0000 L CNN
 F 2 "Diode_SMD:D_SOD-123" H 3175 1450 50  0001 C CNN
 F 3 "https://docs.rs-online.com/2159/0900766b812e22b6.pdf" H 3175 1450 50  0001 C CNN
 	1    3175 1450
 	0    1    1    0   
-$EndComp
-$Comp
-L Transistor_BJT:BCP51 Q?
-U 1 1 60019DE0
-P 4675 1575
-F 0 "Q?" H 4865 1621 50  0000 L CNN
-F 1 "BCP5310" H 4865 1530 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 4875 1500 50  0001 L CIN
-F 3 "" H 4675 1575 50  0001 L CNN
-	1    4675 1575
-	1    0    0    -1  
 $EndComp
 $Comp
 L Amplifier_Operational:TLC272 U?
@@ -138,7 +127,7 @@ Wire Wire Line
 	4775 925  4000 925 
 Connection ~ 4000 925 
 Wire Wire Line
-	4000 925  3425 925 
+	4000 925  3725 925 
 $Comp
 L Amplifier_Operational:TLC272 U?
 U 3 1 6003EE56
@@ -175,7 +164,7 @@ F 3 "" H 1850 1825 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1850 1750 1850 1825
+	1850 1750 1850 1775
 $Comp
 L Transistor_FET:BS170F Q?
 U 1 1 60049EAB
@@ -188,17 +177,6 @@ F 3 "http://www.diodes.com/assets/Datasheets/BS170F.pdf" H 3325 2200 50  0001 L 
 	1    0    0    -1  
 $EndComp
 Connection ~ 4575 2475
-$Comp
-L Device:R R?
-U 1 1 6006FB1E
-P 3425 1100
-F 0 "R?" H 3250 1150 50  0000 L CNN
-F 1 "100K" H 3175 1050 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 3355 1100 50  0001 C CNN
-F 3 "~" H 3425 1100 50  0001 C CNN
-	1    3425 1100
-	1    0    0    -1  
-$EndComp
 $Comp
 L Device:R R?
 U 1 1 6007059A
@@ -262,7 +240,7 @@ F 1 "BCP5310" H 6090 1530 50  0000 L CNN
 F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 6100 1500 50  0001 L CIN
 F 3 "" H 5900 1575 50  0001 L CNN
 	1    5900 1575
-	-1   0    0    -1  
+	-1   0    0    1   
 $EndComp
 Text Notes 5725 1475 2    50   ~ 0
 150mW\n1V5
@@ -358,7 +336,7 @@ L Device:R R?
 U 1 1 6002537D
 P 3425 1450
 F 0 "R?" H 3250 1500 50  0000 L CNN
-F 1 "100K" H 3175 1400 50  0000 L CNN
+F 1 "100K" H 3475 1350 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 3355 1450 50  0001 C CNN
 F 3 "~" H 3425 1450 50  0001 C CNN
 	1    3425 1450
@@ -366,8 +344,6 @@ F 3 "~" H 3425 1450 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	3425 925  3425 950 
-Wire Wire Line
-	3425 1250 3425 1275
 Wire Wire Line
 	3425 1600 3425 1650
 Wire Wire Line
@@ -383,35 +359,17 @@ Wire Wire Line
 	3175 925  3175 1300
 Connection ~ 3425 925 
 Wire Wire Line
-	3425 1275 3625 1275
-Wire Wire Line
-	3625 1275 3625 1475
-Wire Wire Line
 	3625 1475 3875 1475
-Connection ~ 3425 1275
-Wire Wire Line
-	3425 1275 3425 1300
 $Comp
 L Device:D_Schottky D?
 U 1 1 600971FA
 P 7400 1450
 F 0 "D?" V 7425 1525 50  0000 L CNN
-F 1 "MMSZ4679T1G 2V" V 7550 750 50  0000 L CNN
+F 1 "MMSZ4679T1G 2V" H 7000 1325 50  0000 L CNN
 F 2 "Diode_SMD:D_SOD-123" H 7400 1450 50  0001 C CNN
 F 3 "https://docs.rs-online.com/2159/0900766b812e22b6.pdf" H 7400 1450 50  0001 C CNN
 	1    7400 1450
 	0    -1   1    0   
-$EndComp
-$Comp
-L Device:R R?
-U 1 1 60097201
-P 7150 1100
-F 0 "R?" H 6975 1150 50  0000 L CNN
-F 1 "100K" H 6900 1050 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 7080 1100 50  0001 C CNN
-F 3 "~" H 7150 1100 50  0001 C CNN
-	1    7150 1100
-	-1   0    0    -1  
 $EndComp
 $Comp
 L Device:R R?
@@ -431,7 +389,7 @@ L Device:R R?
 U 1 1 6009720E
 P 7150 1450
 F 0 "R?" H 6975 1500 50  0000 L CNN
-F 1 "100K" H 6900 1400 50  0000 L CNN
+F 1 "100K" H 7200 1325 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 7080 1450 50  0001 C CNN
 F 3 "~" H 7150 1450 50  0001 C CNN
 	1    7150 1450
@@ -439,8 +397,6 @@ F 3 "~" H 7150 1450 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	7150 925  7150 950 
-Wire Wire Line
-	7150 1250 7150 1275
 Wire Wire Line
 	7150 1600 7150 1650
 Wire Wire Line
@@ -452,19 +408,118 @@ Wire Wire Line
 	7400 925  7400 1300
 Connection ~ 7150 925 
 Wire Wire Line
-	7150 1275 6950 1275
-Wire Wire Line
-	6950 1275 6950 1475
-Wire Wire Line
 	6950 1475 6700 1475
-Connection ~ 7150 1275
 Wire Wire Line
-	7150 1275 7150 1300
-Wire Wire Line
-	5800 925  7150 925 
+	5800 925  6850 925 
 Connection ~ 5800 925 
 Wire Wire Line
 	7150 1950 7150 2025
 Wire Wire Line
 	7150 2425 7150 2475
+Wire Wire Line
+	3425 1250 3425 1300
+$Comp
+L Device:R_POT RV?
+U 1 1 6000B3BD
+P 3425 1100
+F 0 "RV?" H 3356 1146 50  0000 R CNN
+F 1 "100K" H 3675 1200 50  0000 R CNN
+F 2 "" H 3425 1100 50  0001 C CNN
+F 3 "~" H 3425 1100 50  0001 C CNN
+	1    3425 1100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3575 1100 3625 1100
+$Comp
+L Device:R_POT RV?
+U 1 1 60010BB5
+P 7150 1100
+F 0 "RV?" H 7081 1146 50  0000 R CNN
+F 1 "100K" H 7100 1000 50  0000 R CNN
+F 2 "" H 7150 1100 50  0001 C CNN
+F 3 "~" H 7150 1100 50  0001 C CNN
+	1    7150 1100
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	7150 1250 7150 1300
+Wire Wire Line
+	7000 1100 6950 1100
+Wire Wire Line
+	6950 1100 6950 1225
+$Comp
+L Device:C C?
+U 1 1 60017144
+P 2250 1425
+F 0 "C?" H 2365 1471 50  0000 L CNN
+F 1 "100nF" H 2365 1380 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric" H 2288 1275 50  0001 C CNN
+F 3 "~" H 2250 1425 50  0001 C CNN
+	1    2250 1425
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C?
+U 1 1 60017FDE
+P 3725 1075
+F 0 "C?" H 3840 1121 50  0000 L CNN
+F 1 "100nF" H 3840 1030 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric" H 3763 925 50  0001 C CNN
+F 3 "~" H 3725 1075 50  0001 C CNN
+	1    3725 1075
+	1    0    0    -1  
+$EndComp
+Connection ~ 3725 925 
+Wire Wire Line
+	3725 925  3425 925 
+$Comp
+L Device:C C?
+U 1 1 60018C52
+P 6850 1075
+F 0 "C?" H 6965 1121 50  0000 L CNN
+F 1 "100nF" H 6965 1030 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric" H 6888 925 50  0001 C CNN
+F 3 "~" H 6850 1075 50  0001 C CNN
+	1    6850 1075
+	1    0    0    -1  
+$EndComp
+Connection ~ 6850 925 
+Wire Wire Line
+	6850 925  7150 925 
+Wire Wire Line
+	6850 1225 6950 1225
+Connection ~ 6950 1225
+Wire Wire Line
+	6950 1225 6950 1475
+Wire Wire Line
+	3725 1225 3625 1225
+Wire Wire Line
+	3625 1100 3625 1225
+Connection ~ 3625 1225
+Wire Wire Line
+	3625 1225 3625 1475
+Wire Wire Line
+	1850 1075 2250 1075
+Wire Wire Line
+	2250 1075 2250 1275
+Connection ~ 1850 1075
+Wire Wire Line
+	1850 1775 2250 1775
+Wire Wire Line
+	2250 1775 2250 1575
+Connection ~ 1850 1775
+Wire Wire Line
+	1850 1775 1850 1825
+$Comp
+L Transistor_BJT:BCP51 Q?
+U 1 1 60019DE0
+P 4675 1575
+F 0 "Q?" H 4865 1621 50  0000 L CNN
+F 1 "BCP5310" H 4865 1530 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 4875 1500 50  0001 L CIN
+F 3 "" H 4675 1575 50  0001 L CNN
+	1    4675 1575
+	1    0    0    1   
+$EndComp
 $EndSCHEMATC

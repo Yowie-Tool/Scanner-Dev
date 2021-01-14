@@ -95,7 +95,7 @@ L Device:D_Schottky D?
 U 1 1 6001883B
 P 3175 1450
 F 0 "D?" V 3200 1525 50  0000 L CNN
-F 1 "MMSZ4679T1G 2V" V 3325 750 50  0000 L CNN
+F 1 "MMSZ4679T1G 2V" H 2825 1350 50  0000 L CNN
 F 2 "Diode_SMD:D_SOD-123" H 3175 1450 50  0001 C CNN
 F 3 "https://docs.rs-online.com/2159/0900766b812e22b6.pdf" H 3175 1450 50  0001 C CNN
 	1    3175 1450
@@ -188,17 +188,6 @@ F 3 "http://www.diodes.com/assets/Datasheets/BS170F.pdf" H 3325 2200 50  0001 L 
 	1    0    0    -1  
 $EndComp
 Connection ~ 4575 2475
-$Comp
-L Device:R R?
-U 1 1 6006FB1E
-P 3425 1100
-F 0 "R?" H 3250 1150 50  0000 L CNN
-F 1 "100K" H 3175 1050 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 3355 1100 50  0001 C CNN
-F 3 "~" H 3425 1100 50  0001 C CNN
-	1    3425 1100
-	1    0    0    -1  
-$EndComp
 $Comp
 L Device:R R?
 U 1 1 6007059A
@@ -351,14 +340,14 @@ F 3 "" H 825 1500 50  0001 C CNN
 	1    825  1500
 	-1   0    0    1   
 $EndComp
-Text Notes 3225 1925 0    50   ~ 0
+Text Notes 3175 1850 0    50   ~ 0
 50uA
 $Comp
 L Device:R R?
 U 1 1 6002537D
 P 3425 1450
 F 0 "R?" H 3250 1500 50  0000 L CNN
-F 1 "100K" H 3175 1400 50  0000 L CNN
+F 1 "100K" H 3475 1350 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 3355 1450 50  0001 C CNN
 F 3 "~" H 3425 1450 50  0001 C CNN
 	1    3425 1450
@@ -366,8 +355,6 @@ F 3 "~" H 3425 1450 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	3425 925  3425 950 
-Wire Wire Line
-	3425 1250 3425 1275
 Wire Wire Line
 	3425 1600 3425 1650
 Wire Wire Line
@@ -383,35 +370,17 @@ Wire Wire Line
 	3175 925  3175 1300
 Connection ~ 3425 925 
 Wire Wire Line
-	3425 1275 3625 1275
-Wire Wire Line
-	3625 1275 3625 1475
-Wire Wire Line
 	3625 1475 3875 1475
-Connection ~ 3425 1275
-Wire Wire Line
-	3425 1275 3425 1300
 $Comp
 L Device:D_Schottky D?
 U 1 1 600971FA
 P 7400 1450
 F 0 "D?" V 7425 1525 50  0000 L CNN
-F 1 "MMSZ4679T1G 2V" V 7550 750 50  0000 L CNN
+F 1 "MMSZ4679T1G 2V" H 7000 1325 50  0000 L CNN
 F 2 "Diode_SMD:D_SOD-123" H 7400 1450 50  0001 C CNN
 F 3 "https://docs.rs-online.com/2159/0900766b812e22b6.pdf" H 7400 1450 50  0001 C CNN
 	1    7400 1450
 	0    -1   1    0   
-$EndComp
-$Comp
-L Device:R R?
-U 1 1 60097201
-P 7150 1100
-F 0 "R?" H 6975 1150 50  0000 L CNN
-F 1 "100K" H 6900 1050 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 7080 1100 50  0001 C CNN
-F 3 "~" H 7150 1100 50  0001 C CNN
-	1    7150 1100
-	-1   0    0    -1  
 $EndComp
 $Comp
 L Device:R R?
@@ -424,14 +393,14 @@ F 3 "~" H 7150 1800 50  0001 C CNN
 	1    7150 1800
 	-1   0    0    -1  
 $EndComp
-Text Notes 7825 1975 2    50   ~ 0
+Text Notes 7400 1850 2    50   ~ 0
 50uA
 $Comp
 L Device:R R?
 U 1 1 6009720E
 P 7150 1450
 F 0 "R?" H 6975 1500 50  0000 L CNN
-F 1 "100K" H 6900 1400 50  0000 L CNN
+F 1 "100K" H 7200 1325 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 7080 1450 50  0001 C CNN
 F 3 "~" H 7150 1450 50  0001 C CNN
 	1    7150 1450
@@ -440,11 +409,7 @@ $EndComp
 Wire Wire Line
 	7150 925  7150 950 
 Wire Wire Line
-	7150 1250 7150 1275
-Wire Wire Line
 	7150 1600 7150 1650
-Wire Wire Line
-	7625 2000 7625 2050
 Wire Wire Line
 	7400 1600 7150 1600
 Connection ~ 7150 1600
@@ -454,14 +419,7 @@ Wire Wire Line
 	7400 925  7400 1300
 Connection ~ 7150 925 
 Wire Wire Line
-	7150 1275 6950 1275
-Wire Wire Line
-	6950 1275 6950 1475
-Wire Wire Line
 	6950 1475 6700 1475
-Connection ~ 7150 1275
-Wire Wire Line
-	7150 1275 7150 1300
 Wire Wire Line
 	5800 925  7150 925 
 Connection ~ 5800 925 
@@ -469,4 +427,38 @@ Wire Wire Line
 	7150 1950 7150 2025
 Wire Wire Line
 	7150 2425 7150 2475
+Wire Wire Line
+	3425 1250 3425 1300
+$Comp
+L Device:R_POT RV?
+U 1 1 6000B3BD
+P 3425 1100
+F 0 "RV?" H 3356 1146 50  0000 R CNN
+F 1 "100K" H 3675 1200 50  0000 R CNN
+F 2 "" H 3425 1100 50  0001 C CNN
+F 3 "~" H 3425 1100 50  0001 C CNN
+	1    3425 1100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3575 1100 3625 1100
+Wire Wire Line
+	3625 1100 3625 1475
+$Comp
+L Device:R_POT RV?
+U 1 1 60010BB5
+P 7150 1100
+F 0 "RV?" H 7081 1146 50  0000 R CNN
+F 1 "100K" H 7100 1000 50  0000 R CNN
+F 2 "" H 7150 1100 50  0001 C CNN
+F 3 "~" H 7150 1100 50  0001 C CNN
+	1    7150 1100
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	7150 1250 7150 1300
+Wire Wire Line
+	7000 1100 6950 1100
+Wire Wire Line
+	6950 1100 6950 1475
 $EndSCHEMATC
