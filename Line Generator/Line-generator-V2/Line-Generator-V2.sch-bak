@@ -273,8 +273,8 @@ Wire Wire Line
 	1950 4975 1950 5050
 Wire Bus Line
 	4600 6300 4600 4675
-Text Notes 4675 6125 0    50   ~ 0
-All this\nwill get\nslightly hot
+Text Notes 4675 6200 0    50   ~ 0
+All this\nwill get\nslightly\nhot
 Wire Wire Line
 	5375 6375 7250 6375
 Wire Wire Line
