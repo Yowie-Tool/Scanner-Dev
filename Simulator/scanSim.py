@@ -741,6 +741,8 @@ def GetVisibilityPolygons(scannerPart, room):
 
 ClearAll()
 
+# Initial test setup
+'''
 # Make the scanner
 
 world = ScannerPart()
@@ -783,7 +785,38 @@ polygons = GetVisibilityPolygons(lightSource, room)
 PlotPolygons(polygons)
 #SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
 #SaveCameraImageRoom(camera, room, roomLight, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/scan")
+'''
 
+# Realistic (?) simulation
+
+# Make the room
+
+a = Part.makeBox(4200, 3400, 2000)
+a.translate(Base.Vector(-2100, -1700, 0))
+b = Part.makeBox(4000, 3200, 3000)
+b.translate(Base.Vector(-2000, -1600, 100))
+room = a.cut(b)
+
+#roomLight = ScannerPart(offset = Vector3(200, 200, 1000), parent = world)
+
+Part.show(room)
+
+# Make the scanner
+
+world = ScannerPart()
+scanner = ScannerPart(offset = Vector3(0, 0, 1000), parent = world)
+lightSource = ScannerPart(offset = Vector3(0, 0, -250), parent = scanner, lightAngle = 1)
+camera = ScannerPart(offset = Vector3(0, 0, 250), parent = scanner, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25) 
+lightSource.RotateU(-0.5*math.pi)
+lightSource.RotateW(-0.5*math.pi)
+camera.RotateU(-0.5*math.pi)
+Display(world, showLight = True, showCamera = True)
+
+
+roomLight = ScannerPart(offset = Vector3(0, 0, 3000), parent = world)
+
+polygons = GetVisibilityPolygons(lightSource, room)
+PlotPolygons(polygons)
 
 
 
