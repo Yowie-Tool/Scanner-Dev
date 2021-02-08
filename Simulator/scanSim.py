@@ -727,13 +727,15 @@ def GetVisibilityPolygons(scannerPart, room):
 
   crossLines = CrossSection(scannerPart, face, p0, scannerPart.u)
   for line in crossLines:
+   print(line)
    lines.append(line)
 
 
   # Cast a ray from the light source through each line end in turn and add what it hits
   # to the visibility polygons.  Process those polygons back into 3D.
-
- return RayCast2D(lines, faces, scannerPart)
+ castLines = RayCast2D(lines, faces, scannerPart)
+ print(castLines)
+ return castLines
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -793,9 +795,18 @@ PlotPolygons(polygons)
 
 a = Part.makeBox(4200, 3400, 2000)
 a.translate(Base.Vector(-2100, -1700, 0))
-b = Part.makeBox(4000, 3200, 3000)
-b.translate(Base.Vector(-2000, -1600, 100))
+b = Part.makeBox(4000, 3600, 3000)
+b.translate(Base.Vector(-2000, -2000, 100))
 room = a.cut(b)
+
+calibration1 = Part.makeBox(500, 500, 2000)
+calibration2 = Part.makeBox(500, 500, 2000)
+calibration1.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1), 25)
+calibration2.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1), 37)
+calibration2.translate(Base.Vector(-400, 800, 0))
+calibration1.translate(Base.Vector(300, 500, 0))
+room = room.fuse(calibration1)
+room = room.fuse(calibration2)
 
 #roomLight = ScannerPart(offset = Vector3(200, 200, 1000), parent = world)
 
@@ -804,8 +815,8 @@ Part.show(room)
 # Make the scanner
 
 world = ScannerPart()
-scanner = ScannerPart(offset = Vector3(0, 0, 1000), parent = world)
-lightSource = ScannerPart(offset = Vector3(0, 0, -250), parent = scanner, lightAngle = 1)
+scanner = ScannerPart(offset = Vector3(0, -1700, 1000), parent = world)
+lightSource = ScannerPart(offset = Vector3(0, 0, -250), parent = scanner, lightAngle = 2)
 camera = ScannerPart(offset = Vector3(0, 0, 250), parent = scanner, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25) 
 lightSource.RotateU(-0.5*math.pi)
 lightSource.RotateW(-0.5*math.pi)
@@ -817,6 +828,7 @@ roomLight = ScannerPart(offset = Vector3(0, 0, 3000), parent = world)
 
 polygons = GetVisibilityPolygons(lightSource, room)
 PlotPolygons(polygons)
+SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/calibrate")
 
 
 
