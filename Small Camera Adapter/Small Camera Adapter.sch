@@ -1,0 +1,328 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L 68611514122:68611514122 J1
+U 1 1 6026C795
+P 2075 1850
+F 0 "J1" H 2039 1890 50  0000 L CNN
+F 1 "68611514122" H 2039 1799 50  0000 L CNN
+F 2 "68611514122" H 2075 1850 50  0001 L BNN
+F 3 "None" H 2075 1850 50  0001 L BNN
+F 4 "68611514122" H 2075 1850 50  0001 L BNN "Field4"
+F 5 "None" H 2075 1850 50  0001 L BNN "Field5"
+F 6 "Unavailable" H 2075 1850 50  0001 L BNN "Field6"
+F 7 "Connector [Würth Elektronik] 68611514122 Connector" H 2075 1850 50  0001 L BNN "Field7"
+F 8 "Würth Elektronik" H 2075 1850 50  0001 L BNN "Field8"
+	1    2075 1850
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:D_Zener D2
+U 1 1 6026D633
+P 3575 2050
+F 0 "D2" H 3575 2267 50  0000 C CNN
+F 1 "D_Zener 3.3V" H 3575 2176 50  0000 C CNN
+F 2 "Diode_SMD:D_SOD-123F" H 3575 2050 50  0001 C CNN
+F 3 "https://uk.rs-online.com/web/p/zener-diodes/8160608/" H 3575 2050 50  0001 C CNN
+	1    3575 2050
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:LED D1
+U 1 1 6026DE3A
+P 3000 3500
+F 0 "D1" H 2993 3717 50  0000 C CNN
+F 1 "LED" H 2993 3626 50  0000 C CNN
+F 2 "LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 3000 3500 50  0001 C CNN
+F 3 "~" H 3000 3500 50  0001 C CNN
+	1    3000 3500
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R1
+U 1 1 602704B6
+P 3325 1900
+F 0 "R1" V 3118 1900 50  0000 C CNN
+F 1 "100R" V 3209 1900 50  0000 C CNN
+F 2 "Resistor_SMD:R_2512_6332Metric_Pad1.40x3.35mm_HandSolder" V 3255 1900 50  0001 C CNN
+F 3 "https://uk.rs-online.com/web/p/surface-mount-fixed-resistors/7397957/" H 3325 1900 50  0001 C CNN
+	1    3325 1900
+	0    1    1    0   
+$EndComp
+$Comp
+L power:GND #PWR0102
+U 1 1 60272598
+P 1700 1150
+F 0 "#PWR0102" H 1700 900 50  0001 C CNN
+F 1 "GND" V 1705 1022 50  0000 R CNN
+F 2 "" H 1700 1150 50  0001 C CNN
+F 3 "" H 1700 1150 50  0001 C CNN
+	1    1700 1150
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	1875 1150 1725 1150
+Wire Wire Line
+	1725 1150 1725 1450
+Wire Wire Line
+	1725 1450 1875 1450
+Connection ~ 1725 1150
+Wire Wire Line
+	1725 1150 1700 1150
+Wire Wire Line
+	1725 1450 1725 1750
+Wire Wire Line
+	1725 1750 1875 1750
+Connection ~ 1725 1450
+Wire Wire Line
+	1725 1750 1725 2050
+Wire Wire Line
+	1725 2050 1875 2050
+Connection ~ 1725 1750
+Text GLabel 1675 1250 0    50   Input ~ 0
+CAMERADN0
+Text GLabel 1675 1350 0    50   Input ~ 0
+CAMERADP0
+Text GLabel 1675 1550 0    50   Input ~ 0
+CAMERADN1
+Text GLabel 1675 1650 0    50   Input ~ 0
+CAMERADP1
+Text GLabel 1675 1850 0    50   Input ~ 0
+CAMERACN
+Text GLabel 1675 1950 0    50   Input ~ 0
+CAMERACP
+Text GLabel 1675 2150 0    50   Input ~ 0
+CAMERAGPIO
+Text GLabel 1675 2350 0    50   Input ~ 0
+CAMERASCL
+Text GLabel 1675 2450 0    50   Input ~ 0
+CAMERASDA
+NoConn ~ 1875 2250
+Wire Wire Line
+	1675 1250 1875 1250
+Wire Wire Line
+	1875 1350 1675 1350
+Wire Wire Line
+	1675 1550 1875 1550
+Wire Wire Line
+	1875 1650 1675 1650
+Wire Wire Line
+	1675 1850 1875 1850
+Wire Wire Line
+	1875 1950 1675 1950
+Wire Wire Line
+	1675 2150 1875 2150
+Wire Wire Line
+	1875 2350 1675 2350
+Wire Wire Line
+	1675 2450 1875 2450
+Wire Wire Line
+	1875 2550 1675 2550
+$Comp
+L Device:R R2
+U 1 1 60276D20
+P 3400 3500
+F 0 "R2" V 3193 3500 50  0000 C CNN
+F 1 "1K" V 3284 3500 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 3330 3500 50  0001 C CNN
+F 3 "https://uk.rs-online.com/web/p/surface-mount-fixed-resistors/7397957/" H 3400 3500 50  0001 C CNN
+	1    3400 3500
+	0    1    1    0   
+$EndComp
+$Comp
+L power:+3.3V #PWR0103
+U 1 1 60277E2B
+P 3650 3500
+F 0 "#PWR0103" H 3650 3350 50  0001 C CNN
+F 1 "+3.3V" V 3665 3628 50  0000 L CNN
+F 2 "" H 3650 3500 50  0001 C CNN
+F 3 "" H 3650 3500 50  0001 C CNN
+	1    3650 3500
+	0    1    1    0   
+$EndComp
+$Comp
+L power:GND #PWR0104
+U 1 1 60278449
+P 2775 3500
+F 0 "#PWR0104" H 2775 3250 50  0001 C CNN
+F 1 "GND" V 2780 3372 50  0000 R CNN
+F 2 "" H 2775 3500 50  0001 C CNN
+F 3 "" H 2775 3500 50  0001 C CNN
+	1    2775 3500
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	3150 3500 3250 3500
+Wire Wire Line
+	3550 3500 3650 3500
+Wire Wire Line
+	2850 3500 2775 3500
+$Comp
+L power:GND #PWR0105
+U 1 1 6027B84D
+P 3575 2275
+F 0 "#PWR0105" H 3575 2025 50  0001 C CNN
+F 1 "GND" H 3580 2102 50  0000 C CNN
+F 2 "" H 3575 2275 50  0001 C CNN
+F 3 "" H 3575 2275 50  0001 C CNN
+	1    3575 2275
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3V #PWR0106
+U 1 1 6027C000
+P 3100 1900
+F 0 "#PWR0106" H 3100 1750 50  0001 C CNN
+F 1 "+3.3V" V 3115 2028 50  0000 L CNN
+F 2 "" H 3100 1900 50  0001 C CNN
+F 3 "" H 3100 1900 50  0001 C CNN
+	1    3100 1900
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	3100 1900 3175 1900
+Wire Wire Line
+	3475 1900 3575 1900
+Wire Wire Line
+	3575 2200 3575 2275
+Text GLabel 1675 2550 0    50   Input ~ 0
+3.3VProtected
+Text GLabel 3575 1825 1    50   Input ~ 0
+3.3VProtected
+Wire Wire Line
+	3575 1825 3575 1900
+Connection ~ 3575 1900
+Text GLabel 5400 1450 0    50   Input ~ 0
+CAMERADN0
+Text GLabel 5400 1550 0    50   Input ~ 0
+CAMERADP0
+Text GLabel 5400 2950 0    50   Input ~ 0
+CAMERADN1
+Text GLabel 5400 3050 0    50   Input ~ 0
+CAMERADP1
+Wire Wire Line
+	5500 1450 5400 1450
+Wire Wire Line
+	5400 1550 5500 1550
+Wire Wire Line
+	5500 2950 5400 2950
+Wire Wire Line
+	5400 3050 5500 3050
+Text GLabel 5375 3650 0    50   Input ~ 0
+CAMERACP
+Text GLabel 5300 2150 0    50   Input ~ 0
+CAMERASCL
+Text GLabel 5300 2050 0    50   Input ~ 0
+CAMERASDA
+Wire Wire Line
+	5500 2150 5300 2150
+Wire Wire Line
+	5300 2050 5500 2050
+Text GLabel 5400 3250 0    50   Input ~ 0
+CAMERADN1
+Text GLabel 5400 3350 0    50   Input ~ 0
+CAMERADP1
+Wire Wire Line
+	5500 3250 5400 3250
+Wire Wire Line
+	5400 3350 5500 3350
+Text GLabel 5400 2350 0    50   Input ~ 0
+CAMERADN0
+Text GLabel 5400 2450 0    50   Input ~ 0
+CAMERADP0
+Wire Wire Line
+	5500 2350 5400 2350
+Wire Wire Line
+	5400 2450 5500 2450
+Text GLabel 5375 3550 0    50   Input ~ 0
+CAMERACP
+Text GLabel 5300 2750 0    50   Input ~ 0
+CAMERACN
+Wire Wire Line
+	5300 2750 5500 2750
+Wire Wire Line
+	5500 3650 5375 3650
+Wire Wire Line
+	5375 3550 5500 3550
+$Comp
+L power:+3.3V #PWR0107
+U 1 1 6029026D
+P 5375 1250
+F 0 "#PWR0107" H 5375 1100 50  0001 C CNN
+F 1 "+3.3V" V 5390 1378 50  0000 L CNN
+F 2 "" H 5375 1250 50  0001 C CNN
+F 3 "" H 5375 1250 50  0001 C CNN
+	1    5375 1250
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5500 1250 5375 1250
+$Comp
+L power:GND #PWR0111
+U 1 1 6029544D
+P 5350 3850
+F 0 "#PWR0111" H 5350 3600 50  0001 C CNN
+F 1 "GND" V 5355 3722 50  0000 R CNN
+F 2 "" H 5350 3850 50  0001 C CNN
+F 3 "" H 5350 3850 50  0001 C CNN
+	1    5350 3850
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	5500 3850 5350 3850
+Text GLabel 5300 1750 0    50   Input ~ 0
+CAMERASDA
+Wire Wire Line
+	5300 1750 5500 1750
+$Comp
+L power:+3.3V #PWR0113
+U 1 1 602A2F89
+P 5375 1150
+F 0 "#PWR0113" H 5375 1000 50  0001 C CNN
+F 1 "+3.3V" V 5390 1278 50  0000 L CNN
+F 2 "" H 5375 1150 50  0001 C CNN
+F 3 "" H 5375 1150 50  0001 C CNN
+	1    5375 1150
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5500 1150 5375 1150
+Wire Wire Line
+	5500 1850 5300 1850
+Text GLabel 5300 1850 0    50   Input ~ 0
+CAMERASCL
+Wire Wire Line
+	5500 2650 5300 2650
+Text GLabel 5300 2650 0    50   Input ~ 0
+CAMERACN
+$Comp
+L 10137062-00021LF:10137062-00021LF J2
+U 1 1 602D118D
+P 6000 2550
+F 0 "J2" H 6330 2596 50  0000 L CNN
+F 1 "10137062-00021LF" H 6330 2505 50  0000 L CNN
+F 2 "digikey-footprints:CONN_10137062-00021LF" H 6000 2550 50  0001 L BNN
+F 3 "" H 6000 2550 50  0001 L BNN
+F 4 "B" H 6000 2550 50  0001 L BNN "PARTREV"
+F 5 "Amphenol" H 6000 2550 50  0001 L BNN "MANUFACTURER"
+F 6 "Manufacturer Recommendations" H 6000 2550 50  0001 L BNN "STANDARD"
+	1    6000 2550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5500 3850 5500 3950
+Connection ~ 5500 3850
+$EndSCHEMATC
