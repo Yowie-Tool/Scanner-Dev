@@ -17,7 +17,7 @@ veryShort2 = veryShort*veryShort
 
 # Roughly the largest dimension in mm of anything that will be dealt with
 
-veryLong = 80
+veryLong = 6000
 
 # The standard deviation width of a light stripe on a surface in mm
 
