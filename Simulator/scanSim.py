@@ -2,7 +2,8 @@
 # Adrian Bowyer
 # 19 February 2020
 
-import Part, BOPTools, FreeCAD, math, copy, sys
+import Part, BOPTools, FreeCAD, copy, sys
+import math as maths
 from FreeCAD import Base
 import PySide
 from PySide import QtGui, QtCore
@@ -106,7 +107,7 @@ def Null():
 
 def Cylinder(p0, p1, r):
  p2 = p1.Sub(p0)
- length = math.sqrt(p2.Length2())
+ length = maths.sqrt(p2.Length2())
  if length < 0.0001:
   return Null()
  c = Part.makeCylinder(r, length, FreeCADv(p0), FreeCADv(p2), 360)
@@ -298,7 +299,7 @@ def PlotPolygons(polygons):
 # Find the point on the line from previous to current where a line at angle crosses
 
 def CrossingPoint(previous, current, angle):
- line1 = Line2D(Point2D(0, 0), Point2D(math.cos(angle), math.sin(angle)))
+ line1 = Line2D(Point2D(0, 0), Point2D(maths.cos(angle), maths.sin(angle)))
  line2 = Line2D(previous[1], current[1])
  s, t = line2.Cross(line1)
  if s < 0 or s > 1:
@@ -314,7 +315,7 @@ def SortByAngle(visibiltyPolygon, lightSource):
  halfAngle = 0.5*lightSource.lightAngle
  for p in visibiltyPolygon:
   line = Line2D(Point2D(0, 0), p)
-  angle = math.atan2(line.direction.y, line.direction.x)
+  angle = maths.atan2(line.direction.y, line.direction.x)
   inside = angle >= -halfAngle and angle <= halfAngle
   angleTripples.append((angle, p, inside))
  if len(angleTripples) <= 0:
@@ -442,7 +443,7 @@ def RayIntoSolid(ray, solid):
   info = distss[2][0]
   normal = Simv(solid.Shells[0].Faces[info[1]].normalAt(info[2][0],info[2][1]))
   hitPoint = Simv(distss[1][0][0])
-  rayHitD = math.sqrt(hitPoint.Sub(ray[0]).Length2())
+  rayHitD = maths.sqrt(hitPoint.Sub(ray[0]).Length2())
   return (distss[0], rayHitD, normal, hitPoint)
  else:
   return (None, None, None, None)
@@ -555,8 +556,8 @@ def Display(scannerPart, showLight = False, showCamera = False):
  if scannerPart.lightAngle > 0 and showLight:
   vv = scannerPart.v
   ww = scannerPart.w
-  vv = vv.Multiply(veryLong*math.sin(scannerPart.lightAngle*0.5))
-  ww = ww.Multiply(veryLong*math.cos(scannerPart.lightAngle*0.5))
+  vv = vv.Multiply(veryLong*maths.sin(scannerPart.lightAngle*0.5))
+  ww = ww.Multiply(veryLong*maths.cos(scannerPart.lightAngle*0.5))
   p2 = p1.Add(vv).Add(ww)
   p3 = p1.Sub(vv).Add(ww)
   e1 = Part.makeLine(FreeCADv(p1), FreeCADv(p2))
@@ -608,7 +609,7 @@ def CastRay(scannerPart, ray, room, polygons, startingPolygonDistance):
      testObstruction = RayIntoSolid(testObstructionRay, room)[1]
      if testObstruction is None or testObstruction + veryShort > s: # NB - relies on OR operator not bothering with second argument if first is True
       polygonPoint = RayPoint(polygonLine, t)
-      rayLightDistance = math.sqrt(rayPoint.Sub(polygonPoint).Length2())
+      rayLightDistance = maths.sqrt(rayPoint.Sub(polygonPoint).Length2())
       if s < minPolygonDistance and rayLightDistance < 3*lightSD:
        minRayLightDistance = rayLightDistance
        rayHitPolygon = True
@@ -695,8 +696,8 @@ def GetVisibilityPolygons(scannerPart, room):
   wall2 = Part.makeBox(4, 1, veryLong)
   wall1.translate(Base.Vector(-2, -1, -3))
   wall2.translate(Base.Vector(-2, 0, -3))
-  wall1.rotate(Base.Vector(0, 0, 0),Base.Vector(1, 0, 0), 0.5*self.lightAngle*180/math.pi)
-  wall2.rotate(Base.Vector(0, 0, 0),Base.Vector(1, 0, 0), -0.5*self.lightAngle*180/math.pi)
+  wall1.rotate(Base.Vector(0, 0, 0),Base.Vector(1, 0, 0), 0.5*self.lightAngle*180/maths.pi)
+  wall2.rotate(Base.Vector(0, 0, 0),Base.Vector(1, 0, 0), -0.5*self.lightAngle*180/maths.pi)
   self.PutShapeInMyCoordinates(wall1)
   self.PutShapeInMyCoordinates(wall2)
   s = s.fuse(wall1)
@@ -751,12 +752,12 @@ world = ScannerPart()
 scanner = ScannerPart(offset = Vector3(38, 12, 10), parent = world)
 lightSource = ScannerPart(offset = Vector3(0, 10, 0), parent = scanner, lightAngle = 1)
 camera = ScannerPart(offset = Vector3(0, -10, 0), parent = scanner, uPixels = 75, vPixels = 100, uMM = 1.5, vMM = 2, focalLength = 5) 
-lightSource.RotateV(-0.5*math.pi)
-lightSource.RotateW(0.5*math.pi)
+lightSource.RotateV(-0.5*maths.pi)
+lightSource.RotateW(0.5*maths.pi)
 lightSource.RotateV(-0.5)
-camera.RotateV(-0.5*math.pi)
+camera.RotateV(-0.5*maths.pi)
 camera.RotateU(-0.1)
-camera.RotateW(-0.5*math.pi)
+camera.RotateW(-0.5*maths.pi)
 
 Display(world, showLight = True, showCamera = True)
 
@@ -818,9 +819,9 @@ world = ScannerPart()
 scanner = ScannerPart(offset = Vector3(0, -1700, 1000), parent = world)
 lightSource = ScannerPart(offset = Vector3(0, 0, -250), parent = scanner, lightAngle = 2)
 camera = ScannerPart(offset = Vector3(0, 0, 250), parent = scanner, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25) 
-lightSource.RotateU(-0.5*math.pi)
-lightSource.RotateW(-0.5*math.pi)
-camera.RotateU(-0.5*math.pi)
+lightSource.RotateU(-0.5*maths.pi)
+lightSource.RotateW(-0.5*maths.pi)
+camera.RotateU(-0.5*maths.pi)
 Display(world, showLight = True, showCamera = True)
 
 
@@ -828,7 +829,7 @@ roomLight = ScannerPart(offset = Vector3(0, 0, 3000), parent = world)
 
 polygons = GetVisibilityPolygons(lightSource, room)
 PlotPolygons(polygons)
-SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/calibrate")
+#SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/calibrate")
 
 
 

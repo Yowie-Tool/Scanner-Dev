@@ -3,7 +3,8 @@
 # Adrian Bowyer
 # 19 November 2020
 
-import math, copy, sys
+import copy, sys
+import math as maths
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -22,7 +23,7 @@ veryLong = 6000
 # The standard deviation width of a light stripe on a surface in mm
 
 lightSD = 0.05
-gaussDivide = 1.0/(lightSD*math.sqrt(2.0*math.pi))
+gaussDivide = 1.0/(lightSD*maths.sqrt(2.0*maths.pi))
 
 # Unique count as a string
 
@@ -37,7 +38,7 @@ def UniqueNumber():
 
 def GaussianLightIntensity(d):
  e = d/lightSD
- return math.exp(-0.5*(e*e))*gaussDivide
+ return maths.exp(-0.5*(e*e))*gaussDivide
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -175,7 +176,7 @@ class Vector3:
   d = self.Length2()
   if d <= 0.0:
    print("Attempt to normalize zero-length vector")
-  return self.Multiply(1.0/math.sqrt(d))
+  return self.Multiply(1.0/maths.sqrt(d))
 
  def __repr__(self):
   return 'Vector3(' + str(self.x) + ', ' +  str(self.y) + ', ' +  str(self.z) + ')' 
@@ -189,9 +190,9 @@ class RotationM:
 
  def __init__(self, vec, ang):
   v = vec.Normalize()
-  c = math.cos(-ang)
+  c = maths.cos(-ang)
   c1 = 1.0 - c
-  s = math.sin(-ang)
+  s = maths.sin(-ang)
   x = v.x
   y = v.y
   z = v.z
@@ -268,7 +269,7 @@ class ScannerPart:
 
   # If we are a light source (i.e. lightAngle >= 0) check we're not projecting backwards
 
-  if lightAngle > math.pi:
+  if lightAngle > maths.pi:
    print("Light source with angle > pi: ", lightAngle)
 
   self.lightAngle = lightAngle
@@ -349,7 +350,7 @@ class ScannerPart:
   r = RotationM(self.w, angle)
   self.Rotate(r)
 
-# Create the ray from a pixel in a camera's [u, v] plane through the centre of the lens.
+# Create the ray from a pixel in mm in a camera's [u, v] plane through the centre of the lens.
 
  def GetCameraRay(self, pixelU, pixelV):
   if self.focalLength <= 0:
@@ -412,8 +413,8 @@ class ScannerPart:
 # Find the point in space where the ray from a camera pixel (pixel indices) hits the light sheet from this light source
 
  def CameraPixelIndicesArePointInMyPlane(self, camera, pixelUIndex, pixelVIndex):
-  pixelU = pixelUIndex*self.uMM
-  pixelV = pixelVIndex*self.vMM
+  pixelU = camera.uMM*(pixelUIndex/(camera.uPixels - 1.0) - 0.5)
+  pixelV = camera.vMM*(pixelVIndex/(camera.vPixels - 1.0) - 0.5)
   return self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
 
 # Convert a point p in the [v, w] plane into a point in absolute 3D space.
@@ -449,22 +450,37 @@ class ScannerPart:
 # Short demonstration of how to use this.
 # Uncomment it to run it
 
+# Make the scanner
+
+world = ScannerPart()
+scanner = ScannerPart(offset = Vector3(0, -1700, 1000), parent = world)
+lightSource = ScannerPart(offset = Vector3(0, 0, -250), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = scanner, lightAngle = 2, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1)
+camera = ScannerPart(offset = Vector3(0, 0, 250),  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = scanner, lightAngle = -1, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25) 
+lightSource.RotateU(-0.5*maths.pi)
+lightSource.RotateW(-0.5*maths.pi)
+camera.RotateU(-0.5*maths.pi)
+#Display(world, showLight = True, showCamera = True)
+spacePoint = lightSource.CameraPixelIndicesArePointInMyPlane(camera, 390, 170)
+print("Point in space: ", spacePoint)
+pix = camera.ProjectPointIntoCameraPixel(spacePoint)
+print("Camera pixel: ", pix)
+
 '''
 world = ScannerPart()
 scanner = ScannerPart(offset = Vector3(38, 12, 10), parent = world)
 lightSource = ScannerPart(offset = Vector3(0, 10, 0), parent = scanner, lightAngle = 1)
 camera = ScannerPart(offset = Vector3(0, -10, 0), parent = scanner, uPixels = 75, vPixels = 100, uMM = 1.5, vMM = 2, focalLength = 5) 
-lightSource.RotateV(-0.5*math.pi)
-lightSource.RotateW(0.5*math.pi)
+lightSource.RotateV(-0.5*maths.pi)
+lightSource.RotateW(0.5*maths.pi)
 lightSource.RotateV(-0.5)
-camera.RotateV(-0.5*math.pi)
+camera.RotateV(-0.5*maths.pi)
 camera.RotateU(-0.1)
-camera.RotateW(-0.5*math.pi)
+camera.RotateW(-0.5*maths.pi)
 
 # Find the point in the light sheet corresponding to the pixel indices (3, 17) in the camera
 
 print(lightSource.CameraPixelIndicesArePointInMyPlane(camera, 3, 17))
-
 '''
+
 
 
