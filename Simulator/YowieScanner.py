@@ -447,40 +447,25 @@ class ScannerPart:
 
 #-----------------------------------------------------------------------------------------------------------------------------------------
 
-# Short demonstration of how to use this.
-# Uncomment it to run it
 
-# Make the scanner
 
-world = ScannerPart()
-scanner = ScannerPart(offset = Vector3(0, -1700, 1000), parent = world)
-lightSource = ScannerPart(offset = Vector3(0, 0, -250), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = scanner, lightAngle = 2, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1)
-camera = ScannerPart(offset = Vector3(0, 0, 250),  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = scanner, lightAngle = -1, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25) 
-lightSource.RotateU(-0.5*maths.pi)
-lightSource.RotateW(-0.5*maths.pi)
-camera.RotateU(-0.5*maths.pi)
-#Display(world, showLight = True, showCamera = True)
-spacePoint = lightSource.CameraPixelIndicesArePointInMyPlane(camera, 390, 170)
-print("Point in space: ", spacePoint)
-pix = camera.ProjectPointIntoCameraPixel(spacePoint)
-print("Camera pixel: ", pix)
 
-'''
-world = ScannerPart()
-scanner = ScannerPart(offset = Vector3(38, 12, 10), parent = world)
-lightSource = ScannerPart(offset = Vector3(0, 10, 0), parent = scanner, lightAngle = 1)
-camera = ScannerPart(offset = Vector3(0, -10, 0), parent = scanner, uPixels = 75, vPixels = 100, uMM = 1.5, vMM = 2, focalLength = 5) 
-lightSource.RotateV(-0.5*maths.pi)
-lightSource.RotateW(0.5*maths.pi)
-lightSource.RotateV(-0.5)
-camera.RotateV(-0.5*maths.pi)
-camera.RotateU(-0.1)
-camera.RotateW(-0.5*maths.pi)
+idealWorld = ScannerPart()
+idealScanner = ScannerPart(offset = Vector3(0, -1700, 1000), parent = idealWorld)
+idealLightSource = ScannerPart(offset = Vector3(0, 0, -250), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = idealScanner, lightAngle = 2, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1)
+idealCamera = ScannerPart(offset = Vector3(0, 0, 250),  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = idealScanner, lightAngle = -1, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25) 
+idealLightSource.RotateU(-0.5*maths.pi)
+idealLightSource.RotateW(-0.5*maths.pi)
+idealCamera.RotateU(-0.5*maths.pi)
 
-# Find the point in the light sheet corresponding to the pixel indices (3, 17) in the camera
+# Find the point in the light sheet corresponding to the pixel indices (30, 170) in the camera
+p = idealLightSource.CameraPixelIndicesArePointInMyPlane(idealCamera, 30, 170)
 
-print(lightSource.CameraPixelIndicesArePointInMyPlane(camera, 3, 17))
-'''
+# Find the pixel that point corresponds to
+pix = idealCamera.ProjectPointIntoCameraPixel(p)
+
+print("Point in space: ", p, " corresponds to pixel: ", pix)
+
 
 
 
