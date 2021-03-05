@@ -1,4 +1,4 @@
-19718388115001471
+19726450399840409
 Battery
 BatteryHolder_Bulgin_BX0036_1xC
 Bulgin Battery Holder, BX0036, Battery Type C (https://www.bulgin.com/products/pub/media/bulgin/data/Battery_holders.pdf)
@@ -82824,6 +82824,13 @@ Connector
 12
 12
 digikey-footprints
+632723130112
+<b>WR-COM</b><br> USB 3.1 Type C Receptacle Horizontal Mid-Mount THR / SMT 1.6 mm
+
+0
+28
+28
+digikey-footprints
 ARDUINO_MEGA2560_REV3_-_RETAIL
 
 
@@ -82865,6 +82872,13 @@ https://www.johansontechnology.com/datasheets/antennas/2450AT18A100.pdf
 0
 2
 2
+digikey-footprints
+Arduino_Nano_sidemount
+Arduino Nano, http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf
+Arduino Nano
+0
+30
+30
 digikey-footprints
 BME680
 https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BME680-DS001-00.pdf
@@ -83082,6 +83096,13 @@ CB-5_Formed_Leads
 0
 29
 5
+digikey-footprints
+CONN_10137062-00021LF
+
+
+0
+28
+28
 digikey-footprints
 CUI_PJ-051AH
 
@@ -83824,6 +83845,13 @@ MODULE_DFR0299
 0
 16
 16
+digikey-footprints
+MODULE_RASPBERRY_PI_3_MODEL_B+
+
+
+0
+44
+44
 digikey-footprints
 MSOP-8-1EP_W3mm
 http://www.ti.com/lit/ds/symlink/tpa2005d1-q1.pdf
@@ -86274,6 +86302,13 @@ XDFN-2_1x0.60mm
 0
 2
 2
+digikey-footprints
+YAAJ_BluePill_1
+Through hole headers for BluePill module. No SWD breakout. Fancy silkscreen.
+module BlluePill Blue Pill header SWD breakout
+0
+40
+40
 digikey-footprints
 Zigbee_Module_MRF24J40MA
 http://ww1.microchip.com/downloads/en/DeviceDoc/70329b.pdf
