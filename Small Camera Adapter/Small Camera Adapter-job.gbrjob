@@ -7,7 +7,7 @@
       "Application": "Pcbnew",
       "Version":     "(5.1.7)-1"
     },
-    "CreationDate":  "2021-02-12T20:28:04+00:00"
+    "CreationDate":  "2021-02-26T18:48:09+00:00"
   },
   "GeneralSpecs":
   {
@@ -60,6 +60,11 @@
       "FilePolarity":  "Positive"
     },
     {
+      "Path":  "Small Camera Adapter-F_SilkS.gbr",
+      "FileFunction":  "Legend,Top",
+      "FilePolarity":  "Positive"
+    },
+    {
       "Path":  "Small Camera Adapter-B_SilkS.gbr",
       "FileFunction":  "Legend,Bot",
       "FilePolarity":  "Positive"
@@ -82,6 +87,10 @@
   ],
   "MaterialStackup":
   [
+    {
+      "Type":  "Legend",
+      "Notes":  "Layer F.SilkS"
+    },
     {
       "Type":  "SolderPaste",
       "Notes":  "Layer F.Paste"

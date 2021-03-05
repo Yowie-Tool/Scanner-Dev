@@ -30,17 +30,6 @@ F 8 "Würth Elektronik" H 2075 1850 50  0001 L BNN "Field8"
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:D_Zener D2
-U 1 1 6026D633
-P 3575 2050
-F 0 "D2" H 3575 2267 50  0000 C CNN
-F 1 "D_Zener 3.3V" H 3575 2176 50  0000 C CNN
-F 2 "Diode_SMD:D_SOD-123F" H 3575 2050 50  0001 C CNN
-F 3 "https://uk.rs-online.com/web/p/zener-diodes/8160608/" H 3575 2050 50  0001 C CNN
-	1    3575 2050
-	0    1    1    0   
-$EndComp
-$Comp
 L Device:LED D1
 U 1 1 6026DE3A
 P 3000 3500
@@ -54,13 +43,13 @@ $EndComp
 $Comp
 L Device:R R1
 U 1 1 602704B6
-P 3325 1900
-F 0 "R1" V 3118 1900 50  0000 C CNN
-F 1 "100R" V 3209 1900 50  0000 C CNN
-F 2 "Resistor_SMD:R_2512_6332Metric_Pad1.40x3.35mm_HandSolder" V 3255 1900 50  0001 C CNN
-F 3 "https://uk.rs-online.com/web/p/surface-mount-fixed-resistors/7397957/" H 3325 1900 50  0001 C CNN
-	1    3325 1900
-	0    1    1    0   
+P 2425 4800
+F 0 "R1" V 2218 4800 50  0000 C CNN
+F 1 "1K" V 2309 4800 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2355 4800 50  0001 C CNN
+F 3 "https://uk.rs-online.com/web/p/surface-mount-fixed-resistors/7397957/" H 2425 4800 50  0001 C CNN
+	1    2425 4800
+	-1   0    0    1   
 $EndComp
 $Comp
 L power:GND #PWR0102
@@ -173,90 +162,85 @@ Wire Wire Line
 $Comp
 L power:GND #PWR0105
 U 1 1 6027B84D
-P 3575 2275
-F 0 "#PWR0105" H 3575 2025 50  0001 C CNN
-F 1 "GND" H 3580 2102 50  0000 C CNN
-F 2 "" H 3575 2275 50  0001 C CNN
-F 3 "" H 3575 2275 50  0001 C CNN
-	1    3575 2275
+P 3650 5050
+F 0 "#PWR0105" H 3650 4800 50  0001 C CNN
+F 1 "GND" H 3655 4877 50  0000 C CNN
+F 2 "" H 3650 5050 50  0001 C CNN
+F 3 "" H 3650 5050 50  0001 C CNN
+	1    3650 5050
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:+3.3V #PWR0106
 U 1 1 6027C000
-P 3100 1900
-F 0 "#PWR0106" H 3100 1750 50  0001 C CNN
-F 1 "+3.3V" V 3115 2028 50  0000 L CNN
-F 2 "" H 3100 1900 50  0001 C CNN
-F 3 "" H 3100 1900 50  0001 C CNN
-	1    3100 1900
+P 2150 4175
+F 0 "#PWR0106" H 2150 4025 50  0001 C CNN
+F 1 "+3.3V" V 2165 4303 50  0000 L CNN
+F 2 "" H 2150 4175 50  0001 C CNN
+F 3 "" H 2150 4175 50  0001 C CNN
+	1    2150 4175
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	3100 1900 3175 1900
+	2150 4175 2250 4175
 Wire Wire Line
-	3475 1900 3575 1900
-Wire Wire Line
-	3575 2200 3575 2275
+	3650 4975 3650 5050
 Text GLabel 1675 2550 0    50   Input ~ 0
 3.3VProtected
-Text GLabel 3575 1825 1    50   Input ~ 0
+Text GLabel 3775 4175 2    50   Input ~ 0
 3.3VProtected
-Wire Wire Line
-	3575 1825 3575 1900
-Connection ~ 3575 1900
-Text GLabel 5400 1450 0    50   Input ~ 0
-CAMERADN0
 Text GLabel 5400 1550 0    50   Input ~ 0
+CAMERADN0
+Text GLabel 5400 1450 0    50   Input ~ 0
 CAMERADP0
-Text GLabel 5400 2950 0    50   Input ~ 0
-CAMERADN1
 Text GLabel 5400 3050 0    50   Input ~ 0
+CAMERADN1
+Text GLabel 5400 2950 0    50   Input ~ 0
 CAMERADP1
 Wire Wire Line
-	5500 1450 5400 1450
+	5500 1550 5400 1550
 Wire Wire Line
-	5400 1550 5500 1550
+	5400 1450 5500 1450
 Wire Wire Line
-	5500 2950 5400 2950
+	5500 3050 5400 3050
 Wire Wire Line
-	5400 3050 5500 3050
-Text GLabel 5375 3650 0    50   Input ~ 0
+	5400 2950 5500 2950
+Text GLabel 5375 2750 0    50   Input ~ 0
 CAMERACP
-Text GLabel 5300 2150 0    50   Input ~ 0
-CAMERASCL
 Text GLabel 5300 2050 0    50   Input ~ 0
+CAMERASCL
+Text GLabel 5300 2150 0    50   Input ~ 0
 CAMERASDA
 Wire Wire Line
-	5500 2150 5300 2150
+	5500 2050 5300 2050
 Wire Wire Line
-	5300 2050 5500 2050
-Text GLabel 5400 3250 0    50   Input ~ 0
-CAMERADN1
+	5300 2150 5500 2150
 Text GLabel 5400 3350 0    50   Input ~ 0
+CAMERADN1
+Text GLabel 5400 3250 0    50   Input ~ 0
 CAMERADP1
 Wire Wire Line
-	5500 3250 5400 3250
+	5500 3350 5400 3350
 Wire Wire Line
-	5400 3350 5500 3350
-Text GLabel 5400 2350 0    50   Input ~ 0
-CAMERADN0
+	5400 3250 5500 3250
 Text GLabel 5400 2450 0    50   Input ~ 0
+CAMERADN0
+Text GLabel 5400 2350 0    50   Input ~ 0
 CAMERADP0
 Wire Wire Line
-	5500 2350 5400 2350
+	5500 2450 5400 2450
 Wire Wire Line
-	5400 2450 5500 2450
-Text GLabel 5375 3550 0    50   Input ~ 0
+	5400 2350 5500 2350
+Text GLabel 5375 2650 0    50   Input ~ 0
 CAMERACP
-Text GLabel 5300 2750 0    50   Input ~ 0
+Text GLabel 5300 3650 0    50   Input ~ 0
 CAMERACN
 Wire Wire Line
-	5300 2750 5500 2750
+	5300 3650 5500 3650
 Wire Wire Line
-	5500 3650 5375 3650
+	5500 2750 5375 2750
 Wire Wire Line
-	5375 3550 5500 3550
+	5375 2650 5500 2650
 $Comp
 L power:+3.3V #PWR0107
 U 1 1 6029026D
@@ -283,10 +267,10 @@ F 3 "" H 5350 3850 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	5500 3850 5350 3850
-Text GLabel 5300 1750 0    50   Input ~ 0
+Text GLabel 5300 1850 0    50   Input ~ 0
 CAMERASDA
 Wire Wire Line
-	5300 1750 5500 1750
+	5300 1850 5500 1850
 $Comp
 L power:+3.3V #PWR0113
 U 1 1 602A2F89
@@ -301,12 +285,12 @@ $EndComp
 Wire Wire Line
 	5500 1150 5375 1150
 Wire Wire Line
-	5500 1850 5300 1850
-Text GLabel 5300 1850 0    50   Input ~ 0
+	5500 1750 5300 1750
+Text GLabel 5300 1750 0    50   Input ~ 0
 CAMERASCL
 Wire Wire Line
-	5500 2650 5300 2650
-Text GLabel 5300 2650 0    50   Input ~ 0
+	5500 3550 5300 3550
+Text GLabel 5300 3550 0    50   Input ~ 0
 CAMERACN
 $Comp
 L 10137062-00021LF:10137062-00021LF J2
@@ -325,4 +309,92 @@ $EndComp
 Wire Wire Line
 	5500 3850 5500 3950
 Connection ~ 5500 3850
+$Comp
+L Device:Q_SCR_KAG D3
+U 1 1 60304FE2
+P 3200 4400
+F 0 "D3" H 3288 4446 50  0000 L CNN
+F 1 "Q_SCR_KAG" H 3288 4355 50  0000 L CNN
+F 2 "digikey-footprints:DPAK" V 3200 4400 50  0001 C CNN
+F 3 "~" V 3200 4400 50  0001 C CNN
+	1    3200 4400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3050 4500 2775 4500
+Wire Wire Line
+	2425 4500 2425 4475
+Wire Wire Line
+	2425 4500 2425 4650
+Connection ~ 2425 4500
+Wire Wire Line
+	2425 4175 3200 4175
+Connection ~ 2425 4175
+Wire Wire Line
+	3200 4250 3200 4175
+Wire Wire Line
+	3200 4175 3775 4175
+Wire Wire Line
+	3200 4550 3200 4975
+Wire Wire Line
+	3200 4975 3650 4975
+Wire Wire Line
+	2425 4950 2425 4975
+Wire Wire Line
+	2425 4975 2775 4975
+Connection ~ 3200 4175
+Connection ~ 3200 4975
+$Comp
+L Device:C_Small C2
+U 1 1 6031A6F9
+P 2775 4725
+F 0 "C2" H 2867 4771 50  0000 L CNN
+F 1 "47nF" H 2867 4680 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 2775 4725 50  0001 C CNN
+F 3 "~" H 2775 4725 50  0001 C CNN
+	1    2775 4725
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C_Small C1
+U 1 1 6031ADFF
+P 2250 4700
+F 0 "C1" H 2125 4775 50  0000 L CNN
+F 1 "100nF" H 1900 4625 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 2250 4700 50  0001 C CNN
+F 3 "~" H 2250 4700 50  0001 C CNN
+	1    2250 4700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2250 4600 2250 4175
+Connection ~ 2250 4175
+Wire Wire Line
+	2250 4175 2425 4175
+Wire Wire Line
+	2250 4800 2250 4975
+Wire Wire Line
+	2250 4975 2425 4975
+Connection ~ 2425 4975
+Wire Wire Line
+	2775 4625 2775 4500
+Connection ~ 2775 4500
+Wire Wire Line
+	2775 4500 2425 4500
+Wire Wire Line
+	2775 4825 2775 4975
+Connection ~ 2775 4975
+Wire Wire Line
+	2775 4975 3200 4975
+$Comp
+L Device:D_Zener D2
+U 1 1 6026D633
+P 2425 4325
+F 0 "D2" H 2425 4542 50  0000 C CNN
+F 1 "D_Zener 3.3V" H 2425 4451 50  0000 C CNN
+F 2 "Diode_SMD:D_SOD-123F" H 2425 4325 50  0001 C CNN
+F 3 "https://uk.rs-online.com/web/p/zener-diodes/8160608/" H 2425 4325 50  0001 C CNN
+	1    2425 4325
+	0    1    1    0   
+$EndComp
 $EndSCHEMATC
