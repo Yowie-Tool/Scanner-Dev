@@ -371,16 +371,24 @@ class ScannerPart:
   newRay = (ray[0], ray[0].Add(direction))
   return newRay
 
-# Find the pixel (u, v) in the camera's image plane that the point p projects into
+# Find the pixel coordinates point in the image plane (not necessarily an exact pixel) that point p projects into
 
- def ProjectPointIntoCameraPixel(self, p):
+ def ProjectPointIntoCameraPlane(self, p):
   w = self.w.Multiply(self.focalLength)
   pRelativeInv = self.focalLength/p.Sub(self.AbsoluteOffset().Add(w)).Dot(self.w)
   pd = self.AbsoluteOffset().Sub(p)
   u = pd.Dot(self.u)*pRelativeInv
   v = pd.Dot(self.v)*pRelativeInv
-  u = int(round((u + 0.5*self.uMM)*(self.uPixels - 1)/self.uMM))
-  v = int(round((v + 0.5*self.vMM)*(self.vPixels - 1)/self.vMM))
+  u = (u + 0.5*self.uMM)*(self.uPixels - 1)/self.uMM
+  v = (v + 0.5*self.vMM)*(self.vPixels - 1)/self.vMM
+  return (u, v)
+
+# Find the pixel (u, v) in the camera's image plane that the point p projects into
+
+ def ProjectPointIntoCameraPixel(self, p):
+  uv = self.ProjectPointIntoCameraPlane(p)
+  u = int(round(uv[0]))
+  v = int(round(uv[1]))
   return (u, v)
 
 # Find the implicit plane equation of the light sheet, returned as the normal vector and the origin offset constant
@@ -448,8 +456,7 @@ class ScannerPart:
 #-----------------------------------------------------------------------------------------------------------------------------------------
 
 
-
-
+'''
 idealWorld = ScannerPart()
 idealScanner = ScannerPart(offset = Vector3(0, -1700, 1000), parent = idealWorld)
 idealLightSource = ScannerPart(offset = Vector3(0, 0, -250), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = idealScanner, lightAngle = 2, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1)
@@ -466,6 +473,6 @@ pix = idealCamera.ProjectPointIntoCameraPixel(p)
 
 print("Point in space: ", p, " corresponds to pixel: ", pix)
 
-
+'''
 
 

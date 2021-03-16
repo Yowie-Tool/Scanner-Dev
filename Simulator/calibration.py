@@ -1,10 +1,11 @@
 # Simulation of scanner calibration
 
+from random import seed, random, gauss
+
 from YowieScanner import *
 
 r2 = maths.sqrt(2.0)
 sideLength = 500
-2.21576925
 
 # Make a 45, 45, 90 triangle in space at angle apexAndAngle[1] to the X axis with the right angle at apexAndAngle[0]
 
@@ -37,11 +38,30 @@ def TriangleErrors(triangles, realCamera, idealLightSource, idealCamera):
  for triangle in triangles:
   corners = []
   for i in range(3):
-   pix = realCamera.ProjectPointIntoCameraPixel(triangle[i])
+   pix = realCamera.ProjectPointIntoCameraPlane(triangle[i])
    spacePoint = idealLightSource.CameraPixelIndicesArePointInMyPlane(idealCamera, pix[0], pix[1])
    corners.append(spacePoint)
   sum += TriangleSquaredError(corners, sideLength)
  return sum
+
+# Uniform random number in [-1, 1]
+
+def Random2():
+ return random()*2.0 - 1.0
+
+# Generate a random vector of mean length with standard deviation sd
+# by rejection sampling on the unit ball
+
+def RandomVector(mean, sd):
+ s = 2.0
+ while s > 1.0:
+  x = Random2()
+  y = Random2()
+  z = Random2()
+  s = x*x + y*y + z*z
+ v = Vector3(x, y, z).Normalize().Multiply(gauss(mean, sd))
+ return v
+
 
 def MakeTriangles(apexesAndAngles):
  triangles = []
@@ -49,27 +69,45 @@ def MakeTriangles(apexesAndAngles):
   triangles.append(Triangle(sideLength, apexAndAngle))
  return triangles
 
+def MakeScanner(world, scannerOffset, lightOffset, lightAng, cameraOffset, uPix, vPix, uM, vM, focalLen, mean, sd):
+ if mean < veryShort2:
+  so = scannerOffset
+  lo = lightOffset
+  la = lightAng
+  co = cameraOffset
+  fl = focalLen
+ else:
+  so = scannerOffset.Add(RandomVector(mean, sd))
+  lo = lightOffset.Add(RandomVector(mean, sd))
+  la = lightAng + gauss(0.0, sd)  #???
+  co = cameraOffset.Add(RandomVector(mean, sd))
+  fl = focalLen + gauss(0.0, sd)  #???
+ scanner = ScannerPart(offset = so, parent = world)
+ lightSource = ScannerPart(offset = lo, u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = scanner, lightAngle = la)
+ camera = ScannerPart(offset = co,  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = scanner, uPixels = uPix, vPixels = vPix, uMM =  uM, vMM = vM, focalLength = fl)
+ lightSource.RotateU(-0.5*maths.pi)
+ lightSource.RotateW(-0.5*maths.pi)
+ camera.RotateU(-0.5*maths.pi)
+ return (scanner, lightSource, camera)
+
+#*********************************************************************************************
+
+seed(1)
+
+world = ScannerPart()
+
 # Make the scanner with small errors in its relative positions and angles; that is the scanner as it really is.
 
 realWorld = ScannerPart()
-realScanner = ScannerPart(offset = Vector3(0, -1701, 1001), parent = realWorld)
-realLightSource = ScannerPart(offset = Vector3(0, 0, -251), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = realScanner, lightAngle = 2, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1)
-realCamera = ScannerPart(offset = Vector3(0, 0, 251),  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = realScanner, lightAngle = -1, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25.1) 
-realLightSource.RotateU(-0.5*maths.pi)
-realLightSource.RotateW(-0.5*maths.pi)
-realCamera.RotateU(-0.5*maths.pi)
-#Display(world, showLight = True, showCamera = True)
+realScanner = MakeScanner(world, Vector3(0, -1700, 1000), Vector3(0, 0, -250), 2, Vector3(0, 0, 250), 2464, 3280, 17.64, 24.088543586543586, 25, 0.0, 0.0)
+realLightSource = realScanner[1]
+realCamera = realScanner[2]
 
 # Make an ideal scanner with no errors as a starting point.  This has to be corrected to correspond with the scanner above.
 
-idealWorld = ScannerPart()
-idealScanner = ScannerPart(offset = Vector3(0, -1700, 1000), parent = idealWorld)
-idealLightSource = ScannerPart(offset = Vector3(0, 0, -250), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = idealScanner, lightAngle = 2, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1)
-idealCamera = ScannerPart(offset = Vector3(0, 0, 250),  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = idealScanner, lightAngle = -1, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25) 
-idealLightSource.RotateU(-0.5*maths.pi)
-idealLightSource.RotateW(-0.5*maths.pi)
-idealCamera.RotateU(-0.5*maths.pi)
-
+idealScanner = MakeScanner(world, Vector3(0, -1700, 1000), Vector3(0, 0, -250), 2, Vector3(0, 0, 250), 2464, 3280, 17.64, 24.088543586543586, 25, 0.0, 0.0)
+idealLightSource = idealScanner[1]
+idealCamera = idealScanner[2]
 
 apexesAndAngles = []
 
