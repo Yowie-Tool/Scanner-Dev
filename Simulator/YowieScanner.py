@@ -1,6 +1,8 @@
 
 # Yowie Tool Scanner Simulator
 # Adrian Bowyer
+# RepRap Ltd
+# https://reprapltd.com
 # 19 November 2020
 
 import copy, sys
@@ -142,7 +144,7 @@ class Line2D:
 
 #----------------------------------------------------------------------------------------------------------------------------
 
-# The simulator needs its own 3D vector algebra and rotation matrix classes so it can stand alone independently of FreeCad
+# The simulator needs its own 3D vector algebra and rotation matrix classes so it can stand alone independently of FreeCAD
 
 class Vector3:
  def __init__(self, x = 0, y = 0, z = 0):
@@ -318,7 +320,7 @@ class ScannerPart:
   self.notMoved = True
   return self.position
 
-# Rotate my coordinates, and the coordinates of all my descendents recursively
+# Rotate my coordinates, and the coordinates of all my descendants recursively
 
  def Rotate(self, r):
   self.notMoved = False
@@ -374,6 +376,8 @@ class ScannerPart:
 # Find the pixel coordinates point in the image plane (not necessarily an exact pixel) that point p projects into
 
  def ProjectPointIntoCameraPlane(self, p):
+  if self.focalLength <= 0.0:
+   print("Attempt to get a pixel from a scanner part that is not a camera.")
   w = self.w.Multiply(self.focalLength)
   pRelativeInv = self.focalLength/p.Sub(self.AbsoluteOffset().Add(w)).Dot(self.w)
   pd = self.AbsoluteOffset().Sub(p)
@@ -383,7 +387,7 @@ class ScannerPart:
   v = (v + 0.5*self.vMM)*(self.vPixels - 1)/self.vMM
   return (u, v)
 
-# Find the pixel (u, v) in the camera's image plane that the point p projects into
+# Find the integer pixel (u, v) in the camera's image plane nearest where the point p projects into
 
  def ProjectPointIntoCameraPixel(self, p):
   uv = self.ProjectPointIntoCameraPlane(p)
@@ -453,26 +457,7 @@ class ScannerPart:
   v = self.v.Multiply(p.y)
   return self.AbsoluteOffset().add(u).add(v)
 
-#-----------------------------------------------------------------------------------------------------------------------------------------
 
 
-'''
-idealWorld = ScannerPart()
-idealScanner = ScannerPart(offset = Vector3(0, -1700, 1000), parent = idealWorld)
-idealLightSource = ScannerPart(offset = Vector3(0, 0, -250), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = idealScanner, lightAngle = 2, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1)
-idealCamera = ScannerPart(offset = Vector3(0, 0, 250),  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = idealScanner, lightAngle = -1, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25) 
-idealLightSource.RotateU(-0.5*maths.pi)
-idealLightSource.RotateW(-0.5*maths.pi)
-idealCamera.RotateU(-0.5*maths.pi)
-
-# Find the point in the light sheet corresponding to the pixel indices (30, 170) in the camera
-p = idealLightSource.CameraPixelIndicesArePointInMyPlane(idealCamera, 30, 170)
-
-# Find the pixel that point corresponds to
-pix = idealCamera.ProjectPointIntoCameraPixel(p)
-
-print("Point in space: ", p, " corresponds to pixel: ", pix)
-
-'''
 
 

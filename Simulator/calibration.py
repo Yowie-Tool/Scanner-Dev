@@ -1,7 +1,10 @@
 # Simulation of scanner calibration
+# Adrian Bowyer
+# RepRap Ltd
+# https://reprapltd.com
+# 2 March 2021
 
 from random import seed, random, gauss
-
 from YowieScanner import *
 
 r2 = maths.sqrt(2.0)
@@ -22,12 +25,12 @@ def Triangle(side, apexAndAngle):
 
 def TriangleSquaredError(triangle, side):
  sum = 0.0
- for i in range(3): 
-  if i is not 2:
-   s = maths.sqrt(triangle[i].Sub(triangle[(i+1)%3]).Length2()) - side
-  else:
-   s = maths.sqrt(triangle[i].Sub(triangle[(i+1)%3]).Length2()) - side*r2
-  sum += s*s
+ s = maths.sqrt(triangle[1].Sub(triangle[0]).Length2()) - side
+ sum += s*s
+ s = maths.sqrt(triangle[2].Sub(triangle[1]).Length2()) - side
+ sum += s*s
+ s = maths.sqrt(triangle[0].Sub(triangle[2]).Length2()) - side*r2
+ sum += s*s
  return sum
 
 # Take triangles in space, find the pixels in the real camera of their corners, project them back in to the scene using
@@ -50,7 +53,7 @@ def Random2():
  return random()*2.0 - 1.0
 
 # Generate a random vector of mean length with standard deviation sd
-# by rejection sampling on the unit ball
+# by rejection sampling in the unit ball
 
 def RandomVector(mean, sd):
  s = 2.0
