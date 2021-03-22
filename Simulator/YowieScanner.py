@@ -395,7 +395,7 @@ class ScannerPart:
   v = int(round(uv[1]))
   return (u, v)
 
-# Find the implicit plane equation of the light sheet, returned as the normal vector and the origin offset constant
+# Find the implicit plane equation of the light sheet, returned as the unit length normal vector and the origin offset constant
 
  def GetLightPlane(self):
   if self.lightAngle <= 0:
