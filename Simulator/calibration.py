@@ -10,38 +10,38 @@ from YowieScanner import *
 r2 = maths.sqrt(2.0)
 sideLength = 500
 
+# Make a 45, 45, 90 triangle in space at angle apexAndAngle[1] to the X axis with the right angle at apexAndAngle[0]
+
+def Triangle(side, apexAndAngle):
+ triangle = []
+ x = side*maths.cos(apexAndAngle[1])
+ y = side*maths.sin(apexAndAngle[1])
+ triangle.append(Vector3(apexAndAngle[0].x - x, apexAndAngle[0].y + y, apexAndAngle[0].z))
+ triangle.append(apexAndAngle[0])
+ triangle.append(Vector3(apexAndAngle[0].x + y, apexAndAngle[0].y + x, apexAndAngle[0].z))
+ return triangle
+
 # Sum the squared errors in the lengths of a triangles sides compared with the ideal 45, 45, 90 triangle
 
 def TriangleSquaredError(triangle, side):
- #print(triangle)
  sum = 0.0
  s = maths.sqrt(triangle[1].Sub(triangle[0]).Length2()) - side
- #print(s)
  sum += s*s
  s = maths.sqrt(triangle[2].Sub(triangle[1]).Length2()) - side
- #print(s)
  sum += s*s
  s = maths.sqrt(triangle[0].Sub(triangle[2]).Length2()) - side*r2
- #print(s)
- #print()
  sum += s*s
  return sum
 
 # Take triangles in space, find the pixels in the real camera of their corners, project them back in to the scene using
 # the scanner that is to be calibrated, and sum the resulting squared errors.
 
-def TriangleErrors(triangles, realLightSource, realCamera, idealLightSource, idealCamera):
- plane = realLightSource.GetLightPlane()
- planeDVector = plane[0].Multiply(-plane[1])
+def TriangleErrors(triangles, realCamera, idealLightSource, idealCamera):
  sum = 0.0
  for triangle in triangles:
   corners = []
   for i in range(3):
-   #v = triangle[i]
-   vOffset = planeDVector.Sub(plane[0].Multiply(triangle[i].Dot(plane[0])))
-   #print(vOffset)
-   v = triangle[i].Add(vOffset)
-   pix = realCamera.ProjectPointIntoCameraPlane(v)
+   pix = realCamera.ProjectPointIntoCameraPlane(triangle[i])
    spacePoint = idealLightSource.CameraPixelIndicesArePointInMyPlane(idealCamera, pix[0], pix[1])
    corners.append(spacePoint)
   print(triangle)
@@ -68,21 +68,11 @@ def RandomVector(mean, sd):
  v = Vector3(x, y, z).Normalize().Multiply(gauss(mean, sd))
  return v
 
-# Make a 45, 45, 90 triangle in space at angle apexAndAngle[1] to the X axis with the right angle at apexAndAngle[0]
-
-def Triangle(apexAndAngle):
- triangle = []
- x = sideLength*maths.cos(apexAndAngle[1])
- y = sideLength*maths.sin(apexAndAngle[1])
- triangle.append(Vector3(apexAndAngle[0].x - x, apexAndAngle[0].y + y, apexAndAngle[0].z))
- triangle.append(apexAndAngle[0])
- triangle.append(Vector3(apexAndAngle[0].x + y, apexAndAngle[0].y + x, apexAndAngle[0].z))
- return triangle
 
 def MakeTriangles(apexesAndAngles):
  triangles = []
  for apexAndAngle in apexesAndAngles:
-  triangles.append(Triangle(apexAndAngle))
+  triangles.append(Triangle(sideLength, apexAndAngle))
  return triangles
 
 def MakeScanner(world, scannerOffset, lightOffset, lightAng, cameraOffset, uPix, vPix, uM, vM, focalLen, mean, sd):
@@ -95,7 +85,7 @@ def MakeScanner(world, scannerOffset, lightOffset, lightAng, cameraOffset, uPix,
  else:
   so = scannerOffset.Add(RandomVector(mean, sd))
   lo = lightOffset.Add(RandomVector(mean, sd))
-  la = lightAng # + gauss(0.0, sd)  #???
+  la = lightAng + gauss(0.0, sd)  #???
   co = cameraOffset.Add(RandomVector(mean, sd))
   fl = focalLen + gauss(0.0, sd)  #???
  scanner = ScannerPart(offset = so, parent = world)
@@ -127,14 +117,14 @@ idealCamera = idealScanner[2]
 
 apexesAndAngles = []
 
-apexesAndAngles.append( (Vector3(-400.0, -3500.0, 750.0), 0.4) )
-apexesAndAngles.append( (Vector3(470.0, -3600.0, 750.0), 0.27) )
-apexesAndAngles.append( (Vector3(-40.0, -3400.0, 750.0), 0.6) )
+apexesAndAngles.append( (Vector3(-400.0, -3500.0, 2000.0), 0.4) )
+apexesAndAngles.append( (Vector3(470.0, -3600.0, 2000.0), 0.27) )
+apexesAndAngles.append( (Vector3(-40.0, -3400.0, 2000.0), 0.6) )
 
 
 triangles = MakeTriangles(apexesAndAngles)
 
 
-print("Squared errors: ", TriangleErrors(triangles, realLightSource, realCamera, idealLightSource, idealCamera))
-#print("Squared errors: ", TriangleErrors(triangles, idealLightSource, idealCamera, idealLightSource, idealCamera))
+print("Squared errors: ", TriangleErrors(triangles, realCamera, idealLightSource, idealCamera))
+
 
