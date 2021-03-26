@@ -7,6 +7,7 @@
 
 import copy, sys
 import math as maths
+from random import seed, random, gauss
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -171,6 +172,10 @@ class Vector3:
    self.x*v.y - self.y*v.x
    )
 
+ def Del(self, v, divisor):
+  d = self.Sub(v)
+  return d.Multiply(1.0/divisor)
+
  def Length2(self):
   return self.Dot(self)
 
@@ -182,6 +187,26 @@ class Vector3:
 
  def __repr__(self):
   return 'Vector3(' + str(self.x) + ', ' +  str(self.y) + ', ' +  str(self.z) + ')' 
+
+#---
+
+# Uniform random number in [-1, 1]
+
+def Random2():
+ return random()*2.0 - 1.0
+
+# Generate a random vector of mean length with standard deviation sd
+# by rejection sampling in the unit ball
+
+def RandomVector(mean, sd):
+ s = 2.0
+ while s > 1.0:
+  x = Random2()
+  y = Random2()
+  z = Random2()
+  s = x*x + y*y + z*z
+ v = Vector3(x, y, z).Normalize().Multiply(gauss(mean, sd))
+ return v
 
 #---
 
@@ -463,6 +488,38 @@ class ScannerPart:
   u = self.u.Multiply(p.x)
   v = self.v.Multiply(p.y)
   return self.AbsoluteOffset().add(u).add(v)
+
+# Small class to hold the parameters needed to build a complete scanner
+# Make a scanner in the standard configuration
+
+class Scanner:
+ def __init__(self, world, scannerOffset, lightOffset, lightAng, cameraOffset, uPix, vPix, uM, vM, focalLen):
+  self.scannerOffset = scannerOffset
+  self.lightOffset = lightOffset
+  self.lightAng = lightAng
+  self.cameraOffset = cameraOffset
+  self.uPix = uPix
+  self.vPix = vPix
+  self.uM = uM
+  self.vM = vM
+  self.focalLen = focalLen
+
+  self.scanner = ScannerPart(offset = scannerOffset, parent = world)
+  self.lightSource = ScannerPart(offset = lightOffset, u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = self.scanner, lightAngle = lightAng)
+  self.camera = ScannerPart(offset = cameraOffset,  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = self.scanner, uPixels = uPix, vPixels = vPix, uMM =  uM, vMM = vM, focalLength = focalLen)
+  self.lightSource.RotateU(-0.5*maths.pi)
+  self.lightSource.RotateW(-0.5*maths.pi)
+  self.camera.RotateU(-0.5*maths.pi)
+
+ def Copy(self):
+  return Scanner(self.scanner.parent, self.scannerOffset, self.lightOffset, self.lightAng, self.cameraOffset, self.uPix, self.vPix, self.uM, self.vM, self.focalLen)
+
+ def PurturbedCopy(self, mean, sd):
+  if mean < veryShort2:
+   return self.Copy()
+  return Scanner(self.scanner.parent, self.scannerOffset.Add(RandomVector(mean, sd)), self.lightOffset.Add(RandomVector(mean, sd)), self.lightAng, self.cameraOffset.Add(RandomVector(mean, sd)),
+                 self.uPix, self.vPix, self.uM, self.vM, self.focalLen + gauss(0.0, sd))
+
 
 
 
