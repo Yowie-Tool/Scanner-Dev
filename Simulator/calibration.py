@@ -13,16 +13,17 @@ sideLength = 500
 # Sum the squared errors in the lengths of a triangles sides compared with the ideal 45, 45, 90 triangle
 
 def TriangleSquaredError(triangle, side):
+ #print(triangle)
  sum = 0.0
  s = maths.sqrt(triangle[1].Sub(triangle[0]).Length2()) - side
- print(s)
+ #print(s)
  sum += s*s
  s = maths.sqrt(triangle[2].Sub(triangle[1]).Length2()) - side
- print(s)
+ #print(s)
  sum += s*s
  s = maths.sqrt(triangle[0].Sub(triangle[2]).Length2()) - side*r2
- print(s)
- print()
+ #print(s)
+ #print()
  sum += s*s
  return sum
 
@@ -43,6 +44,9 @@ def TriangleErrors(triangles, realLightSource, realCamera, idealLightSource, ide
    pix = realCamera.ProjectPointIntoCameraPlane(v)
    spacePoint = idealLightSource.CameraPixelIndicesArePointInMyPlane(idealCamera, pix[0], pix[1])
    corners.append(spacePoint)
+  print(triangle)
+  print(corners)
+  print()
   sum += TriangleSquaredError(corners, sideLength)
  return sum
 
@@ -132,5 +136,5 @@ triangles = MakeTriangles(apexesAndAngles)
 
 
 print("Squared errors: ", TriangleErrors(triangles, realLightSource, realCamera, idealLightSource, idealCamera))
-
+#print("Squared errors: ", TriangleErrors(triangles, idealLightSource, idealCamera, idealLightSource, idealCamera))
 

@@ -407,7 +407,9 @@ class ScannerPart:
 
 # Find the point in space where the ray from a camera pixel (mm coordinates) hits the light sheet from this light source
 
- def CameraPixelIsPointInMyPlane(self, camera, pixelU, pixelV):
+ def CameraPixelIsPointInMyPlane(self, camera, pixU, pixV):
+  pixelU = camera.uMM*(pixU/(camera.uPixels - 1.0) - 0.5)
+  pixelV = camera.vMM*(pixV/(camera.vPixels - 1.0) - 0.5)
   plane = self.GetLightPlane()
   normal = plane[0]
   d = plane[1]
@@ -425,9 +427,7 @@ class ScannerPart:
 # Find the point in space where the ray from a camera pixel (pixel indices) hits the light sheet from this light source
 
  def CameraPixelIndicesArePointInMyPlane(self, camera, pixelUIndex, pixelVIndex):
-  pixelU = camera.uMM*(pixelUIndex/(camera.uPixels - 1.0) - 0.5)
-  pixelV = camera.vMM*(pixelVIndex/(camera.vPixels - 1.0) - 0.5)
-  return self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
+  return self.CameraPixelIsPointInMyPlane(camera, pixelUIndex, pixelUIndex)
 
 # Convert a point p in the [v, w] plane into a point in absolute 3D space.
 # The [v, w] plane is the light sheet for a light source.  Remember that
