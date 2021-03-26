@@ -300,7 +300,14 @@ class ScannerPart:
   self.notMoved = False
   self.position = Vector3(0, 0, 0)
 
+  # Storage for a parameter vector that allows a scanner to be reconstructed
+
+  self.parameters = []
+
 #-----------------
+
+ def SetParameters(self, parameters):
+  self.parameters = parameters
 
 # Compute my absolute offset from the origin recursively
 # Use lazy evaluation if I haven't moved.
@@ -422,11 +429,11 @@ class ScannerPart:
   tPoint = rayDirection.Multiply(t).Add(t0Point)
   return tPoint
 
-# Find the point in space where the ray from a camera pixel (pixel indices) hits the light sheet from this light source
+# Find the point in space where the ray from a camera pixel (pixel coordinates; not necessarily integers) hits the light sheet from this light source
 
- def CameraPixelIndicesArePointInMyPlane(self, camera, pixelUIndex, pixelVIndex):
-  pixelU = camera.uMM*(pixelUIndex/(camera.uPixels - 1.0) - 0.5)
-  pixelV = camera.vMM*(pixelVIndex/(camera.vPixels - 1.0) - 0.5)
+ def CameraPixelCoordinatesArePointInMyPlane(self, camera, pixelUCoordinate, pixelVCoordinate):
+  pixelU = camera.uMM*(pixelUCoordinate/(camera.uPixels - 1.0) - 0.5)
+  pixelV = camera.vMM*(pixelVCoordinate/(camera.vPixels - 1.0) - 0.5)
   return self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
 
 # Convert a point p in the [v, w] plane into a point in absolute 3D space.

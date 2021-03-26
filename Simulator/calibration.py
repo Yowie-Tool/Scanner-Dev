@@ -36,17 +36,18 @@ def TriangleSquaredError(triangle, side):
 # Take triangles in space, find the pixels in the real camera of their corners, project them back in to the scene using
 # the scanner that is to be calibrated, and sum the resulting squared errors.
 
-def TriangleErrors(triangles, realCamera, idealLightSource, idealCamera):
+def TriangleErrors(triangles, realCamera, idealLightSource, idealCamera, printTriangles):
  sum = 0.0
  for triangle in triangles:
   corners = []
   for i in range(3):
    pix = realCamera.ProjectPointIntoCameraPlane(triangle[i])
-   spacePoint = idealLightSource.CameraPixelIndicesArePointInMyPlane(idealCamera, pix[0], pix[1])
+   spacePoint = idealLightSource.CameraPixelCoordinatesArePointInMyPlane(idealCamera, pix[0], pix[1])
    corners.append(spacePoint)
-  print(triangle)
-  print(corners)
-  print()
+  if printTriangles:
+   print(triangle)
+   print(corners)
+   print()
   sum += TriangleSquaredError(corners, sideLength)
  return sum
 
@@ -85,7 +86,7 @@ def MakeScanner(world, scannerOffset, lightOffset, lightAng, cameraOffset, uPix,
  else:
   so = scannerOffset.Add(RandomVector(mean, sd))
   lo = lightOffset.Add(RandomVector(mean, sd))
-  la = lightAng + gauss(0.0, sd)  #???
+  la = lightAng # + gauss(0.0, sd)  #???
   co = cameraOffset.Add(RandomVector(mean, sd))
   fl = focalLen + gauss(0.0, sd)  #???
  scanner = ScannerPart(offset = so, parent = world)
@@ -94,11 +95,12 @@ def MakeScanner(world, scannerOffset, lightOffset, lightAng, cameraOffset, uPix,
  lightSource.RotateU(-0.5*maths.pi)
  lightSource.RotateW(-0.5*maths.pi)
  camera.RotateU(-0.5*maths.pi)
+ scanner.SetParameters([so, lo, la, co, fl])
  return (scanner, lightSource, camera)
 
 #*********************************************************************************************
 
-seed(1)
+seed(2)
 
 world = ScannerPart()
 
@@ -109,22 +111,32 @@ realScanner = MakeScanner(world, Vector3(0, -1700, 1000), Vector3(0, 0, -250), 2
 realLightSource = realScanner[1]
 realCamera = realScanner[2]
 
-# Make an ideal scanner with no errors as a starting point.  This has to be corrected to correspond with the scanner above.
-
-idealScanner = MakeScanner(world, Vector3(0, -1700, 1000), Vector3(0, 0, -250), 2, Vector3(0, 0, 250), 2464, 3280, 17.64, 24.088543586543586, 25, 0.0, 0.0)
-idealLightSource = idealScanner[1]
-idealCamera = idealScanner[2]
+# Make the triangles in the scene
 
 apexesAndAngles = []
-
 apexesAndAngles.append( (Vector3(-400.0, -3500.0, 2000.0), 0.4) )
 apexesAndAngles.append( (Vector3(470.0, -3600.0, 2000.0), 0.27) )
 apexesAndAngles.append( (Vector3(-40.0, -3400.0, 2000.0), 0.6) )
-
-
 triangles = MakeTriangles(apexesAndAngles)
 
+# Make an ideal scanner with no errors as a starting point.  This has to be corrected to correspond with the scanner above.
 
-print("Squared errors: ", TriangleErrors(triangles, realCamera, idealLightSource, idealCamera))
+minSE = 100000000000
+
+for i in range(2000):
+ idealScanner = MakeScanner(world, Vector3(0, -1700, 1000), Vector3(0, 0, -250), 2, Vector3(0, 0, 250), 2464, 3280, 17.64, 24.088543586543586, 25, 2.0, 0.5)
+ idealLightSource = idealScanner[1]
+ idealCamera = idealScanner[2]
+
+ tse = TriangleErrors(triangles, realCamera, idealLightSource, idealCamera, False)
+ #print("Squared errors: ", tse)
+ if tse < minSE:
+  print("--------")
+  tse = TriangleErrors(triangles, realCamera, idealLightSource, idealCamera, True)
+  parameters = idealScanner[0].parameters
+  minSE = tse
+
+print("Min error: ", minSE)
+print(parameters)
 
 
