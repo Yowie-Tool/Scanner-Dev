@@ -198,7 +198,7 @@ def Random2():
 # Generate a random vector of mean length with standard deviation sd
 # by rejection sampling in the unit ball
 
-def RandomVector(mean, sd):
+def RandomVector3(mean, sd):
  s = 2.0
  while s > 1.0:
   x = Random2()
@@ -281,7 +281,9 @@ class RotationM:
 
 class ScannerPart:
  def __init__(self, offset = Vector3(0, 0, 0), u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = None,\
-  lightAngle = -1, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1):
+  lightAngle = -1, uPixels = 0, vPixels = 0, uMM = 0, vMM = 0, focalLength = -1, name = ""):
+
+  self.name = name
 
   # Offset from the parent in the parent's coordinate system
   # If the parent is None these are absolute cartesian coordinates
@@ -325,14 +327,30 @@ class ScannerPart:
   self.notMoved = False
   self.position = Vector3(0, 0, 0)
 
-  # Storage for a parameter vector that allows a scanner to be reconstructed
+  # Flag for reporting what's going on
 
-  self.parameters = []
+  self.debug = False
 
 #-----------------
 
- def SetParameters(self, parameters):
-  self.parameters = parameters
+# Set my name down through my children recursively
+
+ def SetName(self, name):
+  self.name = name
+  for child in self.children:
+   child.SetName(name)
+
+# Turn debugging on and off for me and all my children recursively
+
+ def DebugOn(self):
+  self.debug = True
+  for child in self.children:
+   child.DebugOn()
+
+ def DebugOff(self):
+  self.debug = False
+  for child in self.children:
+   child.DebugOff()
 
 # Compute my absolute offset from the origin recursively
 # Use lazy evaluation if I haven't moved.
@@ -394,7 +412,8 @@ class ScannerPart:
   pixel = self.AbsoluteOffset().Add(u).Add(v)  
   w = self.w.Multiply(self.focalLength)
   lens = self.AbsoluteOffset().Add(w)
-  return (pixel, lens)
+  ray = (pixel, lens)
+  return ray
 
 # As above, but so that parameter values along the ray measure real distance
 
@@ -415,9 +434,12 @@ class ScannerPart:
   pd = self.AbsoluteOffset().Sub(p)
   u = pd.Dot(self.u)*pRelativeInv
   v = pd.Dot(self.v)*pRelativeInv
-  u = (u + 0.5*self.uMM)*(self.uPixels - 1)/self.uMM
-  v = (v + 0.5*self.vMM)*(self.vPixels - 1)/self.vMM
-  return (u, v)
+  uu = (u + 0.5*self.uMM)*(self.uPixels - 1)/self.uMM
+  vv = (v + 0.5*self.vMM)*(self.vPixels - 1)/self.vMM
+  pixel = (uu, vv)
+  if self.debug:
+   print(self.name, " - Point ", p, " projects to pixel ", pixel, "(mm: ", u, ", ", v, ")")
+  return pixel
 
 # Find the integer pixel (u, v) in the camera's image plane nearest where the point p projects into
 
@@ -435,7 +457,8 @@ class ScannerPart:
   uu = copy.deepcopy(self.u)
   pointInPlane = self.AbsoluteOffset()
   offset = -uu.Dot(pointInPlane)
-  return (uu, offset)
+  plane = (uu, offset)
+  return plane
 
 # Find the point in space where the ray from a camera pixel (mm coordinates) hits the light sheet from this light source
 
@@ -445,13 +468,16 @@ class ScannerPart:
   d = plane[1]
   ray = camera.GetCameraRay(pixelU, pixelV)
   t0Point = ray[0]
-  rayDirection = ray[1].Sub(ray[0])
+  rayDirection = ray[1].Sub(t0Point)
   sp = rayDirection.Dot(normal)
   if abs(sp) < veryShort2:
    print("Ray is parallel to plane.")
    return Vector3(0, 0, 0)
-  t = -d/sp
+  inPlane = -(normal.Dot(t0Point) + d)
+  t = inPlane/sp
   tPoint = rayDirection.Multiply(t).Add(t0Point)
+  if self.debug:
+   print("] makes a ray ", ray, " that \n         hits the light plane ", plane, " at: ", tPoint)
   return tPoint
 
 # Find the point in space where the ray from a camera pixel (pixel coordinates; not necessarily integers) hits the light sheet from this light source
@@ -459,7 +485,10 @@ class ScannerPart:
  def CameraPixelCoordinatesArePointInMyPlane(self, camera, pixelUCoordinate, pixelVCoordinate):
   pixelU = camera.uMM*(pixelUCoordinate/(camera.uPixels - 1.0) - 0.5)
   pixelV = camera.vMM*(pixelVCoordinate/(camera.vPixels - 1.0) - 0.5)
-  return self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
+  if self.debug:
+   print(self.name, "Pixel [", pixelUCoordinate, ", ", pixelVCoordinate, end = '')
+  tPoint = self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
+  return tPoint
 
 # Convert a point p in the [v, w] plane into a point in absolute 3D space.
 # The [v, w] plane is the light sheet for a light source.  Remember that
@@ -511,13 +540,22 @@ class Scanner:
   self.lightSource.RotateW(-0.5*maths.pi)
   self.camera.RotateU(-0.5*maths.pi)
 
+ def SetName(self, name):
+  self.scanner.SetName(name)
+
+ def DebugOn(self):
+  self.scanner.DebugOn()
+
+ def DebugOff(self):
+  self.scanner.DebugOff()
+
  def Copy(self):
   return Scanner(self.scanner.parent, self.scannerOffset, self.lightOffset, self.lightAng, self.cameraOffset, self.uPix, self.vPix, self.uM, self.vM, self.focalLen)
 
  def PurturbedCopy(self, mean, sd):
   if mean < veryShort2:
    return self.Copy()
-  return Scanner(self.scanner.parent, self.scannerOffset.Add(RandomVector(mean, sd)), self.lightOffset.Add(RandomVector(mean, sd)), self.lightAng, self.cameraOffset.Add(RandomVector(mean, sd)),
+  return Scanner(self.scanner.parent, self.scannerOffset.Add(RandomVector3(mean, sd)), self.lightOffset.Add(RandomVector3(mean, sd)), self.lightAng, self.cameraOffset.Add(RandomVector3(mean, sd)),
                  self.uPix, self.vPix, self.uM, self.vM, self.focalLen + gauss(0.0, sd))
 
 

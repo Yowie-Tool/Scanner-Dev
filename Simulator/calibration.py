@@ -40,6 +40,8 @@ def TriangleErrors(triangles, realScanner, idealScanner, printTriangles):
  realCamera = realScanner.camera
  idealLightSource = idealScanner.lightSource
  idealCamera = idealScanner.camera
+ if printTriangles:
+  print(" Original and reconstructed triangles: ")
  sum = 0.0
  for triangle in triangles:
   corners = []
@@ -48,8 +50,8 @@ def TriangleErrors(triangles, realScanner, idealScanner, printTriangles):
    spacePoint = idealLightSource.CameraPixelCoordinatesArePointInMyPlane(idealCamera, pix[0], pix[1])
    corners.append(spacePoint)
   if printTriangles:
-   print(triangle)
-   print(corners)
+   print("  ", triangle)
+   print("  ", corners)
    print()
   sum += TriangleSquaredError(corners, sideLength)
  return sum
@@ -62,7 +64,23 @@ def MakeTriangles(apexesAndAngles):
   triangles.append(Triangle(sideLength, apexAndAngle))
  return triangles
 
+# Generate scanners at random, exploring the space of scanners, looking for a chance good fit
 
+def ScatterGun(idealScanner, actualScanner, mean, sd, samples, reportProgress):
+ minSE = 100000000000
+
+ for i in range(samples):
+  randomScanner = idealScanner.PurturbedCopy(mean, sd)
+
+  tse = TriangleErrors(triangles, actualScanner, randomScanner, False)
+  #print("Squared errors: ", tse)
+  if tse < minSE and reportProgress:
+   print("--------")
+   #tse = TriangleErrors(triangles, actualScanner, realScanner, True)
+   betterScanner = randomScanner
+   minSE = tse
+   print(minSE)
+ return betterScanner
 
 #*********************************************************************************************
 
@@ -70,34 +88,34 @@ seed(2)
 
 world = ScannerPart()
 
-# Make the scanner with small errors in its relative positions and angles; that is the scanner as it really is.
+# Make the scanner as we would like it to be.
 
-realScanner = Scanner(world, Vector3(0, -1700, 1000), Vector3(0, 0, -250), 2, Vector3(0, 0, 250), 2464, 3280, 17.64, 24.088543586543586, 25)
+idealScanner = Scanner(world, Vector3(0, -1700, 1000), Vector3(0, 0, -250), 2, Vector3(0, 0, 250), 2464, 3280, 17.64, 24.088543586543586, 25)
+idealScanner.SetName("Ideal");
 
 # Make the triangles in the scene
 
 apexesAndAngles = []
-apexesAndAngles.append( (Vector3(-400.0, -3500.0, 2000.0), 0.4) )
-apexesAndAngles.append( (Vector3(470.0, -3600.0, 2000.0), 0.27) )
-apexesAndAngles.append( (Vector3(-40.0, -3400.0, 2000.0), 0.6) )
+apexesAndAngles.append( (Vector3(-400.0, -3500.0, 750.0), 0.4) )
+apexesAndAngles.append( (Vector3(470.0, -3600.0, 750.0), 0.27) )
+apexesAndAngles.append( (Vector3(-40.0, -3400.0, 750.0), 0.6) )
 triangles = MakeTriangles(apexesAndAngles)
 
-# Make an ideal scanner with no errors as a starting point.  This has to be corrected to correspond with the scanner above.
+# make a scanner with small errors
 
-minSE = 100000000000
+realScanner = idealScanner.PurturbedCopy(3, 0.5)
+realScanner.SetName("Purturbed");
+#idealScanner.DebugOn()
+#copiedScanner.DebugOn()
 
-for i in range(2000):
- idealScanner = realScanner.PurturbedCopy(8.0, 0.5)
+#tse = TriangleErrors(triangles, idealScanner, copiedScanner, True)
+#print("Copied scanner RMS error: ", maths.sqrt(tse/(len(triangles)*3.0)))
 
- tse = TriangleErrors(triangles, realScanner, idealScanner, False)
- #print("Squared errors: ", tse)
- if tse < minSE:
-  print("--------")
-  tse = TriangleErrors(triangles, realScanner, idealScanner, True)
-  betterScanner = idealScanner
-  minSE = tse
 
-print("Min error: ", minSE)
-print("Best scanner error: ", TriangleErrors(triangles, realScanner, betterScanner, True))
+bestScanner = ScatterGun(idealScanner, realScanner, 8.0, 0.5, 2000, True)
+print("************")
+tse = TriangleErrors(triangles, realScanner, bestScanner, True)
+print("Best scanner RMS error (mm): ", maths.sqrt(tse/(len(triangles)*3.0)))
+print("NB: the error is the error in side lengths, not corner positions (we don't \"know\" the latter).")
 
 
