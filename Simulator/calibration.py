@@ -20,6 +20,14 @@ def Triangle(side, apexAndAngle):
  triangle.append(Vector3(apexAndAngle[0].x + y, apexAndAngle[0].y + x, apexAndAngle[0].z))
  return triangle
 
+# Construct the list of test triangles
+
+def MakeTriangles(apexesAndAngles):
+ triangles = []
+ for apexAndAngle in apexesAndAngles:
+  triangles.append(Triangle(sideLength, apexAndAngle))
+ return triangles
+
 # Sum the squared errors in the lengths of a triangles sides compared with the ideal 45, 45, 90 triangle
 
 def TriangleSquaredError(triangle, side):
@@ -32,55 +40,77 @@ def TriangleSquaredError(triangle, side):
  sum += s*s
  return sum
 
-# Take triangles in space, find the pixels in the real camera of their corners, project them back in to the scene using
-# the scanner that is to be calibrated, and sum the resulting squared errors.
+def TriangleSquaredPositionError(realTriangle, reconstructedTriangle):
+ sum = 0.0
+ for t in range(3):
+  sum += realTriangle[t].Sub(reconstructedTriangle[t]).Length2()
+ return sum
 
-def TriangleErrors(triangles, realScanner, idealScanner, printTriangles):
- realLightSource = realScanner.lightSource
+# Take triangles in space, find the pixels in the real camera of their corners, project them back in to the scene using
+# the scanner that is to be adjusted, so creating a set of reconstructed triangles.
+
+def TriangleReconstructions(triangles, realScanner, ScannerToBeAdjusted, printTriangles):
  realCamera = realScanner.camera
- idealLightSource = idealScanner.lightSource
- idealCamera = idealScanner.camera
+ lightSourceToBeAdjusted = ScannerToBeAdjusted.lightSource
+ cameraToBeAdjusted = ScannerToBeAdjusted.camera
  if printTriangles:
   print(" Original and reconstructed triangles: ")
- sum = 0.0
+ reconstructedTriangles = []
  for triangle in triangles:
   corners = []
   for i in range(3):
-   pix = realCamera.ProjectPointIntoCameraPlane(triangle[i])
-   spacePoint = idealLightSource.CameraPixelCoordinatesArePointInMyPlane(idealCamera, pix[0], pix[1])
+   pixel = realCamera.ProjectPointIntoCameraPlane(triangle[i])
+   spacePoint = lightSourceToBeAdjusted.CameraPixelCoordinatesArePointInMyPlane(cameraToBeAdjusted, pixel)
    corners.append(spacePoint)
   if printTriangles:
    print("  ", triangle)
    print("  ", corners)
    print()
-  sum += TriangleSquaredError(corners, sideLength)
- return sum
+  reconstructedTriangles.append(corners)
+ return reconstructedTriangles
 
+# Find the mean squared errors in the triangle side lengths.
 
+def TriangleMeanSquaredErrors(triangles, reconstructedTriangles):
+ sum = 0.0
+ for triangle in reconstructedTriangles:
+  sum += TriangleSquaredError(triangle, sideLength)
+ return sum/(len(triangles)*3.0)
 
-def MakeTriangles(apexesAndAngles):
- triangles = []
- for apexAndAngle in apexesAndAngles:
-  triangles.append(Triangle(sideLength, apexAndAngle))
- return triangles
+# Find the mean squared errors in the triangle corner positions.
+# NB there is no way we could do this in a real machine, as we cannot know the true positions of the triangles.
+
+def TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles):
+ sum = 0.0
+ for t in range(len(reconstructedTriangles)):
+  realTriangle = triangles[t]
+  reconstructedTriangle = reconstructedTriangles[t]
+  sum += TriangleSquaredPositionError(realTriangle, reconstructedTriangle)
+ return sum/(len(triangles)*3.0)
+
 
 # Generate scanners at random, exploring the space of scanners, looking for a chance good fit
+# Record the best and the second best, so we can estimate the gradient of the error function
 
 def ScatterGun(idealScanner, actualScanner, mean, sd, samples, reportProgress):
- minSE = 100000000000
+ minSE = sys.float_info.max
+ bestScanner = idealScanner.PurturbedCopy(mean, sd)
+ secondBestScanner = bestScanner
 
  for i in range(samples):
   randomScanner = idealScanner.PurturbedCopy(mean, sd)
 
-  tse = TriangleErrors(triangles, actualScanner, randomScanner, False)
-  #print("Squared errors: ", tse)
-  if tse < minSE and reportProgress:
-   print("--------")
-   #tse = TriangleErrors(triangles, actualScanner, realScanner, True)
-   betterScanner = randomScanner
+  reconstructedTriangles = TriangleReconstructions(triangles, actualScanner, randomScanner, False)
+  tse = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
+  if tse < minSE:
+   secondBestScanner = bestScanner
+   bestScanner = randomScanner
+   secondMinSE = minSE
    minSE = tse
-   print(minSE)
- return betterScanner
+   if reportProgress:
+    print("--------")
+    print(minSE)
+ return (secondBestScanner, bestScanner)
 
 #*********************************************************************************************
 
@@ -99,23 +129,34 @@ apexesAndAngles = []
 apexesAndAngles.append( (Vector3(-400.0, -3500.0, 750.0), 0.4) )
 apexesAndAngles.append( (Vector3(470.0, -3600.0, 750.0), 0.27) )
 apexesAndAngles.append( (Vector3(-40.0, -3400.0, 750.0), 0.6) )
+apexesAndAngles.append( (Vector3(-200.0, -3100.0, 750.0), 1.1) )
+apexesAndAngles.append( (Vector3(270.0, -3800.0, 750.0), 1.27) )
+apexesAndAngles.append( (Vector3(-140.0, -3423.0, 750.0), 0.83) )
+apexesAndAngles.append( (Vector3(-300.0, -2900.0, 750.0), 0.71) )
+apexesAndAngles.append( (Vector3(170.0, -3812.0, 750.0), 1.02) )
+apexesAndAngles.append( (Vector3(-80.0, -4400.0, 750.0), 0.54) )
 triangles = MakeTriangles(apexesAndAngles)
+
+print("Sanity check - run the ideal scanner against itself and check the errors are zero:")
+reconstructedTriangles = TriangleReconstructions(triangles, idealScanner, idealScanner, False)
+tse = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
+print("Scanner versus itself RMS side length error (mm, should be 0.0): ", maths.sqrt(tse))
+tpe = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
+print("Position RMS error (mm, should be 0.0): ", maths.sqrt(tpe))
 
 # make a scanner with small errors
 
 realScanner = idealScanner.PurturbedCopy(3, 0.5)
 realScanner.SetName("Purturbed");
-#idealScanner.DebugOn()
-#copiedScanner.DebugOn()
 
-#tse = TriangleErrors(triangles, idealScanner, copiedScanner, True)
-#print("Copied scanner RMS error: ", maths.sqrt(tse/(len(triangles)*3.0)))
+# Run 2000 purturbed copies of the ideal scanner against it to find a good(ish) match
 
-
-bestScanner = ScatterGun(idealScanner, realScanner, 8.0, 0.5, 2000, True)
+bestScanners = ScatterGun(idealScanner, realScanner, 8.0, 0.5, 2000, True)
 print("************")
-tse = TriangleErrors(triangles, realScanner, bestScanner, True)
-print("Best scanner RMS error (mm): ", maths.sqrt(tse/(len(triangles)*3.0)))
-print("NB: the error is the error in side lengths, not corner positions (we don't \"know\" the latter).")
+reconstructedTriangles = TriangleReconstructions(triangles, realScanner, bestScanners[1], True)
+tse = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
+print("Best scanner RMS side-length error (mm): ", maths.sqrt(tse))
+tpe = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
+print("Position RMS error (mm; couldn't be calculated in real life)", maths.sqrt(tpe))
 
 

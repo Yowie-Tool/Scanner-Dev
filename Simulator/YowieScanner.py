@@ -404,21 +404,21 @@ class ScannerPart:
 
 # Create the ray from a pixel in mm in a camera's [u, v] plane through the centre of the lens.
 
- def GetCameraRay(self, pixelU, pixelV):
+ def GetCameraRay(self, pixel):
   if self.focalLength <= 0:
    print("Attempt to get a pixel ray from a scanner part that is not a camera.")
-  u = self.u.Multiply(pixelU)
-  v = self.v.Multiply(pixelV)
-  pixel = self.AbsoluteOffset().Add(u).Add(v)  
+  u = self.u.Multiply(pixel[0])
+  v = self.v.Multiply(pixel[1])
+  newPixel = self.AbsoluteOffset().Add(u).Add(v)
   w = self.w.Multiply(self.focalLength)
   lens = self.AbsoluteOffset().Add(w)
-  ray = (pixel, lens)
+  ray = (newPixel, lens)
   return ray
 
 # As above, but so that parameter values along the ray measure real distance
 
- def GetCameraRayNormalised(self, pixelU, pixelV):
-  ray = self.GetCameraRay(pixelU, pixelV)
+ def GetCameraRayNormalised(self, pixel):
+  ray = self.GetCameraRay(pixel)
   direction = ray[1].Sub(ray[0])
   direction = direction.Normalize()
   newRay = (ray[0], ray[0].Add(direction))
@@ -462,11 +462,11 @@ class ScannerPart:
 
 # Find the point in space where the ray from a camera pixel (mm coordinates) hits the light sheet from this light source
 
- def CameraPixelIsPointInMyPlane(self, camera, pixelU, pixelV):
+ def CameraPixelIsPointInMyPlane(self, camera, pixel):
   plane = self.GetLightPlane()
   normal = plane[0]
   d = plane[1]
-  ray = camera.GetCameraRay(pixelU, pixelV)
+  ray = camera.GetCameraRay(pixel)
   t0Point = ray[0]
   rayDirection = ray[1].Sub(t0Point)
   sp = rayDirection.Dot(normal)
@@ -482,12 +482,13 @@ class ScannerPart:
 
 # Find the point in space where the ray from a camera pixel (pixel coordinates; not necessarily integers) hits the light sheet from this light source
 
- def CameraPixelCoordinatesArePointInMyPlane(self, camera, pixelUCoordinate, pixelVCoordinate):
-  pixelU = camera.uMM*(pixelUCoordinate/(camera.uPixels - 1.0) - 0.5)
-  pixelV = camera.vMM*(pixelVCoordinate/(camera.vPixels - 1.0) - 0.5)
+ def CameraPixelCoordinatesArePointInMyPlane(self, camera, pixelCoordinates):
+  pixelU = camera.uMM*(pixelCoordinates[0]/(camera.uPixels - 1.0) - 0.5)
+  pixelV = camera.vMM*(pixelCoordinates[1]/(camera.vPixels - 1.0) - 0.5)
+  pixel = (pixelU, pixelV)
   if self.debug:
-   print(self.name, "Pixel [", pixelUCoordinate, ", ", pixelVCoordinate, end = '')
-  tPoint = self.CameraPixelIsPointInMyPlane(camera, pixelU, pixelV)
+   print(self.name, "Pixel [", pixelCoordinates[0], ", ", pixelCoordinates[1], end = '')
+  tPoint = self.CameraPixelIsPointInMyPlane(camera, pixel)
   return tPoint
 
 # Convert a point p in the [v, w] plane into a point in absolute 3D space.
