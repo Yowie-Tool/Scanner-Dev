@@ -550,10 +550,14 @@ class Scanner:
  def DebugOff(self):
   self.scanner.DebugOff()
 
+# Make a deep copy of a scanner
+
  def Copy(self):
   return Scanner(self.scanner.parent, self.scannerOffset, self.lightOffset, self.lightAng, self.cameraOffset, self.uPix, self.vPix, self.uM, self.vM, self.focalLen)
 
- def PurturbedCopy(self, mean, sd):
+# Make a copy of a scanner perturbed by small Gaussian amounts with mean and sd standard deviation.
+
+ def PerturbedCopy(self, mean, sd):
   if mean < veryShort2:
    return self.Copy()
   return Scanner(self.scanner.parent, self.scannerOffset.Add(RandomVector3(mean, sd)), self.lightOffset.Add(RandomVector3(mean, sd)), self.lightAng, self.cameraOffset.Add(RandomVector3(mean, sd)),

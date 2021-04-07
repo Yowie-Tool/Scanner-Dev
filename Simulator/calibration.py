@@ -94,11 +94,11 @@ def TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles):
 
 def ScatterGun(idealScanner, actualScanner, mean, sd, samples, reportProgress):
  minSE = sys.float_info.max
- bestScanner = idealScanner.PurturbedCopy(mean, sd)
+ bestScanner = idealScanner.PerturbedCopy(mean, sd)
  secondBestScanner = bestScanner
 
  for i in range(samples):
-  randomScanner = idealScanner.PurturbedCopy(mean, sd)
+  randomScanner = idealScanner.PerturbedCopy(mean, sd)
 
   reconstructedTriangles = TriangleReconstructions(triangles, actualScanner, randomScanner, False)
   tse = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
@@ -146,7 +146,7 @@ print("Position RMS error (mm, should be 0.0): ", maths.sqrt(tpe))
 
 # make a scanner with small errors
 
-realScanner = idealScanner.PurturbedCopy(3, 0.5)
+realScanner = idealScanner.PerturbedCopy(3, 0.5)
 realScanner.SetName("Purturbed");
 
 # Run 2000 purturbed copies of the ideal scanner against it to find a good(ish) match
