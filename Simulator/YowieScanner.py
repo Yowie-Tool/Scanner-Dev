@@ -600,3 +600,13 @@ class Scanner:
   self.lightSource.RotateU(parameters[10])
   self.lightSource.RotateW(parameters[11])
   self.camera.RotateU(parameters[12])
+
+# How different are two scanners?
+
+ def ParameterRMSDifference(self, scanner):
+  sum = 0.0
+  n = len(self.parameters)
+  for p in range(n):
+   d = self.parameters[p] - scanner.parameters[p]
+   sum += d*d
+  return maths.sqrt(sum/n)

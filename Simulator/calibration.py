@@ -91,32 +91,33 @@ def TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles):
  return sum/(len(triangles)*3.0)
 
 
-def CostFunction(parameters, idealScanner, actualScanner, triangles):
+def CostFunction(parameters, idealScanner, actualScanner, triangles, sides):
  thisScanner = idealScanner.Copy()
  thisScanner.ImposeParameters(parameters)
  reconstructedTriangles = TriangleReconstructions(triangles, actualScanner, thisScanner, False)
- cost = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
+ if sides:
+  cost = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
+ else:
+  cost = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
  return cost
 
 # Generate scanners at random, exploring the space of scanners, looking for a chance good fit
 # Record the best and the second best, so we can estimate the gradient of the error function
 
-def ScatterGun(idealScanner, actualScanner, triangles, mean, sd, samples, reportProgress):
- minSE = sys.float_info.max
+def ScatterGun(idealScanner, actualScanner, triangles, mean, sd, samples, reportProgress, sides):
+ minCost = sys.float_info.max
  bestScanner = idealScanner.PerturbedCopy(mean, sd)
- secondBestScanner = bestScanner
 
  for i in range(samples):
   randomScanner = idealScanner.PerturbedCopy(mean, sd)
-  tse = CostFunction(randomScanner.parameters, idealScanner, actualScanner, triangles)
-  if tse < minSE:
-   secondBestScanner = bestScanner
+  cost = CostFunction(randomScanner.parameters, idealScanner, actualScanner, triangles, sides)
+  if cost < minCost:
    bestScanner = randomScanner
-   minSE = tse
+   minCost = cost
    if reportProgress:
     print("--------")
-    print(minSE)
- return (secondBestScanner, bestScanner)
+    print(minCost)
+ return bestScanner
 
 
 
@@ -147,45 +148,48 @@ triangles = MakeTriangles(apexesAndAngles)
 
 print("Sanity check - run the ideal scanner against itself and check the errors are zero:")
 reconstructedTriangles = TriangleReconstructions(triangles, idealScanner, idealScanner, False)
-tse = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
-print("Scanner versus itself RMS side length error (mm, should be 0.0): ", maths.sqrt(tse))
-tpe = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
-print("Position RMS error (mm, should be 0.0): ", maths.sqrt(tpe))
+cost = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
+print("Scanner versus itself RMS side length error (mm, should be 0.0): ", maths.sqrt(cost))
+cost = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
+print("Position RMS error (mm, should be 0.0): ", maths.sqrt(cost))
 
 # make a scanner with small errors
 
 realScanner = idealScanner.PerturbedCopy(3, 0.5)
 realScanner.SetName("Purturbed");
 
+# Set this true to optimise against triangle side lengths
+# or False to optimise against the actual triangle corner positions
+# The latter would be physically much more difficult to do.
+
+sides = True
+
 # Optimisation
 
-print("************")
-parameters = copy.deepcopy(idealScanner.parameters)
-res = minimize(CostFunction, x0 = parameters, args = (idealScanner, realScanner, triangles,))
-#print(res)
-print("************")
-#print(res.x)
-#print(realScanner.parameters)
+print("First stage - scattergun to find a good (if random) starting point for the optimisation")
+bestScanner = ScatterGun(idealScanner, realScanner, triangles, 8.0, 0.5, 2000, False, sides)
+reconstructedTriangles = TriangleReconstructions(triangles, realScanner, bestScanner, False)
+cost = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
+print("Best scatter scanner RMS side-length error (mm): ", maths.sqrt(cost))
+cost = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
+print("Scatter scanner triangle corner position RMS error (mm)", maths.sqrt(cost))
+
+print("Second stage - whatever the scipy minimise() function does...")
+minResult = minimize(CostFunction, x0 = bestScanner.parameters, args = (idealScanner, realScanner, triangles, sides,))
 finalScanner = idealScanner.Copy()
-finalScanner.ImposeParameters(res.x)
+finalScanner.ImposeParameters(minResult.x)
 reconstructedTriangles = TriangleReconstructions(triangles, realScanner, finalScanner, True)
 cost = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
 print("Scanner RMS side length error (mm): ", maths.sqrt(cost))
-tpe = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
-print("Position RMS error (mm): ", maths.sqrt(tpe))
+cost = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
+print("Position RMS error (mm): ", maths.sqrt(cost))
+print("RMS difference between the actual scanner and the fitted model of it: ", realScanner.ParameterRMSDifference(finalScanner))
 
 
 
 
-'''
 # Run 2000 purturbed copies of the ideal scanner against it to find a good(ish) match
 
-bestScanners = ScatterGun(idealScanner, realScanner, triangles, 8.0, 0.5, 2000, True)
-print("************")
-reconstructedTriangles = TriangleReconstructions(triangles, realScanner, bestScanners[1], True)
-tse = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
-print("Best scanner RMS side-length error (mm): ", maths.sqrt(tse))
-tpe = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
-print("Position RMS error (mm; couldn't be calculated in real life)", maths.sqrt(tpe))
-'''
+
+
 
