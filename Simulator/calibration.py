@@ -176,7 +176,7 @@ def Optimise(idealScanner, triangles, sides, mean, sd):
 # with a measurement of the two edges of a piece of A4 paper.
 
 def FieldTest(idealScanner, triangles, a4Points):
- for mean in numpy.arange(0.0,10.0,0.25):
+ for mean in numpy.arange(0.0,0.5,0.01):
   sd = mean/6.0
   cSum = 0.0
   aSum = 0.0
@@ -192,7 +192,7 @@ def FieldTest(idealScanner, triangles, a4Points):
 
 #*********************************************************************************************
 
-seed(2)
+seed(7)
 
 world = ScannerPart()
 
