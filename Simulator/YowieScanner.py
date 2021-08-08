@@ -253,13 +253,13 @@ class RotationM:
  def __repr__(self):
   result = 'RotationM('
   for i in range(3):
-   if i is not 0:
+   if i != 0:
     result += ',('
    else:
     result += '('
    for j in range(3):
     result += '%.6f' %self.r[i][j]
-    if j is not 2:
+    if j != 2:
      result += ','
     else:
      result += ')'

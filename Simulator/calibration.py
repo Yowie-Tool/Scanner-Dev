@@ -191,6 +191,7 @@ def FieldTest(idealScanner, triangles, a4Points):
   print(maths.sqrt(aSum), maths.sqrt(cSum))
 
 #*********************************************************************************************
+#def __init__(self, world, scannerOffset, lightOffset, lightAng, cameraOffset, uPix, vPix, uM, vM, focalLen)
 
 seed(7)
 
