@@ -273,10 +273,18 @@ class RotationM:
 # offset is the vector in the parent's space that gives our position in that space. If there is no parent the offset is in World coordinates.
 # u, v, and w are three orthogonal vectors that define our coordinate system
 # parent is the ScannerPart above us in the tree (if any)
-# lightAngle is the width of the beam in radians if we are a sheet light source; negative if we aren't
-# uPixels, vPixels are the image plane pixel counts if we are a camera
-# uMM, vMM are the distance between one pixel and the next if we are a camera
-# focalLength is our focal length if we are a camera, negative if we aren't
+#
+# Light sheets:
+#
+# lightAngle is the width of the beam in radians if we are a sheet light source; negative if we aren't.
+# A light source's u vector is the normal vector to the plane of the light sheet.
+#
+# Cameras:
+#
+# uPixels, vPixels are the image plane pixel counts if we are a camera; u is the camera's
+# horizontal axis, v it's vertical axis, and w is from the focal plane centre through the lens.
+# uMM, vMM are the size of the image array in mm if we are a camera.
+# focalLength is our focal length if we are a camera, negative if we aren't.
 #
 
 class ScannerPart:
@@ -519,11 +527,13 @@ class ScannerPart:
   v = self.v.Multiply(p.y)
   return self.AbsoluteOffset().add(u).add(v)
 
+#---------------------------------------------------------------------------------------------------------------------------------
+
 # Small class to hold the parameters needed to build a complete scanner
 # Make a scanner in the standard configuration. The parameters are also recorded in a vector for optimisation.
 
 class Scanner:
- def __init__(self, world, scannerOffset, lightOffset, lightAng, cameraOffset, uPix, vPix, uM, vM, focalLen):
+ def __init__(self, world, scannerOffset, lightOffset, lightAng, lightToeIn, cameraOffset, cameraToeIn, uPix, vPix, uM, vM, focalLen):
   self.parameters = []
 
   self.scannerOffset = scannerOffset
@@ -549,17 +559,26 @@ class Scanner:
   self.lightSource = ScannerPart(offset = self.lightOffset, u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = self.scanner, lightAngle = self.lightAng)
   self.camera = ScannerPart(offset = self.cameraOffset,  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = self.scanner, uPixels = uPix, vPixels = vPix, uMM =  uM, vMM = vM, focalLength = self.focalLen)
 
-  lru = -0.5*maths.pi
-  self.parameters.append(lru)
-  self.lightSource.RotateU(lru)
+  halfPi = 0.5*maths.pi
+  self.parameters.append(-halfPi)
+  self.lightSource.RotateU(-halfPi)
+  self.parameters.append(0)
+  self.lightSource.RotateV(0)
+  self.parameters.append(halfPi)
+  self.lightSource.RotateW(halfPi)
 
-  lrw = -0.5*maths.pi
-  self.parameters.append(lrw)
-  self.lightSource.RotateW(lrw)
+  self.parameters.append(-lightToeIn)
+  self.lightSource.RotateV(-lightToeIn)
 
-  cru = -0.5*maths.pi
-  self.parameters.append(cru)
-  self.camera.RotateU(cru)
+  self.parameters.append(-halfPi)
+  self.camera.RotateU(-halfPi)
+  self.parameters.append(0)
+  self.camera.RotateV(0)
+  self.parameters.append(0)
+  self.camera.RotateW(0)
+
+  self.parameters.append(-cameraToeIn)
+  self.camera.RotateU(-cameraToeIn)
 
  def SetName(self, name):
   self.scanner.SetName(name)
@@ -610,3 +629,4 @@ class Scanner:
    d = self.parameters[p] - scanner.parameters[p]
    sum += d*d
   return maths.sqrt(sum/n)
+
