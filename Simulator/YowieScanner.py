@@ -531,54 +531,87 @@ class ScannerPart:
 
 # Small class to hold the parameters needed to build a complete scanner
 # Make a scanner in the standard configuration. The parameters are also recorded in a vector for optimisation.
-
 class Scanner:
- def __init__(self, world, scannerOffset, lightOffset, lightAng, lightToeIn, cameraOffset, cameraToeIn, uPix, vPix, uM, vM, focalLen):
+ def __init__(self, world, scannerOffset, lightOffset, lightAng, lightToeIn, cameraOffset, cameraToeIn, uPix, vPix, uMM, vMM, focalLen):
+  parameters = self.SetParameters(self, scannerOffset, lightOffset, lightToeIn, cameraOffset, cameraToeIn, focalLen)
+  self.MakeScannerFromParameters(parameters, world, lightAng, uPix, vPix, uMM, vMM)
+
+ def SetParameters(self, scannerOffset, lightOffset, lightToeIn, cameraOffset, cameraToeIn, focalLen):
+  parameters = []
+  parameters.append(scannerOffset.x) # 0
+  parameters.append(scannerOffset.y) # 1
+  parameters.append(scannerOffset.z) # 2
+
+  parameters.append(lightOffset.x) # 3
+  parameters.append(lightOffset.y) # 4
+  parameters.append(lightOffset.z) # 5
+
+  parameters.append(cameraOffset.x) # 6
+  parameters.append(cameraOffset.y) # 7
+  parameters.append(cameraOffset.z) # 8
+
+  parameters.append(focalLen) # 9
+
+  # Angle tweaks
+  parameters.append(0) # 10
+  parameters.append(0) # 11
+  parameters.append(0) # 12
+
+  parameters.append(lightToeIn) # 13
+
+  parameters.append(0) # 14
+  parameters.append(0) # 15
+  parameters.append(0) # 16
+
+  parameters.append(cameraToeIn) # 17
+  return parameters
+
+
+ def MakeScannerFromParameters(self, parameters, world, lightAng, uPix, vPix, uMM, vMM):
   self.parameters = []
+  for p in parameters:
+   self.parameters.append(p)
 
-  self.scannerOffset = scannerOffset
-  self.parameters.append(scannerOffset.x)
-  self.parameters.append(scannerOffset.y)
-  self.parameters.append(scannerOffset.z)
+  scannerOffset = Vector3(self.parameters[0], self.parameters[1], self.parameters[2])
+  lightOffset = Vector3(self.parameters[3], self.parameters[4], self.parameters[5])
+  cameraOffset = Vector3(self.parameters[6], self.parameters[7], self.parameters[8])
+  focalLen = self.parameters[9]
 
-  self.lightOffset = lightOffset
-  self.parameters.append(lightOffset.x)
-  self.parameters.append(lightOffset.y)
-  self.parameters.append(lightOffset.z)
-
-  self.cameraOffset = cameraOffset
-  self.parameters.append(cameraOffset.x)
-  self.parameters.append(cameraOffset.y)
-  self.parameters.append(cameraOffset.z)
-
-  self.focalLen = focalLen
-  self.parameters.append(focalLen)
-
+  # These don't want to be in the parameters array because we assume
+  # we know them accurately and we don't want the optimiser to change them.
+  self.world = world
   self.lightAng = lightAng
-  self.scanner = ScannerPart(offset = self.scannerOffset, parent = world)
-  self.lightSource = ScannerPart(offset = self.lightOffset, u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = self.scanner, lightAngle = self.lightAng)
-  self.camera = ScannerPart(offset = self.cameraOffset,  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = self.scanner, uPixels = uPix, vPixels = vPix, uMM =  uM, vMM = vM, focalLength = self.focalLen)
+  self.uPix = uPix
+  self.vPix = vPix
+  self.uMM = uMM
+  self.vMM = vMM
+  self.scanner = ScannerPart(offset = scannerOffset, parent = world)
+  self.lightSource = ScannerPart(offset = lightOffset, u = Vector3(0, 0, -1), v = Vector3(-1, 0, 0), w = Vector3(0, 1, 0), parent = self.scanner, lightAngle = self.lightAng)
+  self.camera = ScannerPart(offset = cameraOffset,  u = Vector3(1, 0, 0), v = Vector3(0, 0, -1), w = Vector3(0, 1, 0), parent = self.scanner, uPixels = self.uPix, vPixels =
+   self.vPix, uMM =  self.uMM, vMM = self.vMM, focalLength = focalLen)
 
-  halfPi = 0.5*maths.pi
-  self.parameters.append(-halfPi)
-  self.lightSource.RotateU(-halfPi)
-  self.parameters.append(0)
-  self.lightSource.RotateV(0)
-  self.parameters.append(halfPi)
-  self.lightSource.RotateW(halfPi)
+  lightU = self.parameters[10]
+  self.lightSource.RotateU(lightU)
+  lightV = self.parameters[11]
+  self.lightSource.RotateV(lightV)
+  lightW = self.parameters[12]
+  self.lightSource.RotateW(lightW)
 
-  self.parameters.append(-lightToeIn)
-  self.lightSource.RotateV(-lightToeIn)
+  lightToeIn = self.parameters[13]
+  self.lightSource.RotateV(lightToeIn)
 
-  self.parameters.append(-halfPi)
-  self.camera.RotateU(-halfPi)
-  self.parameters.append(0)
-  self.camera.RotateV(0)
-  self.parameters.append(0)
-  self.camera.RotateW(0)
+  cameraU = self.parameters[14]
+  self.camera.RotateU(cameraU)
+  cameraV = self.parameters[15]
+  self.camera.RotateV(cameraV)
+  cameraW = self.parameters[16]
+  self.camera.RotateW(cameraW)
 
-  self.parameters.append(-cameraToeIn)
-  self.camera.RotateU(-cameraToeIn)
+  cameraToeIn = self.parameters[17]
+  self.camera.RotateU(cameraToeIn)
+
+ def Copy(self):
+  return copy.deepcopy(self)
 
  def SetName(self, name):
   self.scanner.SetName(name)
@@ -589,10 +622,6 @@ class Scanner:
  def DebugOff(self):
   self.scanner.DebugOff()
 
-# Make a deep copy of a scanner
-
- def Copy(self):
-  return Scanner(self.scanner.parent, self.scannerOffset, self.lightOffset, self.lightAng, self.cameraOffset, self.camera.uPixels, self.camera.vPixels, self.camera.uMM, self.camera.vMM, self.camera.focalLength)
 
 # Make a copy of a scanner perturbed by small Gaussian amounts with mean and sd standard deviation.
 
