@@ -198,8 +198,12 @@ seed(7)
 world = ScannerPart()
 
 # Make the scanner as we would like it to be.
-
-idealScanner = Scanner(world, Vector3(0, -1700, 1000), Vector3(0, 0, -250), 2, Vector3(0, 0, 250), 2464, 3280, 17.64, 24.088543586543586, 25)
+'''
+def __init__(self, world, scannerOffset, lightOffset, lightAng, lightToeIn, cameraOffset, cameraToeIn, uPix, vPix, uMM, vMM, focalLen):
+  parameters = self.SetParameters(self, scannerOffset, lightOffset, lightToeIn, cameraOffset, cameraToeIn, focalLen)
+'''
+idealScanner = Scanner(world, scannerOffset = Vector3(0, -1700, 1000), lightOffset = Vector3(0, 0, -250), lightAng = 2, lightToeIn = 0, cameraOffset = Vector3(0, 0, 250),
+                       cameraToeIn = 0, uPix = 2464, vPix = 3280, uMM = 17.64, vMM = 24.088543586543586, focalLen = 25)
 idealScanner.SetName("Ideal")
 
 # Make the triangles in the scene
@@ -235,9 +239,9 @@ print("Position RMS error (mm, should be 0.0): ", maths.sqrt(cost))
 
 sides = True
 
-#finalScanner = Optimise(idealScanner, triangles, sides, 3, 0.5)
+finalScanner = Optimise(idealScanner, triangles, sides, 3, 0.5)
 
-FieldTest(idealScanner, triangles, a4Points)
+#FieldTest(idealScanner, triangles, a4Points)
 
 
 '''

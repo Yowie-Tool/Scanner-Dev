@@ -533,7 +533,7 @@ class ScannerPart:
 # Make a scanner in the standard configuration. The parameters are also recorded in a vector for optimisation.
 class Scanner:
  def __init__(self, world, scannerOffset, lightOffset, lightAng, lightToeIn, cameraOffset, cameraToeIn, uPix, vPix, uMM, vMM, focalLen):
-  parameters = self.SetParameters(self, scannerOffset, lightOffset, lightToeIn, cameraOffset, cameraToeIn, focalLen)
+  parameters = self.SetParameters(scannerOffset, lightOffset, lightToeIn, cameraOffset, cameraToeIn, focalLen)
   self.MakeScannerFromParameters(parameters, world, lightAng, uPix, vPix, uMM, vMM)
 
  def SetParameters(self, scannerOffset, lightOffset, lightToeIn, cameraOffset, cameraToeIn, focalLen):
@@ -626,28 +626,20 @@ class Scanner:
 # Make a copy of a scanner perturbed by small Gaussian amounts with mean and sd standard deviation.
 
  def PerturbedCopy(self, mean, sd):
+  result = self.Copy()
   if mean < veryShort2:
-   return self.Copy()
-  return Scanner(self.scanner.parent, self.scannerOffset.Add(RandomVector3(mean, sd)), self.lightOffset.Add(RandomVector3(mean, sd)), self.lightAng, self.cameraOffset.Add(RandomVector3(mean, sd)),
-                 self.camera.uPixels, self.camera.vPixels, self.camera.uMM, self.camera.vMM, self.camera.focalLength + gauss(0.0, sd))
+   return result
+  parameters = []
+  for p in self.parameters:
+   parameters.append(p + gauss(mean, sd))
+  result.MakeScannerFromParameters(parameters, self.world, self.lightAng, self.uPix, self.vPix, self.uMM, self.vMM)
+  return result
 
 
 # Take an existing scanner and modify it according to the given parameter vector, assumed to be derived from some optimisation process
 
  def ImposeParameters(self, parameters):
-  self.parameters = copy.deepcopy(parameters)
-  self.scannerOffset = Vector3(parameters[0], parameters[1], parameters[2])
-  self.lightOffset = Vector3(parameters[3], parameters[4], parameters[5])
-  self.cameraOffset = Vector3(parameters[6], parameters[7], parameters[8])
-  self.focalLen = parameters[9]
-  world = self.scanner.parent
-  self.scanner = ScannerPart(offset = self.scannerOffset, parent = world)
-  self.lightSource = ScannerPart(offset = self.lightOffset, u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = self.scanner, lightAngle = self.lightAng)
-  self.camera = ScannerPart(offset = self.cameraOffset,  u = Vector3(1, 0, 0), v = Vector3(0, 1, 0), w = Vector3(0, 0, 1), parent = self.scanner, uPixels = self.camera.uPixels, vPixels = self.camera.vPixels,
-                            uMM =  self.camera.uMM, vMM = self.camera.vMM, focalLength = self.focalLen)
-  self.lightSource.RotateU(parameters[10])
-  self.lightSource.RotateW(parameters[11])
-  self.camera.RotateU(parameters[12])
+  self.MakeScannerFromParameters(parameters, self.world, self.lightAng, self.uPix, self.vPix, self.uMM, self.vMM)
 
 # How different are two scanners?
 
