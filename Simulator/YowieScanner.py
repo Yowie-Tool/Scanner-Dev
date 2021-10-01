@@ -551,19 +551,21 @@ class Scanner:
   parameters.append(cameraOffset.z) # 8
 
   parameters.append(focalLen) # 9
+  parameters.append(lightToeIn) # 10
+  parameters.append(cameraToeIn) # 11
 
   # Angle tweaks
-  parameters.append(0) # 10
-  parameters.append(0) # 11
+  # Light
   parameters.append(0) # 12
-
-  parameters.append(lightToeIn) # 13
-
+  parameters.append(0) # 13
   parameters.append(0) # 14
+
+  # Camera
   parameters.append(0) # 15
   parameters.append(0) # 16
+  parameters.append(0) # 17
 
-  parameters.append(cameraToeIn) # 17
+
   return parameters
 
 
@@ -590,25 +592,27 @@ class Scanner:
   self.camera = ScannerPart(offset = cameraOffset,  u = Vector3(1, 0, 0), v = Vector3(0, 0, -1), w = Vector3(0, 1, 0), parent = self.scanner, uPixels = self.uPix, vPixels =
    self.vPix, uMM =  self.uMM, vMM = self.vMM, focalLength = focalLen)
 
-  lightU = self.parameters[10]
+  lightToeIn = self.parameters[10]
+  self.lightSource.RotateV(lightToeIn)
+  cameraToeIn = self.parameters[11]
+  self.camera.RotateU(cameraToeIn)
+
+  lightU = self.parameters[12]
   self.lightSource.RotateU(lightU)
-  lightV = self.parameters[11]
+  lightV = self.parameters[13]
   self.lightSource.RotateV(lightV)
-  lightW = self.parameters[12]
+  lightW = self.parameters[14]
   self.lightSource.RotateW(lightW)
 
-  lightToeIn = self.parameters[13]
-  self.lightSource.RotateV(lightToeIn)
 
-  cameraU = self.parameters[14]
+  cameraU = self.parameters[15]
   self.camera.RotateU(cameraU)
-  cameraV = self.parameters[15]
+  cameraV = self.parameters[16]
   self.camera.RotateV(cameraV)
-  cameraW = self.parameters[16]
+  cameraW = self.parameters[17]
   self.camera.RotateW(cameraW)
 
-  cameraToeIn = self.parameters[17]
-  self.camera.RotateU(cameraToeIn)
+
 
  def Copy(self):
   return copy.deepcopy(self)
