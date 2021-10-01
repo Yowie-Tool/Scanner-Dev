@@ -6,7 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="4705939a-743b-476a-b215-85f796280736" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/YowieScanner.py" beforeDir="false" afterPath="$PROJECT_DIR$/YowieScanner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/YowieScanner.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pointCalibration.py" beforeDir="false" afterPath="$PROJECT_DIR$/pointCalibration.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,7 +39,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/YowieScanner.py" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="advanced.settings" />
   </component>
   <component name="RunManager" selected="Python.pointCalibration">
     <configuration name="pointCalibration" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">

@@ -4,6 +4,8 @@
 # https://reprapltd.com
 # 2 March 2021
 
+import sys
+sys.path.append('../../ScannerV4/')
 from YowieScanner import *
 from scipy.optimize import minimize
 import numpy
@@ -239,9 +241,9 @@ print("Position RMS error (mm, should be 0.0): ", maths.sqrt(cost))
 
 sides = True
 
-finalScanner = Optimise(idealScanner, triangles, sides, 3, 0.5)
+#finalScanner = Optimise(idealScanner, triangles, sides, 3, 0.5)
 
-#FieldTest(idealScanner, triangles, a4Points)
+FieldTest(idealScanner, triangles, a4Points)
 
 
 '''
