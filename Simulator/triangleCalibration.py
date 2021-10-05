@@ -66,8 +66,8 @@ def TriangleReconstructions(triangles, realScanner, ScannerToBeAdjusted, printTr
    spacePoint = lightSourceToBeAdjusted.CameraPixelCoordinatesArePointInMyPlane(cameraToBeAdjusted, pixel)
    corners.append(spacePoint)
   if printTriangles:
-   print("  ", triangle)
-   print("  ", corners)
+   print("  ", str(triangle))
+   print("  ", str(corners))
    print()
   reconstructedTriangles.append(corners)
  return reconstructedTriangles
@@ -151,9 +151,10 @@ def Optimise(idealScanner, triangles, sides, mean, sd):
 
  realScanner = idealScanner.PerturbedCopy(mean, sd)
  realScanner.SetName("Purturbed")
+ print("Purturbed scanner: \n" + str(realScanner))
 
  print("First stage - scattergun to find a good (if random) starting point for the optimisation")
- bestScanner = ScatterGun(idealScanner, realScanner, triangles, 8.0, 0.5, 2000, False, sides)
+ bestScanner = ScatterGun(idealScanner, realScanner, triangles, 8.0, 0.5, 30, True, sides)
  reconstructedTriangles = TriangleReconstructions(triangles, realScanner, bestScanner, False)
  cost = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
  print("Best scatter scanner RMS side-length error (mm): ", maths.sqrt(cost))
@@ -164,7 +165,7 @@ def Optimise(idealScanner, triangles, sides, mean, sd):
  minResult = minimize(CostFunction, x0 = bestScanner.parameters, args = (idealScanner, realScanner, triangles, sides,))
  finalScanner = idealScanner.Copy()
  finalScanner.ImposeParameters(minResult.x)
- reconstructedTriangles = TriangleReconstructions(triangles, realScanner, finalScanner, True)
+ reconstructedTriangles = TriangleReconstructions(triangles, realScanner, finalScanner, False)
  cost = TriangleMeanSquaredErrors(triangles, reconstructedTriangles)
  print("Scanner RMS side length error (mm): ", maths.sqrt(cost))
  cost = TriangleMeanSquaredPositionErrors(triangles, reconstructedTriangles)
@@ -199,8 +200,15 @@ world = ScannerPart()
 
 # Make the scanner as we would like it to be.
 
-idealScanner = Scanner(world, Vector3(0, -1700, 1000), Vector3(0, 0, -250), 2, Vector3(0, 0, 250), 2464, 3280, 17.64, 24.088543586543586, 25)
+#idealScanner = Scanner(world, scannerOffset = Vector3(0, -1700, 1000), lightOffset = Vector3(0, 0, -250), lightAng = 2, lightToeIn = 0, cameraOffset =
+#		 Vector3(0, 0, 250), cameraToeIn = 0, uPix = 2464, vPix = 3280, uMM = 17.64, vMM = 24.088543586543586, focalLen = 25)
+
+idealScanner = Scanner(world, scannerOffset = Vector3(0, -1700, 1000), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0, cameraOffset =
+		 Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
+
 idealScanner.SetName("Ideal")
+
+print("Initial scanner: \n" + str(idealScanner))
 
 # Make the triangles in the scene
 
@@ -235,9 +243,11 @@ print("Position RMS error (mm, should be 0.0): ", maths.sqrt(cost))
 
 sides = True
 
-#finalScanner = Optimise(idealScanner, triangles, sides, 3, 0.5)
+finalScanner = Optimise(idealScanner, triangles, sides, 3, 0.5)
 
-FieldTest(idealScanner, triangles, a4Points)
+#FieldTest(idealScanner, triangles, a4Points)
+
+print("Final scanner: \n" + str(finalScanner))
 
 
 
