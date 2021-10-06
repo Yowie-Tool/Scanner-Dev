@@ -9,7 +9,7 @@ from scipy.optimize import minimize
 
 # Generate scanners at random, exploring the space of scanners, looking for a chance good fit
 
-def ScatterGun(startScanner, room, pixels, angles, mean, sd, samples, reportProgress):
+def ScatterGun(selectionVector, startScanner, room, pixels, angles, mean, sd, samples, reportProgress):
  bestScanner = startScanner.Copy()
  recoveredRoom = ReconstructRoomFromPixels(pixels, angles, bestScanner)
  minCost = MSRoomDifferences(room, recoveredRoom)
@@ -17,7 +17,7 @@ def ScatterGun(startScanner, room, pixels, angles, mean, sd, samples, reportProg
   print("Intitial MS error: " + str(minCost))
 
  for i in range(samples):
-  randomScanner = startScanner.PerturbedCopy(mean, sd)
+  randomScanner = startScanner.PerturbedCopy(selectionVector, mean, sd)
   recoveredRoom = ReconstructRoomFromPixels(pixels, angles, randomScanner)
   cost = MSRoomDifferences(room, recoveredRoom)
   if cost < minCost:
@@ -27,12 +27,6 @@ def ScatterGun(startScanner, room, pixels, angles, mean, sd, samples, reportProg
     print("--------")
     print(minCost)
  return (bestScanner, minCost)
-
-def CostFunction(parameters, scanner, room, pixels, angles):
- thisScanner = scanner.Copy()
- thisScanner.ImposeParameters(parameters)
- recoveredRoom = ReconstructRoomFromPixels(pixels, angles, thisScanner)
- return MSRoomDifferences(room, recoveredRoom)
 
 count = 0
 scannerCopy = None
@@ -52,27 +46,49 @@ def Progress(parameters):
  cost = CostFunction(scannerCopy.parameters, scannerCopy, rm, px, ag)
  print("Scanner MS error (mm^2): " + str(cost) + " after " + str(count) + " iterations.")
 
+selectionVector = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+
+def CostFunction(minimiserX, scanner, room, pixels, angles):
+ fullParameters = copy.deepcopy(scanner.parameters)
+ for p in range(len(selectionVector)):
+  fullParameters[selectionVector[p]] = minimiserX[p]
+ thisScanner = scanner.Copy()
+ thisScanner.ImposeParameters(fullParameters)
+ recoveredRoom = ReconstructRoomFromPixels(pixels, angles, thisScanner)
+ return MSRoomDifferences(room, recoveredRoom)
+
 # Generate a scanner with random errors then try to find out what they are and make a scanner model that fits it
 
-def Optimise(startScanner, room, pixels, angles, mean, sd, samples, reportProgress):
+def Optimise(startScanner, room, pixels, angles, mean, sd, samples, reportProgress, scatter):
  global count, scannerCopy, report, rm, px, ag
  report = reportProgress
  rm = room
  px = pixels
  ag = angles
- if reportProgress:
-  print("First stage - scattergun to find a good (if random) starting point for the optimisation")
- scatterResult = ScatterGun(startScanner, room, pixels, angles, mean, sd, samples, reportProgress)
- bestScanner = scatterResult[0]
+ if scatter:
+  if reportProgress:
+   print("First stage - scattergun to find a good (if random) starting point for the optimisation")
+  scatterResult = ScatterGun(selectionVector, startScanner, room, pixels, angles, mean, sd, samples, reportProgress)
+  if reportProgress:
+   print("MS error after scattergun: " + str(scatterResult[1]))
+  bestScanner = scatterResult[0]
+ else:
+  bestScanner = startScanner
+
  scannerCopy = bestScanner.Copy()
 
  if reportProgress:
-  print("MS error after scattergun: " + str(scatterResult[1]))
-  print("Second stage - scipy.optimize.minimize using Broyden–Fletcher–Goldfarb–Shanno algorithm ...")
- minResult = minimize(CostFunction, x0 = bestScanner.parameters, args = (bestScanner, room, pixels, angles), callback = Progress)
+  print("scipy.optimize.minimize using Broyden–Fletcher–Goldfarb–Shanno algorithm ...")
+ reducedParameters = []
+ for p in range(len(selectionVector)):
+  reducedParameters.append(bestScanner.parameters[selectionVector[p]])
+ minResult = minimize(CostFunction, x0 = reducedParameters, args = (bestScanner, room, pixels, angles), callback = Progress)
  finalScanner = bestScanner.Copy()
- finalScanner.ImposeParameters(minResult.x)
- cost = CostFunction(finalScanner.parameters, finalScanner, room, pixels)
+ fullParameters = copy.deepcopy(finalScanner.parameters)
+ for p in range(len(selectionVector)):
+  fullParameters[selectionVector[p]] = minResult.x[p]
+ finalScanner.ImposeParameters(fullParameters)
+ cost = CostFunction(minResult.x, finalScanner, room, pixels, angles)
  if reportProgress:
   print("Final scanner RMS error (mm): ", maths.sqrt(cost))
  return finalScanner
@@ -130,33 +146,44 @@ world = ScannerPart()
 
 scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0, cameraOffset =
 		 Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
-
+'''
+scanner = Scanner(world,
+                  scannerOffset = Vector3(-863.612446147733, 2547.3621918921745, 119.50872958629937),
+                  lightOffset = Vector3(-1351.1344535599703, -660.9864964136729, -122.71266770495758),
+                  lightAng = 0.454,
+                  lightToeIn = -0.2509728303244617,
+                  cameraOffset = Vector3(519.652379926871, 3209.7700491595915, 598.1087874460901),
+                  cameraToeIn = -0.32785573647400157,
+                  uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68,
+                  focalLen = 18.944401990122746)
+'''
 #scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 23.15), lightAng = 0.454, lightToeIn = 0, cameraOffset =
 #		 Vector3(-24.8, 0, 436.0), cameraToeIn = -10.94*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 25)
-
+'''
 pixel = (2889.0227882037534, 0.0)
-# point -230.4857937468226 1622.395309211286 0
 point = Vector3(-230.4857937468226, 1622.395309211286, 0)
-'''points = [
+scanner.CheckPoint(point, pixel, True)
+
+points = [
  Vector3(-50, 1000, 0),
  Vector3(0, 1000, 0),
  Vector3(50, 1000, 0),
  Vector3(-50, 2000, 0),
  Vector3(0, 2000, 0),
  Vector3(50, 2000, 0)
-]'''
-#for point in points:
-scanner.CheckPoint(point, pixel, True)
-print()
-
+]
+for point in points:
+ scanner.CheckPoint(point, None, True)
+ print()
 '''
+
 print("Initial scanner:")
 print(str(scanner))
 
-roomJB = GetRoomFromJamesesScan("RoomReaderScan-JB.pts")
+roomJB = GetRoomFromJamesesScan("room-zero-angle")
 scanner.SelfCheck(roomJB)
 
-dataJB = LoadPixels("RoomReaderScanCamera1-pixels.txt")
+dataJB = LoadPixels("room-zero-angle-pixels")
 pixelsJB = dataJB[0]
 anglesJB = dataJB[1]
 
@@ -175,8 +202,8 @@ for s in range(0, len(pixelsJB), coarse):
 
 print("Sampled " + str(len(pixels)) + " pixels for the optimisation.")
 
-bestScanner = Optimise(scanner, room, pixels, angles, 5, 2, 20, True)
+bestScanner = Optimise(scanner, room, pixels, angles, 5, 2, 20, True, True)
 print("Final scanner:")
 print(str(bestScanner))
 
-'''
+

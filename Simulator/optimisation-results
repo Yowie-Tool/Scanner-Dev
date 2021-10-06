@@ -1,0 +1,34 @@
+Just optimisation starting with previous result (except for light and cam angles)
+
+Final scanner RMS error (mm):  8.578236110123367
+Final scanner:
+
+Scanner -
+ scannerOffset: Vector3(-924.677143396701, 5095.587120305756, -643.5989573848847)
+ lightOffset: Vector3(-1170.4884526485166, 26.952121790212193, 641.6425104411359)
+ cameraOffset: Vector3(278.55101401413924, 5072.122609837775, -932.1375163335513)
+ focalLength: 40.73426450749204
+ lightAng: 0.454
+ uPix, vPix, uMM, vMM: 2464, 3280, 2.76, 3.68
+ lightToeIn, cameraToeIn: 1.1677629850077715, -2.842301786277882
+ light U, V, W angles: -0.19557837273404882, -1.1601921231252699, -0.17972466924383854
+ camera U, V, W angles: 0.14623400733486472, 2.7541584747073675, -1.6071385788195545
+ 
+ 
+ 
+ 
+Scatter + optimisation starting with roughly the right numbers:
+ 
+Final scanner RMS error (mm):  10.251172825924424
+Final scanner:
+
+Scanner -
+ scannerOffset: Vector3(-863.612446147733, 2547.3621918921745, 119.50872958629937)
+ lightOffset: Vector3(-1351.1344535599703, -660.9864964136729, -122.71266770495758)
+ cameraOffset: Vector3(519.652379926871, 3209.7700491595915, 598.1087874460901)
+ focalLength: 18.944401990122746
+ lightAng: 0.454
+ uPix, vPix, uMM, vMM: 2464, 3280, 2.76, 3.68
+ lightToeIn, cameraToeIn: -0.2509728303244617, -0.32785573647400157
+ light U, V, W angles: -0.9731934535579826, 0.14693364732341985, 0.20952676269332754
+ camera U, V, W angles: -3.0681298490300573, -0.20951049170219394, 1.6113431178163031

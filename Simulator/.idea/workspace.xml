@@ -6,8 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="4705939a-743b-476a-b215-85f796280736" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScanCamera1-pixels.txt" beforeDir="false" afterPath="$PROJECT_DIR$/RoomReaderScanCamera1-pixels.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pointCalibration.py" beforeDir="false" afterPath="$PROJECT_DIR$/pointCalibration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/triangleCalibration.py" beforeDir="false" afterPath="$PROJECT_DIR$/triangleCalibration.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
