@@ -28,21 +28,6 @@ def GetRoomFromJamesesScan(scanFile):
    room.append(point)
  return room
 
-'''
-def MSRoomDifferences(room1, room2):
- if not len(room1) == len(room2):
-  print("Room point lists are not equal length! " + str(len(room1)) + ", " + str(len(room2)))
-  return 0
- sum = 0.0
- for r in range(len(room1)):
-  r1 = room1[r]
-  r2 = room2[r]
-  rd = r1.Sub(r2)
-  sum += rd.Length2()
- sum = sum/len(room1)
- return sum
-'''
-
 
 #*********************************************************************************************
 
