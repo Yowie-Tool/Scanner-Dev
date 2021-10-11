@@ -2,6 +2,8 @@
 # Adrian Bowyer
 # 19 February 2020
 
+sys.path.append('/home/ensab/Desktop/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator')
+
 import Part, BOPTools, FreeCAD, copy, sys
 import math as maths
 from FreeCAD import Base
@@ -126,7 +128,7 @@ def CrossSection(scannerPart, s, p0, n):
  lineEnds = []
  for line in wires:
   vertexes = line.Vertexes
-  if len(vertexes) is not 2:
+  if len(vertexes) != 2:
    print("Line without 2 ends!", len(vertexes))
   else:
 
@@ -405,7 +407,7 @@ def RayCast2D(lines, faces, lightSource):
     p3 = ray.Point(minS)
     p3.SetFace(minFace)
     visibilityPolygon.append(p3)
-   elif classification is 0:
+   elif classification == 0:
     p2 = ray.Point(minS)
     p2.SetFace(minFace)
     visibilityPolygon.append(p2)
@@ -527,8 +529,8 @@ def PolygonMask(scannerPart, polygons):
   for i in range(1, len(polygon)):
    pair = polygon[i]
    p1 = pair[0]
-   uv0 = scannerPart.ProjectPointIntoCameraPixel(p0)
-   uv1 = scannerPart.ProjectPointIntoCameraPixel(p1)
+   uv0 = scannerPart.ProjectPointIntoIntegerCameraPixel(p0)
+   uv1 = scannerPart.ProjectPointIntoIntegerCameraPixel(p1)
    DrawLine(draw, uv0, uv1, 255)
    p0 = p1
  return Filter(mask, 3)
@@ -570,7 +572,7 @@ def Display(scannerPart, showLight = False, showCamera = False):
  if scannerPart.focalLength > 0 and showCamera:
   for u in (-1, 1):
    for v in (-1, 1):
-    ray = scannerPart.GetCameraRay(scannerPart.uMM*0.5*u, scannerPart.vMM*0.5*v)
+    ray = scannerPart.GetCameraRay((scannerPart.uMM*0.5*u, scannerPart.vMM*0.5*v))
     DisplayCameraRay(ray)
 
  if scannerPart.parent is not None:
@@ -604,7 +606,7 @@ def CastRay(scannerPart, ray, room, polygons, startingPolygonDistance):
      elif t > 1:
       t = 1
      rayPoint = RayPoint(ray, s)
-     uv0 = scannerPart.ProjectPointIntoCameraPixel(rayPoint)
+     uv0 = scannerPart.ProjectPointIntoIntegerCameraPixel(rayPoint)
      testObstructionRay = scannerPart.GetCameraRayNormalised(uv0[0], uv0[1])
      testObstruction = RayIntoSolid(testObstructionRay, room)[1]
      if testObstruction is None or testObstruction + veryShort > s: # NB - relies on OR operator not bothering with second argument if first is True
@@ -619,7 +621,8 @@ def CastRay(scannerPart, ray, room, polygons, startingPolygonDistance):
    return int(round(255.0*GaussianLightIntensity(minRayLightDistance)))
  return 0
   
-
+def DisplayScanner(scanner, showLight = False, showCamera = False):
+ Display(scanner.world, showLight, showCamera)
 
 # If we are a camera...
 # Take a visibilityPolygon from a light source and find what it looks like.
@@ -816,20 +819,17 @@ Part.show(room)
 # Make the scanner
 
 world = ScannerPart()
-scanner = ScannerPart(offset = Vector3(0, -1700, 1000), parent = world)
-lightSource = ScannerPart(offset = Vector3(0, 0, -250), parent = scanner, lightAngle = 2)
-camera = ScannerPart(offset = Vector3(0, 0, 250), parent = scanner, uPixels = 2464, vPixels = 3280, uMM =  17.64, vMM = 24.088543586543586, focalLength = 25) 
-lightSource.RotateU(-0.5*maths.pi)
-lightSource.RotateW(-0.5*maths.pi)
-camera.RotateU(-0.5*maths.pi)
-Display(world, showLight = True, showCamera = True)
 
+scanner = Scanner(world, scannerOffset = Vector3(0, -1700, 1000), lightOffset = Vector3(0, 0, -250), lightAng = 2, lightToeIn = 0, cameraOffset =
+		 Vector3(0, 0, 250), cameraToeIn = 0, uPix = 2464, vPix = 3280, uMM = 17.64, vMM = 24.088543586543586, focalLen = 25)
 
-roomLight = ScannerPart(offset = Vector3(0, 0, 3000), parent = world)
+DisplayScanner(scanner, showLight = True, showCamera = True)
 
-polygons = GetVisibilityPolygons(lightSource, room)
+#roomLight = ScannerPart(offset = Vector3(0, 0, 3000), parent = world)
+
+polygons = GetVisibilityPolygons(scanner.lightSource, room)
 PlotPolygons(polygons)
-#SaveCameraImageLights(camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/calibrate")
+#SaveCameraImageLights(scanner.camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/calibrate")
 
 
 

@@ -50,11 +50,14 @@ scanner = Scanner(world,
 '''
 #scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 23.15), lightAng = 0.454, lightToeIn = 0, cameraOffset =
 #		 Vector3(-24.8, 0, 436.0), cameraToeIn = -10.94*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 25)
-'''
-pixel = (2889.0227882037534, 0.0)
-point = Vector3(-230.4857937468226, 1622.395309211286, 0)
-scanner.CheckPoint(point, pixel, True)
 
+#pixel = (0, 2573.0036496350367)
+#pixel = (2464/2.0, 3280/2.0)
+#pixel = (0, 0)
+#point = Vector3(-188.85944094399068, 1348.9119290579144, 0)
+#scanner.CheckPoint(point, pixel, True)
+scanner.CheckCornersAndMiddle()
+'''
 points = [
  Vector3(-50, 1000, 0),
  Vector3(0, 1000, 0),
@@ -66,7 +69,7 @@ points = [
 for point in points:
  scanner.CheckPoint(point, None, True)
  print()
-'''
+
 
 print("Initial scanner:")
 print(str(scanner))
@@ -102,4 +105,4 @@ bestScanner = betterScanner.Optimise(room, shortPixelsAndAnglesJB)
 print("Final scanner:")
 print(str(bestScanner))
 
-
+'''

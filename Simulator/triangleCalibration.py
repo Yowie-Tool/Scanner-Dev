@@ -62,8 +62,8 @@ def TriangleReconstructions(triangles, realScanner, ScannerToBeAdjusted, printTr
  for triangle in triangles:
   corners = []
   for i in range(3):
-   pixel = realCamera.ProjectPointIntoCameraPlane(triangle[i])
-   spacePoint = lightSourceToBeAdjusted.CameraPixelCoordinatesArePointInMyPlane(cameraToBeAdjusted, pixel)
+   pixel = realCamera.ProjectPointIntoFractionalCameraPixel(triangle[i])
+   spacePoint = lightSourceToBeAdjusted.CameraPixelIsPointInMyPlane(cameraToBeAdjusted, pixel)
    corners.append(spacePoint)
   if printTriangles:
    print("  ", str(triangle))
@@ -82,8 +82,8 @@ def A4Reconstructions(a4Points, realScanner, ScannerToBeAdjusted):
  cameraToBeAdjusted = ScannerToBeAdjusted.camera
  reconstructedA4Points = []
  for point in a4Points:
-  pixel = realCamera.ProjectPointIntoCameraPlane(point)
-  spacePoint = lightSourceToBeAdjusted.CameraPixelCoordinatesArePointInMyPlane(cameraToBeAdjusted, pixel)
+  pixel = realCamera.ProjectPointIntoFractionalCameraPixel(point)
+  spacePoint = lightSourceToBeAdjusted.CameraPixelIsPointInMyPlane(cameraToBeAdjusted, pixel)
   reconstructedA4Points.append(spacePoint)
  return reconstructedA4Points
 
