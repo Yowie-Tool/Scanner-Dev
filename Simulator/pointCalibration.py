@@ -71,7 +71,7 @@ for point in points:
  print()
 '''
 
-sv = [ 8, 11  ]
+sv = [6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
 scanner.DefineSelectionVector(sv)
 
@@ -103,7 +103,7 @@ shortPixelsAndAnglesJB = (pixels, angles)
 
 print("Sampled " + str(len(pixels)) + " pixels for the optimisation.")
 
-betterScanner = scanner.ScatterGun(room, shortPixelsAndAnglesJB, 8, 3, 100)
+betterScanner = scanner.MonteCarlo(room, shortPixelsAndAnglesJB, 8, 3, 100)
 
 bestScanner = betterScanner.Optimise(room, shortPixelsAndAnglesJB)
 print("Final scanner:")
