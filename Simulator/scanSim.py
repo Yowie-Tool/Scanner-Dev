@@ -731,14 +731,14 @@ def GetVisibilityPolygons(scannerPart, room):
 
   crossLines = CrossSection(scannerPart, face, p0, scannerPart.u)
   for line in crossLines:
-   print(line)
+   #print(line)
    lines.append(line)
 
 
   # Cast a ray from the light source through each line end in turn and add what it hits
   # to the visibility polygons.  Process those polygons back into 3D.
  castLines = RayCast2D(lines, faces, scannerPart)
- print(castLines)
+ #print(castLines)
  return castLines
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -783,7 +783,7 @@ Part.show(room)
 
 # Find the point in the light sheet corresponding to the pixel indices (3, 17) in the camera
 
-print(lightSource.CameraPixelIndicesArePointInMyPlane(camera, 3, 17))
+#print(lightSource.CameraPixelIndicesArePointInMyPlane(camera, 3, 17))
 
 # Run a scan and save the image
 
@@ -827,15 +827,12 @@ scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3
 		 Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
 
 
-parameters = [0, 0, 0, 36, 0, 0, 25.83122086921673, -61.193560744902925, 342.6959288246993, 8.89055421253176, 0, -17.59279239283452, 0, 0, 0, 17.186598538399203, 0.04913717801422024, 1.582333824346304]
+#parameters = [0, 0, 0, 36, 0, 0, 51.39949028832171, -218.6961204575926, 367.2294799139914, 10.49632835398877, 0.0, 3.1383388276659403, 0.0, 0.0, 0.0, 2.77501898418852, 0.027515107997151313, 1.5761757832773262]
+#parameters =  [0, 0, 0, 36, 0, 0, 32.30692113512267, 82.30888164978587, 314.7026063287078, 8, 0.0, 1.737705486220911, 0.0, 0.0, 0.0, 4.1162333257310015, 0.050328169663177, 1.5829233965668246]
+
+parameters = [0, 0, 0, 36, 0, 0, -7.75, 0, 875.9251317989438, 8, 0.0, 5.726812341092995, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 
-#parameters = [28.909118463842645, -273.63631016341844, -0.0004587435197104544, 36, 0, 0, 23.31533565971525, -270.09433935156744, 434.27186551558106, 11.27911297025794, 0, 35.724683856571765, 0, 0, 0, -36.08547080506028, 0.02928259484199289, 1.5766578473019532]
-
-
-#parameters = [-173.6594548672991, -1912.6248262146607, 113.76498734640313, -598.0872032710257, -1464.1969190569562, -281.6967853222193, 511.9448523509837, -631.2572129084502, 556.0646938716382, 20.74489446029521, -0.3422299441946912, 266.7404649543458, 0.8079044721195686, -0.2573742843922505, 0.2779230016650566, -266.9913904610575, -0.04835764880724635, 1.579335229725425]
-
-#parameters = [-74.82821554621661, 197.02285056374023, -13.236118179039677, -109.63667082010892, 338.3324660821264, 14.125592756935987, 93.2767612753413, -142.50744181779322, 335.08161974183247, 8.317085227462478, 0.9427862999836595, 20.481868184634685, 0.370720055019063, 0.909669971911214, -0.2979725928560278, -20.90328305374781, 0.055943839456073466, 1.5843958166163479]
 scanner.MakeScannerFromParameters(parameters, scanner.world, scanner.lightAng, scanner.uPix, scanner.vPix, scanner.uMM, scanner.vMM)
 
 DisplayScanner(scanner, showLight = True, showCamera = True)

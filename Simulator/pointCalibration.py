@@ -16,7 +16,7 @@ def LoadPixelsAndAngles(pixelFile):
    numbers = line.split()
    pixel = [float(numbers[1]), float(numbers[0])]
    pixels.append(pixel)
-   angles.append(float(numbers[2]))
+   angles.append(-float(numbers[2])*maths.pi/180.0)
  return (pixels, angles)
 
 def GetRoomFromJamesesScan(scanFile):
@@ -71,17 +71,17 @@ for point in points:
  print()
 '''
 
-sv = [ 6, 7, 8, 9,  11,  15, 16, 17]
+sv = [ 8, 11  ]
 
 scanner.DefineSelectionVector(sv)
 
 print("Initial scanner:")
 print(str(scanner))
 
-roomJB = GetRoomFromJamesesScan("room-zero-angle")
+roomJB = GetRoomFromJamesesScan("RoomReaderScan-JB.pts")
 scanner.SelfCheck(roomJB)
 
-pixelsAndAnglesJB = LoadPixelsAndAngles("room-zero-angle-pixels")
+pixelsAndAnglesJB = LoadPixelsAndAngles("RoomReaderScanCamera1-pixels.txt")
 pixelsJB = pixelsAndAnglesJB[0]
 anglesJB = pixelsAndAnglesJB[1]
 
