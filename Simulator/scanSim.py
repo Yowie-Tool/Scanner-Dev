@@ -745,7 +745,7 @@ def GetVisibilityPolygons(scannerPart, room):
 
 # Testing, testing...
 
-ClearAll()
+#ClearAll()
 
 # Initial test setup
 '''
@@ -798,17 +798,17 @@ PlotPolygons(polygons)
 # Make the room
 
 a = Part.makeBox(4200, 3400, 2000)
-a.translate(Base.Vector(-2100, -1700, 0))
+a.translate(Base.Vector(-2100, 0, -500))
 b = Part.makeBox(4000, 3600, 3000)
-b.translate(Base.Vector(-2000, -2000, 100))
+b.translate(Base.Vector(-2000, -300, -400))
 room = a.cut(b)
 
 calibration1 = Part.makeBox(500, 500, 2000)
 calibration2 = Part.makeBox(500, 500, 2000)
 calibration1.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1), 25)
 calibration2.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1), 37)
-calibration2.translate(Base.Vector(-400, 800, 0))
-calibration1.translate(Base.Vector(300, 500, 0))
+calibration2.translate(Base.Vector(-400, 2500, -500))
+calibration1.translate(Base.Vector(300, 2200, -500))
 room = room.fuse(calibration1)
 room = room.fuse(calibration2)
 
@@ -820,8 +820,23 @@ Part.show(room)
 
 world = ScannerPart()
 
-scanner = Scanner(world, scannerOffset = Vector3(0, -1700, 1000), lightOffset = Vector3(0, 0, -250), lightAng = 2, lightToeIn = 0, cameraOffset =
-		 Vector3(0, 0, 250), cameraToeIn = 0, uPix = 2464, vPix = 3280, uMM = 17.64, vMM = 24.088543586543586, focalLen = 25)
+#scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(0, 0, -250), lightAng = 2, lightToeIn = 0, cameraOffset =
+#		 Vector3(0, 0, 250), cameraToeIn = 0, uPix = 2464, vPix = 3280, uMM = 17.64, vMM = 24.088543586543586, focalLen = 25)
+
+scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0, cameraOffset =
+		 Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
+
+
+parameters = [0, 0, 0, 36, 0, 0, 25.83122086921673, -61.193560744902925, 342.6959288246993, 8.89055421253176, 0, -17.59279239283452, 0, 0, 0, 17.186598538399203, 0.04913717801422024, 1.582333824346304]
+
+
+#parameters = [28.909118463842645, -273.63631016341844, -0.0004587435197104544, 36, 0, 0, 23.31533565971525, -270.09433935156744, 434.27186551558106, 11.27911297025794, 0, 35.724683856571765, 0, 0, 0, -36.08547080506028, 0.02928259484199289, 1.5766578473019532]
+
+
+#parameters = [-173.6594548672991, -1912.6248262146607, 113.76498734640313, -598.0872032710257, -1464.1969190569562, -281.6967853222193, 511.9448523509837, -631.2572129084502, 556.0646938716382, 20.74489446029521, -0.3422299441946912, 266.7404649543458, 0.8079044721195686, -0.2573742843922505, 0.2779230016650566, -266.9913904610575, -0.04835764880724635, 1.579335229725425]
+
+#parameters = [-74.82821554621661, 197.02285056374023, -13.236118179039677, -109.63667082010892, 338.3324660821264, 14.125592756935987, 93.2767612753413, -142.50744181779322, 335.08161974183247, 8.317085227462478, 0.9427862999836595, 20.481868184634685, 0.370720055019063, 0.909669971911214, -0.2979725928560278, -20.90328305374781, 0.055943839456073466, 1.5843958166163479]
+scanner.MakeScannerFromParameters(parameters, scanner.world, scanner.lightAng, scanner.uPix, scanner.vPix, scanner.uMM, scanner.vMM)
 
 DisplayScanner(scanner, showLight = True, showCamera = True)
 
