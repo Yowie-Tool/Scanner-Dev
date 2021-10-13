@@ -5,8 +5,98 @@
 # 2 March 2021
 
 from YowieScanner import *
+from PIL import Image, ImageDraw, ImageFilter, ImageShow
 
 
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Interface to the graphics library (to allow several to be easily substituted)
+
+class Picture:
+# New image x by y pixels
+
+ def __init__(self, x, y):
+  self.picture = Image.new("RGB", (x, y))
+
+ # The drawable frame of an image
+
+ def Display(self):
+  return ImageShow.show(self.picture)
+
+ # Draw a straight line from p0 to p1
+
+ def DrawLine(self, p0, p1, shade):
+  self.picture.line([p0, p1], shade, 1)
+
+# Set a single pixel to colour shade
+
+ def SetPixel(self, x, y, shade):
+  self.picture.putpixel((x, y), shade)
+
+# Grow the image by width f
+
+ def Filter(self, f):
+  return self.picture.filter(ImageFilter.MaxFilter(f))
+
+# Save the image in a file
+
+ def SavePicture(self, fileName):
+  self.picture.save(fileName)
+
+def PlotPoint(picture, x, y, original):
+ if original:
+  picture.SetPixel(x, y, (0,255,0))
+  #picture.SetPixel(x, y-1, (0,255,0))
+  #picture.SetPixel(x-1, y-1, (0,255,0))
+  #picture.SetPixel(x+1, y, (0,255,0))
+ else:
+  picture.SetPixel(x, y, (255,0,0))
+  #picture.SetPixel(x, y+1, (255,0,0))
+  #picture.SetPixel(x-1, y+1, (255,0,0))
+  #picture.SetPixel(x-1, y, (255,0,0))
+
+def PlotRooms(room1, room2, imageFile, scale):
+ minX = sys.float_info.max
+ minY = minX
+ maxX = sys.float_info.min
+ maxY = maxX
+ for r in room1:
+  if r.x > maxX:
+   maxX = r.x
+  if r.x < minX:
+   minX = r.x
+  if r.y > maxY:
+   maxY = r.y
+  if r.y < minY:
+   minY = r.y
+ for r in room2:
+  if r.x > maxX:
+   maxX = r.x
+  if r.x < minX:
+   minX = r.x
+  if r.y > maxY:
+   maxY = r.y
+  if r.y < minY:
+   minY = r.y
+
+ xd = round(scale*(maxX - minX)) + 10
+ yd = round(scale*(maxY - minY)) + 10
+ print("Image size: [" + str(xd) + ", " + str(yd) + "]")
+ picture = Picture(xd, yd)
+ minX -= 5
+ minY -= 5
+ for r in room1:
+  x = round(scale*(r.x - minX))
+  y = round(scale*(r.y - minY))
+  PlotPoint(picture, x, y, True)
+ for r in room2:
+  x = round(scale*(r.x - minX))
+  y = round(scale*(r.y - minY))
+  PlotPoint(picture, x, y, False)
+ picture.Display()
+ picture.SavePicture(imageFile)
+
+
+#***************************************************************************************************************
 
 def LoadPixelsAndAngles(pixelFile):
  pixels = []
@@ -103,10 +193,16 @@ shortPixelsAndAnglesJB = (pixels, angles)
 
 print("Sampled " + str(len(pixels)) + " pixels for the optimisation.")
 
-betterScanner = scanner.MonteCarlo(room, shortPixelsAndAnglesJB, 8, 3, 100)
+#betterScanner = scanner.MonteCarlo(room, shortPixelsAndAnglesJB, 8, 3, 100)
 
-bestScanner = betterScanner.Optimise(room, shortPixelsAndAnglesJB)
+#bestScanner = betterScanner.Optimise(room, shortPixelsAndAnglesJB)
+parameters = [0, 0, 0, 36, 0, 0, 36.29020647040032, -64.73034918263649, 347.2584403909511, 9.132270456355052, 0.0, 2.536641779027073, 0.09830280745876545, 0.0014337786420365016, 0.007458111749965841, 3.344304399002978, 6.270129696264745, 1.5628220387349634, 6.283153237497993, 6.283152870577741, 6.221876183673617]
+
+bestScanner = scanner.Copy()
+bestScanner.ImposeParameters(parameters)
+
 print("Final scanner:")
 print(str(bestScanner))
 
-
+recoveredRoom = bestScanner.ReconstructRoomFromPixelsAndAngles(shortPixelsAndAnglesJB)
+PlotRooms(room, recoveredRoom, "scanner-comparison.png", 0.5)

@@ -7,8 +7,8 @@ sys.path.append('/home/ensab/Desktop/rrlOwncloud/RepRapLtd/Engineering/External-
 import Part, BOPTools, FreeCAD, copy, sys
 import math as maths
 from FreeCAD import Base
-import PySide
-from PySide import QtGui, QtCore
+#import PySide
+#from PySide import QtGui, QtCore
 from PIL import Image, ImageDraw, ImageFilter
 from YowieScanner import *
 
@@ -844,7 +844,7 @@ DisplayScanner(scanner, showLight = True, showCamera = True)
 
 polygons = GetVisibilityPolygons(scanner.lightSource, room)
 PlotPolygons(polygons)
-#SaveCameraImageLights(scanner.camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/calibrate")
+SaveCameraImageLights(scanner.camera, room, polygons, "/home/ensab/rrlOwncloud/RepRapLtd/Engineering/External-Projects/Scantastic/Scanner-Dev/Simulator/calibrate")
 
 
 
