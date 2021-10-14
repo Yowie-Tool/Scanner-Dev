@@ -93,7 +93,8 @@ def PlotRooms(room1, room2, imageFile, scale):
   y = round(scale*(r.y - minY))
   PlotPoint(picture, x, y, False)
  picture.Display()
- picture.SavePicture(imageFile)
+ if imageFile is not None:
+  picture.SavePicture(imageFile)
 
 
 #***************************************************************************************************************
@@ -159,7 +160,7 @@ points = [
 for point in points:
  scanner.CheckPoint(point, None, True)
  print()
-'''
+
 
 sv = [6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
@@ -196,13 +197,29 @@ print("Sampled " + str(len(pixels)) + " pixels for the optimisation.")
 #betterScanner = scanner.MonteCarlo(room, shortPixelsAndAnglesJB, 8, 3, 100)
 
 #bestScanner = betterScanner.Optimise(room, shortPixelsAndAnglesJB)
-parameters = [0, 0, 0, 36, 0, 0, 36.29020647040032, -64.73034918263649, 347.2584403909511, 9.132270456355052, 0.0, 2.536641779027073, 0.09830280745876545, 0.0014337786420365016, 0.007458111749965841, 3.344304399002978, 6.270129696264745, 1.5628220387349634, 6.283153237497993, 6.283152870577741, 6.221876183673617]
+
+
+parameters = [0, 0, 0, 36, 0, 0, 36.29020647040032, -64.73034918263649, 347.2584403909511, 9.132270456355052, 0.0, 2.536641779027073, 
+ 0.09830280745876545, 0.0014337786420365016, 0.007458111749965841, 3.344304399002978, 6.270129696264745, 1.5628220387349634, 
+ 6.283153237497993, 6.283152870577741, 6.221876183673617]
 
 bestScanner = scanner.Copy()
 bestScanner.ImposeParameters(parameters)
+'''
+
+camera1Scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0,
+		 cameraOffset = Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
+
+parameters = [0, 0, 0, 36, 0, 0, 36.29020647040032, -64.73034918263649, 347.2584403909511, 9.132270456355052, 0.0, 2.536641779027073, 0.09830280745876545, 0.0014337786420365016, 0.007458111749965841, 3.344304399002978, 6.270129696264745, 1.5628220387349634, 6.283153237497993, 6.283152870577741, 6.221876183673617]
+
+camera1Scanner.ImposeParameters(parameters)
 
 print("Final scanner:")
-print(str(bestScanner))
+print(str(camera1Scanner))
+pixelsAndAnglesJB = LoadPixelsAndAngles("RoomReaderScanCamera1-pixels.txt")
 
-recoveredRoom = bestScanner.ReconstructRoomFromPixelsAndAngles(shortPixelsAndAnglesJB)
-PlotRooms(room, recoveredRoom, "scanner-comparison.png", 0.5)
+#roomAB = camera1Scanner.ReconstructRoomFromPixelsAndAngles(pixelsAndAnglesJB)
+
+roomJB = GetRoomFromJamesesScan("RoomReaderScan1310JB.pts")
+roomAB = GetRoomFromJamesesScan("RoomReaderScan1310AB.pts")
+PlotRooms(roomJB, roomAB, None, 0.5)
