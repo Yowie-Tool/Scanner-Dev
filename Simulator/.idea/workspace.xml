@@ -6,6 +6,27 @@
   <component name="ChangeListManager">
     <list default="true" id="4705939a-743b-476a-b215-85f796280736" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/GraphicsFunctions.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/ScannerModel.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/col.FCMacro" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/dxfColorMap.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/dxfImportObjects.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/dxfLibrary.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/dxfReader.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/old-functions-and-vector-out.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/section.FCMacro" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/OldStuff/t" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScan-AB.pts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScan-JB-old.pts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScan-JB.pts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScan.pts" beforeDir="false" afterPath="$PROJECT_DIR$/RoomReaderScan.pts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScan1310AB.pts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScan1310JB.pts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScan1310JB.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScanAB-old.pts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScanCamera1-pixels.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScanDebug.txt" beforeDir="false" afterPath="$PROJECT_DIR$/RoomReaderScanDebug.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RoomReaderScanDebug1310.txt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/pointCalibration.py" beforeDir="false" afterPath="$PROJECT_DIR$/pointCalibration.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
