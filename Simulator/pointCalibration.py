@@ -122,7 +122,7 @@ def GetRoomFromJamesesScan(scanFile):
 def FakeTriangle(scanner, triangleSideLength):
  triangle = []
  angle = uniform(-0.5, 0.5)
- apex = Vector3(uniform(-500, 500), uniform(1000, 2000), uniform(-3, 3))
+ apex = Vector3(uniform(-500, 500), uniform(1000, 2000), 0)#uniform(-3, 3))
  x = triangleSideLength*maths.cos(angle)
  y = triangleSideLength*maths.sin(angle)
  triangle.append(scanner.PointInSpaceToPixel(Vector3(apex.x - x, apex.y + y, apex.z)))
@@ -138,8 +138,10 @@ def DoTriangleOptimisation(pixelsAndAnglesJB, triangleSideLength):
 
  scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0,
 		 cameraOffset = Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
+ parameters = [0, 0, 0, 36, 0, 0, 12.439261507779436, 85.07398479331971, 307.37393494542715, 8, 0.0, 1.0145322214287944, 0.011076482035381101, -7.119938967292683e-07, -2.7645354041538894e-06, -1.441521377175576, -0.15282795801825255, 1.4866218267968678, -9.38482980217259e-09, -2.8090019199566996e-09, -0.22434910788453966]
+ scanner.ImposeParameters(parameters)
 
- sv = [6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+ sv = [6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
  scanner.DefineSelectionVector(sv)
 
@@ -173,7 +175,7 @@ def DoPointsOptimisation(pixelsAndAnglesJB, roomJB):
  scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0,
 		 cameraOffset = Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
 
- sv = [6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+ sv = [6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
  scanner.DefineSelectionVector(sv)
 
@@ -210,7 +212,9 @@ def DoPointsOptimisation(pixelsAndAnglesJB, roomJB):
 
 
 '''
-parameters = [0, 0, 0, 36, 0, 0, 36.29020647040032, -64.73034918263649, 347.2584403909511, 9.132270456355052, 0.0, 2.536641779027073, 0.09830280745876545, 0.0014337786420365016, 0.007458111749965841, 3.344304399002978, 6.270129696264745, 1.5628220387349634, 6.283153237497993, 6.283152870577741, 6.221876183673617]
+parameters = [0, 0, 0, 36, 0, 0, 12.439261507779436, 85.07398479331971, 307.37393494542715, 8, 0.0, 1.0145322214287944, 0.011076482035381101, -7.119938967292683e-07, -2.7645354041538894e-06, -1.441521377175576, -0.15282795801825255, 1.4866218267968678, -9.38482980217259e-09, -2.8090019199566996e-09, -0.22434910788453966]
+
+#parameters = [0, 0, 0, 36, 0, 0, 36.29020647040032, -64.73034918263649, 347.2584403909511, 9.132270456355052, 0.0, 2.536641779027073, 0.09830280745876545, 0.0014337786420365016, 0.007458111749965841, 3.344304399002978, 6.270129696264745, 1.5628220387349634, 6.283153237497993, 6.283152870577741, 6.221876183673617]
 
 scanner.ImposeParameters(parameters)
 roomAB = GetRoomFromJamesesScan("RoomReaderScanAB.pts")
