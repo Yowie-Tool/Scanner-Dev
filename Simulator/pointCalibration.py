@@ -105,7 +105,7 @@ def LoadPixelsAndAngles(pixelFile):
  with open(pixelFile) as pxFile:
   for line in pxFile:
    numbers = line.split()
-   pixel = [float(numbers[1]), float(numbers[0])]
+   pixel = [float(numbers[1]), -float(numbers[0])]
    pixels.append(pixel)
    angles.append(-float(numbers[2])*maths.pi/180.0)
  return (pixels, angles)
@@ -175,8 +175,8 @@ def DoPointsOptimisation(pixelsAndAnglesJB, roomJB):
  scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0,
 		 cameraOffset = Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
 
+ #sv = [6, 7, 8, 11, 15, 16, 17, 18, 19, 20]
  sv = [6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-
  scanner.DefineSelectionVector(sv)
 
  print("Initial scanner:")
@@ -236,5 +236,5 @@ def Triangles():
  print(str(scanner))
 
 
-Triangles()
-#Room()
+#Triangles()
+Room()
