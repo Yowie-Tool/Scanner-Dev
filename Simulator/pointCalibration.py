@@ -105,7 +105,7 @@ def LoadPixelsAndAngles(pixelFile):
  with open(pixelFile) as pxFile:
   for line in pxFile:
    numbers = line.split()
-   pixel = [float(numbers[1]), -float(numbers[0])]
+   pixel = [float(numbers[1]), float(numbers[0])]
    pixels.append(pixel)
    angles.append(-float(numbers[2])*maths.pi/180.0)
  return (pixels, angles)
@@ -125,33 +125,21 @@ def FakeTriangle(scanner, triangleSideLength):
  apex = Vector3(uniform(-500, 500), uniform(1000, 2000), 0)#uniform(-3, 3))
  x = triangleSideLength*maths.cos(angle)
  y = triangleSideLength*maths.sin(angle)
- triangle.append(scanner.PointInSpaceToPixel(Vector3(apex.x - x, apex.y + y, apex.z)))
+ v0 = Vector3(apex.x - x, apex.y + y, apex.z)
+ v2 = Vector3(apex.x + y, apex.y + x, apex.z)
+ triangle.append(scanner.PointInSpaceToPixel(v0))
  triangle.append(scanner.PointInSpaceToPixel(apex))
- triangle.append(scanner.PointInSpaceToPixel(Vector3(apex.x + y, apex.y + x, apex.z)))
+ triangle.append(scanner.PointInSpaceToPixel(v2))
  return triangle
 
-def DoTriangleOptimisation(pixelsAndAnglesJB, triangleSideLength):
-
- seed(7)
-
- world = ScannerPart()
-
- scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0,
-		 cameraOffset = Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
- parameters = [0, 0, 0, 36, 0, 0, 12.439261507779436, 85.07398479331971, 307.37393494542715, 8, 0.0, 1.0145322214287944, 0.011076482035381101, -7.119938967292683e-07, -2.7645354041538894e-06, -1.441521377175576, -0.15282795801825255, 1.4866218267968678, -9.38482980217259e-09, -2.8090019199566996e-09, -0.22434910788453966]
- scanner.ImposeParameters(parameters)
-
- sv = [6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-
- scanner.DefineSelectionVector(sv)
-
- print("Initial scanner:")
+def DoTriangleOptimisation(scanner, pixelsAndAnglesJB, triangleSideLength, triangleCount):
+ print("Triangle optimisation - initial scanner:")
  print(str(scanner))
 
  if pixelsAndAnglesJB is None:
   trianglePixels = []
   angles = []
-  for t in range(6):
+  for t in range(triangleCount):
    trianglePixels.append(FakeTriangle(scanner, triangleSideLength))
    angles.append(0.0)
   pixelsAndAnglesJB = (trianglePixels, angles)
@@ -167,19 +155,8 @@ def DoTriangleOptimisation(pixelsAndAnglesJB, triangleSideLength):
 
 #******************************************************************************************************************************************
 
-def DoPointsOptimisation(pixelsAndAnglesJB, roomJB):
- seed(7)
-
- world = ScannerPart()
-
- scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0,
-		 cameraOffset = Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
-
- #sv = [6, 7, 8, 11, 15, 16, 17, 18, 19, 20]
- sv = [6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
- scanner.DefineSelectionVector(sv)
-
- print("Initial scanner:")
+def DoPointsOptimisation(scanner, pixelsAndAnglesJB, roomJB):
+ print("Point optimisation - initial scanner:")
  print(str(scanner))
 
  pixelsJB = pixelsAndAnglesJB[0]
@@ -211,18 +188,10 @@ def DoPointsOptimisation(pixelsAndAnglesJB, roomJB):
 #*********************************************************************************************
 
 
-'''
-parameters = [0, 0, 0, 36, 0, 0, 12.439261507779436, 85.07398479331971, 307.37393494542715, 8, 0.0, 1.0145322214287944, 0.011076482035381101, -7.119938967292683e-07, -2.7645354041538894e-06, -1.441521377175576, -0.15282795801825255, 1.4866218267968678, -9.38482980217259e-09, -2.8090019199566996e-09, -0.22434910788453966]
-
-#parameters = [0, 0, 0, 36, 0, 0, 36.29020647040032, -64.73034918263649, 347.2584403909511, 9.132270456355052, 0.0, 2.536641779027073, 0.09830280745876545, 0.0014337786420365016, 0.007458111749965841, 3.344304399002978, 6.270129696264745, 1.5628220387349634, 6.283153237497993, 6.283152870577741, 6.221876183673617]
-
-scanner.ImposeParameters(parameters)
-roomAB = GetRoomFromJamesesScan("RoomReaderScanAB.pts")
-'''
-def Room():
+def Room(scanner):
  pixelsAndAnglesJB = LoadPixelsAndAngles("RoomReaderScanDebug.txt")
  roomJB = GetRoomFromJamesesScan("RoomReaderScan.pts")
- scanner = DoPointsOptimisation(pixelsAndAnglesJB, roomJB)
+ scanner = DoPointsOptimisation(scanner, pixelsAndAnglesJB, roomJB)
 
  print("Final scanner:")
  print(str(scanner))
@@ -230,11 +199,25 @@ def Room():
 
  PlotRooms(roomJB, recoveredRoom, None, 0.5)
 
-def Triangles():
- scanner = DoTriangleOptimisation(None, 200)
+def Triangles(scanner):
+ scanner = DoTriangleOptimisation(scanner, None, 200, 1)
  print("Final scanner:")
  print(str(scanner))
 
+#***************************************************************************************************************************************************
 
-#Triangles()
-Room()
+seed(7)
+world = ScannerPart()
+scanner = Scanner(world, scannerOffset = Vector3(0, 0, 0), lightOffset = Vector3(36, 0, 0), lightAng = 0.454, lightToeIn = 0,
+		 cameraOffset = Vector3(-7.75, 0, 352.0), cameraToeIn = -20.32*maths.pi/180.0, uPix = 2464, vPix = 3280, uMM = 2.76, vMM = 3.68, focalLen = 8)
+
+# From the optimiser. RMS = 2.52mm
+parameters = [0, 0, 0, 36, 0, 0, 12.439261507779436, 85.07398479331971, 307.37393494542715, 8, 0.0, 1.0145322214287944, 0.011076482035381101, -7.119938967292683e-07, -2.7645354041538894e-06, -1.441521377175576, -0.15282795801825255, 1.4866218267968678, -9.38482980217259e-09, -2.8090019199566996e-09, -0.22434910788453966]
+scanner.ImposeParameters(parameters)
+
+sv = [6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+scanner.DefineSelectionVector(sv)
+
+#scanner.CheckPoint(Vector3(-384.202311310053, 1847.839001639, 0), None, True)
+Triangles(scanner)
+#Room(scanner)
