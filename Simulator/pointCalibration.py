@@ -5,8 +5,8 @@
 # 2 March 2021
 
 from YowieScanner import *
-from PIL import Image, ImageDraw, ImageFilter, ImageShow
-
+from PIL import Image, ImageDraw, ImageFilter, ImageShow, ImageTk
+import tkinter
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Interface to the graphics library (to allow several to be easily substituted)
@@ -54,12 +54,20 @@ def PlotPoint(picture, x, y, original):
   #picture.SetPixel(x-1, y+1, (255,0,0))
   #picture.SetPixel(x-1, y, (255,0,0))
 
-def PlotRooms(room1, room2, imageFile, scale):
- minX = sys.float_info.max
- minY = minX
- maxX = sys.float_info.min
- maxY = maxX
- for r in room1:
+def RoomXY(room, fromBefore):
+ if fromBefore is None:
+  minX = sys.float_info.max
+  minY = minX
+  maxX = sys.float_info.min
+  maxY = maxX
+ else:
+  m = fromBefore[0]
+  minX = m[0]
+  minY = m[1]
+  m = fromBefore[1]
+  maxX = m[0]
+  maxY = m[1]
+ for r in room:
   if r.x > maxX:
    maxX = r.x
   if r.x < minX:
@@ -68,36 +76,39 @@ def PlotRooms(room1, room2, imageFile, scale):
    maxY = r.y
   if r.y < minY:
    minY = r.y
- for r in room2:
-  if r.x > maxX:
-   maxX = r.x
-  if r.x < minX:
-   minX = r.x
-  if r.y > maxY:
-   maxY = r.y
-  if r.y < minY:
-   minY = r.y
+ return [[minX, minY], [maxX, maxY]]
 
- xd = round(scale*(maxX - minX)) + 10
- yd = round(scale*(maxY - minY)) + 10
+def PlotRooms(room1, room2, imageFile, scale):
+ if room1 is not None:
+  box = RoomXY(room1, None)
+ if room2 is not None:
+  if room1 is not None:
+   box = RoomXY(room2, box)
+  else:
+   box = RoomXY(room2, None)
+ min = box[0]
+ max = box[1]
+ xd = round(scale*(max[0] - min[0])) + 10
+ yd = round(scale*(max[1] - min[1])) + 10
  print("Image size: [" + str(xd) + ", " + str(yd) + "]")
  picture = Picture(xd, yd)
- minX -= 5
- minY -= 5
- for r in room1:
-  x = round(scale*(r.x - minX))
-  y = round(scale*(r.y - minY))
-  PlotPoint(picture, x, y, True)
- for r in room2:
-  x = round(scale*(r.x - minX))
-  y = round(scale*(r.y - minY))
-  PlotPoint(picture, x, y, False)
+ min[0] -= 5
+ min[1] -= 5
+ if room1 is not None:
+  for r in room1:
+   x = round(scale*(r.x - min[0]))
+   y = round(scale*(r.y - min[1]))
+   PlotPoint(picture, x, y, True)
+ if room2 is not None:
+  for r in room2:
+   x = round(scale*(r.x - min[0]))
+   y = round(scale*(r.y - min[1]))
+   PlotPoint(picture, x, y, False)
  picture.Display()
  if imageFile is not None:
   picture.SavePicture(imageFile)
 
-
-#***************************************************************************************************************
+#******************************************************************************************************
 
 def LoadPixelsAndAngles(pixelFile):
  pixels = []
@@ -110,14 +121,28 @@ def LoadPixelsAndAngles(pixelFile):
    angles.append(-float(numbers[2])*maths.pi/180.0)
  return (pixels, angles)
 
-def GetRoomFromJamesesScan(scanFile):
- room = []
- with open(scanFile) as scnFile:
-  for line in scnFile:
-   point = line.split()
-   point = Vector3(float(point[0]), float(point[1]), float(point[2]))
-   room.append(point)
- return room
+#*********************************************************************************************************
+
+def OptimiseFromTriangleScans(scanner, triangleSideLength, triangleFileNames):
+ print("Triangle optimisation - initial scanner:")
+ print(str(scanner))
+ pixelsAndAnglesJB = LoadPixelsAndAngles(triangleFileNames[0])
+ recoveredRoom = scanner.ReconstructRoomFromPixelsAndAngles(pixelsAndAnglesJB)
+
+ PlotRooms(recoveredRoom, None, "triscan.png", 0.5)
+ return
+
+ #TODO put some code in here...
+
+ dataCount = len(pixelsAndAnglesJB[0])
+ print("There are " + str(dataCount) + " triangles in the scan.")
+
+ scanner = scanner.OptimiseTriangles(triangleSideLength, pixelsAndAnglesJB)
+ print("Final scanner:")
+ print(str(scanner))
+ return scanner
+
+#***************************************************************************************************************
 
 def FakeTriangle(scanner, triangleSideLength):
  triangle = []
@@ -132,17 +157,16 @@ def FakeTriangle(scanner, triangleSideLength):
  triangle.append(scanner.PointInSpaceToPixel(v2))
  return triangle
 
-def DoTriangleOptimisation(scanner, pixelsAndAnglesJB, triangleSideLength, triangleCount):
- print("Triangle optimisation - initial scanner:")
+def OptimiseFromSimulatedTriangleScan(scanner, triangleSideLength, triangleCount):
+ print("Simulated triangle optimisation - initial scanner:")
  print(str(scanner))
 
- if pixelsAndAnglesJB is None:
-  trianglePixels = []
-  angles = []
-  for t in range(triangleCount):
-   trianglePixels.append(FakeTriangle(scanner, triangleSideLength))
-   angles.append(0.0)
-  pixelsAndAnglesJB = (trianglePixels, angles)
+ trianglePixels = []
+ angles = []
+ for t in range(triangleCount):
+  trianglePixels.append(FakeTriangle(scanner, triangleSideLength))
+  angles.append(0.0)
+ pixelsAndAnglesJB = (trianglePixels, angles)
 
  dataCount = len(pixelsAndAnglesJB[0])
  print("There are " + str(dataCount) + " triangles in the scan.")
@@ -150,12 +174,24 @@ def DoTriangleOptimisation(scanner, pixelsAndAnglesJB, triangleSideLength, trian
  scanner = scanner.MonteCarloTriangles(triangleSideLength, pixelsAndAnglesJB, 8, 3, 100)
 
  scanner = scanner.OptimiseTriangles(triangleSideLength, pixelsAndAnglesJB)
-
+ print("Final scanner:")
+ print(str(scanner))
  return scanner
 
 #******************************************************************************************************************************************
 
-def DoPointsOptimisation(scanner, pixelsAndAnglesJB, roomJB):
+def GetRoomFromJamesesScan(scanFile):
+ room = []
+ with open(scanFile) as scnFile:
+  for line in scnFile:
+   point = line.split()
+   point = Vector3(float(point[0]), float(point[1]), float(point[2]))
+   room.append(point)
+ return room
+
+def OptimiseFromRoomScan(scanner):
+ pixelsAndAnglesJB = LoadPixelsAndAngles("RoomReaderScanDebug.txt")
+ roomJB = GetRoomFromJamesesScan("RoomReaderScan.pts")
  print("Point optimisation - initial scanner:")
  print(str(scanner))
 
@@ -184,25 +220,76 @@ def DoPointsOptimisation(scanner, pixelsAndAnglesJB, roomJB):
 
  scanner = scanner.OptimisePoints(room, shortPixelsAndAnglesJB)
 
- return scanner
-#*********************************************************************************************
-
-
-def Room(scanner):
- pixelsAndAnglesJB = LoadPixelsAndAngles("RoomReaderScanDebug.txt")
- roomJB = GetRoomFromJamesesScan("RoomReaderScan.pts")
- scanner = DoPointsOptimisation(scanner, pixelsAndAnglesJB, roomJB)
-
  print("Final scanner:")
  print(str(scanner))
  recoveredRoom = scanner.ReconstructRoomFromPixelsAndAngles(pixelsAndAnglesJB)
 
  PlotRooms(roomJB, recoveredRoom, None, 0.5)
 
-def Triangles(scanner):
- scanner = DoTriangleOptimisation(scanner, None, 200, 1)
- print("Final scanner:")
- print(str(scanner))
+ return scanner
+
+#***************************************************************************************************************************************************
+
+class Calibrate:
+ def __init__(self, scanner, triangleSideLength, triangleFileNames):
+  box = None
+  recoveredRooms = []
+  for name in triangleFileNames:
+   pixelsAndAngles = LoadPixelsAndAngles(triangleFileNames[0])
+   recoveredRoom = scanner.ReconstructRoomFromPixelsAndAngles(pixelsAndAngles)
+   box = RoomXY(recoveredRoom, box)
+   recoveredRooms.append(recoveredRoom)
+
+  name = "Calibrate scanner"
+  self.min = box[0]
+  self.max = box[1]
+  self.window = tkinter.Tk(className=name)
+  self.scanner = scanner
+  self.image = Image.open(name)
+  self.pixels = self.image.load()
+  self.canvas = tkinter.Canvas(self.window, width=self.max[0] - self.min[0] + 150, height=self.max[1] - self.min[1])
+  self.canvas.pack()
+  image_tk = ImageTk.PhotoImage(self.image)
+  self.canvas.create_image(self.image.size[0]//2, self.image.size[1]//2, image=image_tk)
+
+  self.selectedColour = tkinter.Button(text="", width=10, height=3, bg="white", fg="white")
+  self.selectedColour.pack()
+  yPos = 10
+  self.selectedColour.place(x=self.image.size[0]+20, y = yPos)
+  self.retract = tkinter.Button(text="retract", width=10, height=3, bg="grey", fg="white",command=self.Retract)
+  self.retract.pack()
+  yPos += 70
+  self.retract.place(x=self.image.size[0]+20, y = yPos)
+
+  self.e005 = tkinter.Button(text="0.05 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude005)
+  self.e005.pack()
+  yPos += 70
+  self.e005.place(x=self.image.size[0] + 20, y=yPos)
+  self.e01 = tkinter.Button(text="0.1 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude01)
+  self.e01.pack()
+  yPos += 70
+  self.e01.place(x=self.image.size[0] + 20, y=yPos)
+  self.e02 = tkinter.Button(text="0.2 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude02)
+  self.e02.pack()
+  yPos += 70
+  self.e02.place(x=self.image.size[0] + 20, y=yPos)
+  self.e05 = tkinter.Button(text="0.5 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude05)
+  self.e05.pack()
+  yPos += 70
+  self.e05.place(x=self.image.size[0] + 20, y=yPos)
+  self.e1 = tkinter.Button(text="1 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude1)
+  self.e1.pack()
+  yPos += 70
+  self.e1.place(x=self.image.size[0] + 20, y=yPos)
+
+  self.quit = tkinter.Button(text="Quit", width=10, height=3, bg="grey", fg="white",command=self.Quit)
+  self.quit.pack()
+  yPos += 100
+  self.quit.place(x=self.image.size[0] + 20, y=yPos)
+
+  self.canvas.bind("<Button-1>", self.callback)
+
+  self.window.mainloop()
 
 #***************************************************************************************************************************************************
 
@@ -219,5 +306,8 @@ sv = [6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 scanner.DefineSelectionVector(sv)
 
 #scanner.CheckPoint(Vector3(-384.202311310053, 1847.839001639, 0), None, True)
-Triangles(scanner)
-#Room(scanner)
+#scanner = OptimiseFromSimulatedTriangleScan(scanner, 200, 1)
+#OptimiseFromRoomScan(scanner)
+triangleFileNames = []
+triangleFileNames.append("RoomReaderScanDebug.txt")
+OptimiseFromTriangleScans(scanner, 500, triangleFileNames)
