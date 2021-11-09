@@ -8,105 +8,7 @@ from YowieScanner import *
 from PIL import Image, ImageDraw, ImageFilter, ImageShow, ImageTk
 import tkinter
 
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Interface to the graphics library (to allow several to be easily substituted)
 
-class Picture:
-# New image x by y pixels
-
- def __init__(self, x, y):
-  self.picture = Image.new("RGB", (x, y))
-
- # The drawable frame of an image
-
- def Display(self):
-  return ImageShow.show(self.picture)
-
- # Draw a straight line from p0 to p1
-
- def DrawLine(self, p0, p1, shade):
-  self.picture.line([p0, p1], shade, 1)
-
-# Set a single pixel to colour shade
-
- def SetPixel(self, x, y, shade):
-  self.picture.putpixel((x, y), shade)
-
-# Grow the image by width f
-
- def Filter(self, f):
-  return self.picture.filter(ImageFilter.MaxFilter(f))
-
-# Save the image in a file
-
- def SavePicture(self, fileName):
-  self.picture.save(fileName)
-
-def PlotPoint(picture, x, y, original):
- if original:
-  picture.SetPixel(x, y, (0,255,0))
-  #picture.SetPixel(x, y-1, (0,255,0))
-  #picture.SetPixel(x-1, y-1, (0,255,0))
-  #picture.SetPixel(x+1, y, (0,255,0))
- else:
-  picture.SetPixel(x, y, (255,0,0))
-  #picture.SetPixel(x, y+1, (255,0,0))
-  #picture.SetPixel(x-1, y+1, (255,0,0))
-  #picture.SetPixel(x-1, y, (255,0,0))
-
-def RoomXY(room, fromBefore):
- if fromBefore is None:
-  minX = sys.float_info.max
-  minY = minX
-  maxX = sys.float_info.min
-  maxY = maxX
- else:
-  m = fromBefore[0]
-  minX = m[0]
-  minY = m[1]
-  m = fromBefore[1]
-  maxX = m[0]
-  maxY = m[1]
- for r in room:
-  if r.x > maxX:
-   maxX = r.x
-  if r.x < minX:
-   minX = r.x
-  if r.y > maxY:
-   maxY = r.y
-  if r.y < minY:
-   minY = r.y
- return [[minX, minY], [maxX, maxY]]
-
-def PlotRooms(room1, room2, imageFile, scale):
- if room1 is not None:
-  box = RoomXY(room1, None)
- if room2 is not None:
-  if room1 is not None:
-   box = RoomXY(room2, box)
-  else:
-   box = RoomXY(room2, None)
- min = box[0]
- max = box[1]
- xd = round(scale*(max[0] - min[0])) + 10
- yd = round(scale*(max[1] - min[1])) + 10
- print("Image size: [" + str(xd) + ", " + str(yd) + "]")
- picture = Picture(xd, yd)
- min[0] -= 5
- min[1] -= 5
- if room1 is not None:
-  for r in room1:
-   x = round(scale*(r.x - min[0]))
-   y = round(scale*(r.y - min[1]))
-   PlotPoint(picture, x, y, True)
- if room2 is not None:
-  for r in room2:
-   x = round(scale*(r.x - min[0]))
-   y = round(scale*(r.y - min[1]))
-   PlotPoint(picture, x, y, False)
- picture.Display()
- if imageFile is not None:
-  picture.SavePicture(imageFile)
 
 #******************************************************************************************************
 
@@ -230,66 +132,166 @@ def OptimiseFromRoomScan(scanner):
 
 #***************************************************************************************************************************************************
 
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Interface to the graphics library (to allow several to be easily substituted)
+
+class Picture:
+# New image x by y pixels
+
+ def __init__(self, x, y):
+  self.picture = Image.new("RGB", (x, y))
+
+ # The drawable frame of an image
+
+ def Display(self):
+  return ImageShow.show(self.picture)
+
+ # Draw a straight line from p0 to p1
+
+ def DrawLine(self, p0, p1, shade):
+  self.picture.line([p0, p1], shade, 1)
+
+# Set a single pixel to colour shade
+
+ def SetPixel(self, x, y, shade):
+  self.picture.putpixel((x, y), shade)
+
+# Grow the image by width f
+
+ def Filter(self, f):
+  return self.picture.filter(ImageFilter.MaxFilter(f))
+
+# Save the image in a file
+
+ def SavePicture(self, fileName):
+  self.picture.save(fileName)
+
+def PlotPoint(picture, x, y, original):
+ if original:
+  picture.SetPixel(x, y, (0,255,0))
+  #picture.SetPixel(x, y-1, (0,255,0))
+  #picture.SetPixel(x-1, y-1, (0,255,0))
+  #picture.SetPixel(x+1, y, (0,255,0))
+ else:
+  picture.SetPixel(x, y, (255,0,0))
+  #picture.SetPixel(x, y+1, (255,0,0))
+  #picture.SetPixel(x-1, y+1, (255,0,0))
+  #picture.SetPixel(x-1, y, (255,0,0))
+
+def RoomXY(room, fromBefore):
+ if fromBefore is None:
+  minX = sys.float_info.max
+  minY = minX
+  maxX = sys.float_info.min
+  maxY = maxX
+ else:
+  m = fromBefore[0]
+  minX = m[0]
+  minY = m[1]
+  m = fromBefore[1]
+  maxX = m[0]
+  maxY = m[1]
+ for r in room:
+  if r.x > maxX:
+   maxX = r.x
+  if r.x < minX:
+   minX = r.x
+  if r.y > maxY:
+   maxY = r.y
+  if r.y < minY:
+   minY = r.y
+ return [[minX, minY], [maxX, maxY]]
+
+def PlotRooms(room1, room2, imageFile, scale):
+ if room1 is not None:
+  box = RoomXY(room1, None)
+ if room2 is not None:
+  if room1 is not None:
+   box = RoomXY(room2, box)
+  else:
+   box = RoomXY(room2, None)
+ min = box[0]
+ max = box[1]
+ xd = round(scale*(max[0] - min[0])) + 10
+ yd = round(scale*(max[1] - min[1])) + 10
+ print("Image size: [" + str(xd) + ", " + str(yd) + "]")
+ picture = Picture(xd, yd)
+ min[0] -= 5
+ min[1] -= 5
+ if room1 is not None:
+  for r in room1:
+   x = round(scale*(r.x - min[0]))
+   y = round(scale*(r.y - min[1]))
+   PlotPoint(picture, x, y, True)
+ if room2 is not None:
+  for r in room2:
+   x = round(scale*(r.x - min[0]))
+   y = round(scale*(r.y - min[1]))
+   PlotPoint(picture, x, y, False)
+ picture.Display()
+ if imageFile is not None:
+  picture.SavePicture(imageFile)
+
 class Calibrate:
- def __init__(self, scanner, triangleSideLength, triangleFileNames):
-  box = None
-  recoveredRooms = []
+ def __init__(self, scanner, triangleSideLength, triangleFileNames, scale):
+  self.box = None
+  self.recoveredRooms = []
+  self.scanner = scanner
   for name in triangleFileNames:
    pixelsAndAngles = LoadPixelsAndAngles(triangleFileNames[0])
    recoveredRoom = scanner.ReconstructRoomFromPixelsAndAngles(pixelsAndAngles)
-   box = RoomXY(recoveredRoom, box)
-   recoveredRooms.append(recoveredRoom)
+   self.box = RoomXY(recoveredRoom, self.box)
+   self.recoveredRooms.append(recoveredRoom)
+  self.currentScan = -1;
 
   name = "Calibrate scanner"
-  self.min = box[0]
-  self.max = box[1]
+  self.min = self.box[0]
+  self.max = self.box[1]
+  self.scale = scale
   self.window = tkinter.Tk(className=name)
-  self.scanner = scanner
-  self.image = Image.open(name)
-  self.pixels = self.image.load()
-  self.canvas = tkinter.Canvas(self.window, width=self.max[0] - self.min[0] + 150, height=self.max[1] - self.min[1])
+  topCorner = self.Pixel(self.max[0], self.max[1])
+  self.image = Image.new("RGB", (topCorner[0] + 10, topCorner[1] + 10))
+  self.canvas = tkinter.Canvas(self.window, width=topCorner[0] + 160, height=topCorner[1] + 10)
   self.canvas.pack()
-  image_tk = ImageTk.PhotoImage(self.image)
-  self.canvas.create_image(self.image.size[0]//2, self.image.size[1]//2, image=image_tk)
+  self.image_tk = ImageTk.PhotoImage(self.image)
+  self.image_on_canvas = self.canvas.create_image(self.image.size[0]//2, self.image.size[1]//2, image=self.image_tk)
 
-  self.selectedColour = tkinter.Button(text="", width=10, height=3, bg="white", fg="white")
-  self.selectedColour.pack()
+  self.nextScan = tkinter.Button(text="next room", width=10, height=3, bg="grey", fg="white", command=self.NextScan)
+  self.nextScan.pack()
   yPos = 10
-  self.selectedColour.place(x=self.image.size[0]+20, y = yPos)
-  self.retract = tkinter.Button(text="retract", width=10, height=3, bg="grey", fg="white",command=self.Retract)
-  self.retract.pack()
-  yPos += 70
-  self.retract.place(x=self.image.size[0]+20, y = yPos)
-
-  self.e005 = tkinter.Button(text="0.05 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude005)
-  self.e005.pack()
-  yPos += 70
-  self.e005.place(x=self.image.size[0] + 20, y=yPos)
-  self.e01 = tkinter.Button(text="0.1 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude01)
-  self.e01.pack()
-  yPos += 70
-  self.e01.place(x=self.image.size[0] + 20, y=yPos)
-  self.e02 = tkinter.Button(text="0.2 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude02)
-  self.e02.pack()
-  yPos += 70
-  self.e02.place(x=self.image.size[0] + 20, y=yPos)
-  self.e05 = tkinter.Button(text="0.5 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude05)
-  self.e05.pack()
-  yPos += 70
-  self.e05.place(x=self.image.size[0] + 20, y=yPos)
-  self.e1 = tkinter.Button(text="1 ml", width=10, height=3, bg="grey", fg="white",command=self.Extrude1)
-  self.e1.pack()
-  yPos += 70
-  self.e1.place(x=self.image.size[0] + 20, y=yPos)
+  self.nextScan.place(x=self.image.size[0] + 20, y = yPos)
 
   self.quit = tkinter.Button(text="Quit", width=10, height=3, bg="grey", fg="white",command=self.Quit)
   self.quit.pack()
-  yPos += 100
+  yPos += 70
   self.quit.place(x=self.image.size[0] + 20, y=yPos)
 
   self.canvas.bind("<Button-1>", self.callback)
 
   self.window.mainloop()
+
+ def Pixel(self, x, y):
+  x1 = round(self.scale*(x - self.min[0])) + 5
+  y1 = round(self.scale*(y - self.min[1])) + 5
+  return (x1, y1)
+
+ def PlotRoom(self, r):
+  room = self.recoveredRooms[r]
+  for r in room:
+   pixel = self.Pixel(r.x, r.y)
+   self.image.putpixel(pixel, (255,0,0))
+  self.image_tk = ImageTk.PhotoImage(self.image)
+  self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
+
+ def callback(self):
+  x = 1
+
+ def NextScan(self):
+  self.currentScan += 1
+  self.PlotRoom(self.currentScan)
+
+ def Quit(self):
+  quit()
 
 #***************************************************************************************************************************************************
 
@@ -310,4 +312,6 @@ scanner.DefineSelectionVector(sv)
 #OptimiseFromRoomScan(scanner)
 triangleFileNames = []
 triangleFileNames.append("RoomReaderScanDebug.txt")
-OptimiseFromTriangleScans(scanner, 500, triangleFileNames)
+#OptimiseFromTriangleScans(scanner, 500, triangleFileNames)
+
+c = Calibrate(scanner, 500, triangleFileNames, 0.5)
