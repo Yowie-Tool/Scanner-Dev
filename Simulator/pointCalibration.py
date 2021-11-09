@@ -256,6 +256,15 @@ class Calibrate:
   self.image_tk = ImageTk.PhotoImage(self.image)
   self.image_on_canvas = self.canvas.create_image(self.image.size[0]//2, self.image.size[1]//2, image=self.image_tk)
 
+  self.canvas.bind("<ButtonPress-1>", self.OnButtonPress)
+  self.canvas.bind("<B1-Motion>", self.OnMovePressing)
+  self.canvas.bind("<ButtonRelease-1>", self.OnButtonRelease)
+
+  self.rect = None
+
+  self.rectangleStartX = None
+  self.rectangleStartY = None
+
   self.nextScan = tkinter.Button(text="next room", width=10, height=3, bg="grey", fg="white", command=self.NextScan)
   self.nextScan.pack()
   yPos = 10
@@ -266,7 +275,6 @@ class Calibrate:
   yPos += 70
   self.quit.place(x=self.image.size[0] + 20, y=yPos)
 
-  self.canvas.bind("<Button-1>", self.callback)
 
   self.window.mainloop()
 
@@ -275,20 +283,51 @@ class Calibrate:
   y1 = round(self.scale*(y - self.min[1])) + 5
   return (x1, y1)
 
- def PlotRoom(self, r):
-  room = self.recoveredRooms[r]
+ def InvertPixel(self, pixel):
+  x1 = self.min[0] + (pixel[0] - 5)/self.scale
+  y1 = self.min[1] + (pixel[1] - 5)/self.scale
+  return (x1, y1)
+
+
+ def PlotRoom(self):
+  room = self.recoveredRooms[self.currentScan]
   for r in room:
    pixel = self.Pixel(r.x, r.y)
    self.image.putpixel(pixel, (255,0,0))
   self.image_tk = ImageTk.PhotoImage(self.image)
   self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
 
- def callback(self):
-  x = 1
+
+ def OnButtonPress(self, event):
+  # save mouse drag start position
+  self.rectangleStartX = self.canvas.canvasx(event.x)
+  self.rectangleStartY = self.canvas.canvasy(event.y)
+  self.rectangleEndX = self.rectangleStartX
+  self.rectangleEndY = self.rectangleStartY
+  # create rectangle if not yet exist
+  if self.rect is not None:
+   self.canvas.delete(self.rect)
+  self.rect = self.canvas.create_rectangle(self.rectangleStartX, self.rectangleStartY, 1, 1, outline='yellow')
+
+ def OnMovePressing(self, event):
+  curX = self.canvas.canvasx(event.x)
+  curY = self.canvas.canvasy(event.y)
+  # expand rectangle as you drag the mouse
+  self.canvas.coords(self.rect, self.rectangleStartX, self.rectangleStartY, curX, curY)
+  self.rectangleEndX = curX
+  self.rectangleEndY = curY
+
+
+ def OnButtonRelease(self, event):
+  print(self.InvertPixel((self.rectangleStartX, self.rectangleStartY)))
+  print(self.InvertPixel((self.rectangleEndX, self.rectangleEndY)))
 
  def NextScan(self):
   self.currentScan += 1
-  self.PlotRoom(self.currentScan)
+  if self.currentScan >= len(self.recoveredRooms):
+   print("No more scans left.")
+  else:
+   self.PlotRoom()
 
  def Quit(self):
   quit()
