@@ -350,19 +350,65 @@ class Calibrate:
     pixel = self.Pixel(r.x, r.y)
     self.image.putpixel(pixel, (0,128,0))
   hull = ConvexHull(perimiterXY)
-  for s in hull.simplices:
-   p0 = self.Pixel(perimiterXY[s[0]][0],perimiterXY[s[0]][1])
-   p1 = self.Pixel(perimiterXY[s[1]][0],perimiterXY[s[1]][1])
-   self.draw.line([p0, p1], fill = (0,0,255), width=1)
-  self.image_tk = ImageTk.PhotoImage(self.image)
-  self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
+ # for s in hull.simplices:
+ #  p0 = self.Pixel(perimiterXY[s[0]][0],perimiterXY[s[0]][1])
+ #  p1 = self.Pixel(perimiterXY[s[1]][0],perimiterXY[s[1]][1])
+ #  self.draw.line([p0, p1], fill = (0,0,255), width=1)
+ # self.image_tk = ImageTk.PhotoImage(self.image)
+ # self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
   hullXY = []
   hullPoints = []
   for v in hull.vertices:
    hullXY.append(perimiterXY[v])
    hullPoints.append(perimiterPoints[v])
-  print(hullXY)
-  print(hullPoints)
+  smallestR2 = sys.float_info.max
+  corners = (-1, -1, -1)
+  for t0 in range(len(hullXY) - 2):
+   for t1 in range(t0 + 1, len(hullXY) - 1):
+    for t2 in range(t1 + 1, len(hullXY)):
+     d = disc(hullXY, t0, t1, t2)
+     allIn = True
+     for t in range(len(hullXY)):
+      if t != t0 and t != t1 and t != t2:
+       xd = hullXY[t][0] - d[0][0]
+       yd = hullXY[t][1] - d[0][1]
+       r2 = xd*xd + yd*yd
+       if r2 > d[1]:
+        allIn = False
+        break
+     if allIn:
+      if d[1] < smallestR2:
+       smallestR2 = d[1]
+       corners = (t0, t1, t2)
+  if corners[0] >= 0:
+   p0 = self.Pixel(hullXY[corners[0]][0], hullXY[corners[0]][1])
+   p1 = self.Pixel(hullXY[corners[1]][0], hullXY[corners[1]][1])
+   p2 = self.Pixel(hullXY[corners[2]][0], hullXY[corners[2]][1])
+   self.draw.line([p0, p1], fill = (0,0,255), width=1)
+   self.draw.line([p1, p2], fill = (0,0,255), width=1)
+   self.draw.line([p2, p0], fill = (0,0,255), width=1)
+   self.image_tk = ImageTk.PhotoImage(self.image)
+   self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
+  else:
+   print("No minimum triangle found!")
+
+def disc(xy, t0, t1, t2):
+ xd1 = xy[t1][0] - xy[t0][0]
+ yd1 = xy[t1][1] - xy[t0][1]
+ xd2 = xy[t2][0] - xy[t0][0]
+ yd2 = xy[t2][1] - xy[t0][1]
+ determinant = xd1*yd2 - xd2*yd1
+ if abs(determinant) < veryShort2:
+  return ((0, 0), -1)
+ detInv = 0.5/determinant
+ r1Squared = xd1*xd1 + yd1*yd1
+ r2Squared = xd2*xd2 + yd2*yd2
+ centreX = detInv*(r1Squared*yd2 - r2Squared*yd1)
+ centreY = detInv*(xd1*r2Squared - xd2*r1Squared)
+ r2 = centreX*centreX + centreY*centreY
+ centreX += xy[t0][0]
+ centreY += xy[t0][1]
+ return((centreX, centreY), r2)
 
 #***************************************************************************************************************************************************
 
