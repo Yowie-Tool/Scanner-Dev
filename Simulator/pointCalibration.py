@@ -7,7 +7,7 @@
 from YowieScanner import *
 from PIL import Image, ImageDraw, ImageFilter, ImageShow, ImageTk
 import tkinter
-
+from scipy.spatial import ConvexHull
 
 
 #******************************************************************************************************
@@ -251,6 +251,7 @@ class Calibrate:
   self.window = tkinter.Tk(className=name)
   topCorner = self.Pixel(self.max[0], self.max[1])
   self.image = Image.new("RGB", (topCorner[0] + 10, topCorner[1] + 10))
+  self.draw = ImageDraw.Draw(self.image)
   self.canvas = tkinter.Canvas(self.window, width=topCorner[0] + 160, height=topCorner[1] + 10)
   self.canvas.pack()
   self.image_tk = ImageTk.PhotoImage(self.image)
@@ -265,7 +266,7 @@ class Calibrate:
   self.rectangleStartX = None
   self.rectangleStartY = None
 
-  self.nextScan = tkinter.Button(text="next room", width=10, height=3, bg="grey", fg="white", command=self.NextScan)
+  self.nextScan = tkinter.Button(text="next scan", width=10, height=3, bg="grey", fg="white", command=self.NextScan)
   self.nextScan.pack()
   yPos = 10
   self.nextScan.place(x=self.image.size[0] + 20, y = yPos)
@@ -319,8 +320,8 @@ class Calibrate:
 
 
  def OnButtonRelease(self, event):
-  print(self.InvertPixel((self.rectangleStartX, self.rectangleStartY)))
-  print(self.InvertPixel((self.rectangleEndX, self.rectangleEndY)))
+    self.GatherTriangle()
+
 
  def NextScan(self):
   self.currentScan += 1
@@ -331,6 +332,37 @@ class Calibrate:
 
  def Quit(self):
   quit()
+
+ def GatherTriangle(self):
+  cornerA = self.InvertPixel((self.rectangleStartX, self.rectangleStartY))
+  cornerB = self.InvertPixel((self.rectangleEndX, self.rectangleEndY))
+  minX = min(cornerA[0], cornerB[0])
+  maxX = max(cornerA[0], cornerB[0])
+  minY = min(cornerA[1], cornerB[1])
+  maxY = max(cornerA[1], cornerB[1])
+  perimiterXY = []
+  perimiterPoints = []
+  room = self.recoveredRooms[self.currentScan]
+  for r in room:
+   if r.x > minX and r.x < maxX and r.y > minY and r.y < maxY:
+    perimiterXY.append((r.x, r.y))
+    perimiterPoints.append(r)
+    pixel = self.Pixel(r.x, r.y)
+    self.image.putpixel(pixel, (0,128,0))
+  hull = ConvexHull(perimiterXY)
+  for s in hull.simplices:
+   p0 = self.Pixel(perimiterXY[s[0]][0],perimiterXY[s[0]][1])
+   p1 = self.Pixel(perimiterXY[s[1]][0],perimiterXY[s[1]][1])
+   self.draw.line([p0, p1], fill = (0,0,255), width=1)
+  self.image_tk = ImageTk.PhotoImage(self.image)
+  self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
+  hullXY = []
+  hullPoints = []
+  for v in hull.vertices:
+   hullXY.append(perimiterXY[v])
+   hullPoints.append(perimiterPoints[v])
+  print(hullXY)
+  print(hullPoints)
 
 #***************************************************************************************************************************************************
 
