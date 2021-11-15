@@ -249,7 +249,7 @@ class Calibrate:
   self.max = self.box[1]
   self.scale = scale
   self.window = tkinter.Tk(className=name)
-  topCorner = self.Pixel(self.max[0], self.max[1])
+  topCorner = self.PointToPixel((self.max[0], self.max[1]))
   self.image = Image.new("RGB", (topCorner[0] + 10, topCorner[1] + 10))
   self.draw = ImageDraw.Draw(self.image)
   self.canvas = tkinter.Canvas(self.window, width=topCorner[0] + 160, height=topCorner[1] + 10)
@@ -279,12 +279,12 @@ class Calibrate:
 
   self.window.mainloop()
 
- def Pixel(self, x, y):
-  x1 = round(self.scale*(x - self.min[0])) + 5
-  y1 = round(self.scale*(y - self.min[1])) + 5
+ def PointToPixel(self, point):
+  x1 = round(self.scale*(point[0] - self.min[0])) + 5
+  y1 = round(self.scale*(point[1] - self.min[1])) + 5
   return (x1, y1)
 
- def InvertPixel(self, pixel):
+ def PixelToPoint(self, pixel):
   x1 = self.min[0] + (pixel[0] - 5)/self.scale
   y1 = self.min[1] + (pixel[1] - 5)/self.scale
   return (x1, y1)
@@ -293,7 +293,7 @@ class Calibrate:
  def PlotRoom(self):
   room = self.recoveredRooms[self.currentScan]
   for r in room:
-   pixel = self.Pixel(r.x, r.y)
+   pixel = self.PointToPixel((r.x, r.y))
    self.image.putpixel(pixel, (255,0,0))
   self.image_tk = ImageTk.PhotoImage(self.image)
   self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
@@ -333,13 +333,30 @@ class Calibrate:
  def Quit(self):
   quit()
 
+ def TriangleFit(self, triangle, points):
+  sum = 0.0
+  tPoint0 = Point2D(triangle[0], triangle[1])
+  tPoint1 = Point2D(triangle[2], triangle[3])
+  tPoint2 = Point2D(triangle[4], triangle[5])
+  lines = [Line2D(tPoint0, tPoint1), Line2D(tPoint1, tPoint2), Line2D(tPoint2, tPoint0)]
+  for point in points:
+   p = Point2D(point[0], point[1])
+   nearestD2 = sys.float_info.max
+   for line in lines:
+    nearD2 = line.DistanceToPoint2(p)
+    if nearD2[0] < nearestD2:
+     nearestD2 = nearD2[0]
+   sum += nearestD2
+  return sum
+
+
  def GatherTriangle(self):
 
   # Find all the scanned points in the user's dragged rectangle and
   # change their colour so we can see what's going on.
 
-  cornerA = self.InvertPixel((self.rectangleStartX, self.rectangleStartY))
-  cornerB = self.InvertPixel((self.rectangleEndX, self.rectangleEndY))
+  cornerA = self.PixelToPoint((self.rectangleStartX, self.rectangleStartY))
+  cornerB = self.PixelToPoint((self.rectangleEndX, self.rectangleEndY))
   minX = min(cornerA[0], cornerB[0])
   maxX = max(cornerA[0], cornerB[0])
   minY = min(cornerA[1], cornerB[1])
@@ -351,7 +368,7 @@ class Calibrate:
    if r.x > minX and r.x < maxX and r.y > minY and r.y < maxY:
     perimiterXY.append((r.x, r.y))
     perimiterPoints.append(r)
-    pixel = self.Pixel(r.x, r.y)
+    pixel = self.PointToPixel((r.x, r.y))
     self.image.putpixel(pixel, (0,128,0))
 
   # Find the Convex Hull of those points
@@ -380,14 +397,19 @@ class Calibrate:
   # Plot that triangle (diagnostic)
 
   if corners[0] >= 0:
-   p0 = self.Pixel(perimiterXY[corners[0]][0], perimiterXY[corners[0]][1])
-   p1 = self.Pixel(perimiterXY[corners[1]][0], perimiterXY[corners[1]][1])
-   p2 = self.Pixel(perimiterXY[corners[2]][0], perimiterXY[corners[2]][1])
-   self.draw.line([p0, p1], fill = (0,0,255), width=1)
-   self.draw.line([p1, p2], fill = (0,0,255), width=1)
-   self.draw.line([p2, p0], fill = (0,0,255), width=1)
+   point0= (perimiterXY[corners[0]][0], perimiterXY[corners[0]][1])
+   point1 = (perimiterXY[corners[1]][0], perimiterXY[corners[1]][1])
+   point2 = (perimiterXY[corners[2]][0], perimiterXY[corners[2]][1])
+   pixel0 = self.PointToPixel(point0)
+   pixel1 = self.PointToPixel(point1)
+   pixel2 = self.PointToPixel(point2)
+   self.draw.line([pixel0, pixel1], fill = (0,0,255), width=1)
+   self.draw.line([pixel1, pixel2], fill = (0,0,255), width=1)
+   self.draw.line([pixel2, pixel0], fill = (0,0,255), width=1)
    self.image_tk = ImageTk.PhotoImage(self.image)
    self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
+   triangle = [point0[0], point0[1], point1[0], point1[1], point2[0], point2[1]]
+   print(self.TriangleFit(triangle, perimiterXY))
   else:
    print("No biggest triangle found!")
 
