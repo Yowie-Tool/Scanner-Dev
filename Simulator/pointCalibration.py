@@ -178,6 +178,8 @@ def PlotPoint(picture, x, y, original):
   #picture.SetPixel(x-1, y+1, (255,0,0))
   #picture.SetPixel(x-1, y, (255,0,0))
 
+# Find the minimum enclosing rectangle round the room
+
 def RoomXY(room, fromBefore):
  if fromBefore is None:
   minX = sys.float_info.max
@@ -233,10 +235,11 @@ def PlotRooms(room1, room2, imageFile, scale):
   picture.SavePicture(imageFile)
 
 class Calibrate:
- def __init__(self, scanner, triangleSideLength, triangleFileNames, scale):
+ def __init__(self, scanner, triangleSideLength, triangleFileNames, imageScale):
   self.box = None
   self.recoveredRooms = []
   self.scanner = scanner
+  self.triangleSideLength = triangleSideLength
   for name in triangleFileNames:
    pixelsAndAngles = LoadPixelsAndAngles(triangleFileNames[0])
    recoveredRoom = scanner.ReconstructRoomFromPixelsAndAngles(pixelsAndAngles)
@@ -247,7 +250,7 @@ class Calibrate:
   name = "Calibrate scanner"
   self.min = self.box[0]
   self.max = self.box[1]
-  self.scale = scale
+  self.imageScale = imageScale
   self.window = tkinter.Tk(className=name)
   topCorner = self.PointToPixel((self.max[0], self.max[1]))
   self.image = Image.new("RGB", (topCorner[0] + 10, topCorner[1] + 10))
@@ -280,13 +283,13 @@ class Calibrate:
   self.window.mainloop()
 
  def PointToPixel(self, point):
-  x1 = round(self.scale*(point[0] - self.min[0])) + 5
-  y1 = round(self.scale*(point[1] - self.min[1])) + 5
+  x1 = round(self.imageScale * (point[0] - self.min[0])) + 5
+  y1 = round(self.imageScale * (point[1] - self.min[1])) + 5
   return (x1, y1)
 
  def PixelToPoint(self, pixel):
-  x1 = self.min[0] + (pixel[0] - 5)/self.scale
-  y1 = self.min[1] + (pixel[1] - 5)/self.scale
+  x1 = self.min[0] + (pixel[0] - 5)/self.imageScale
+  y1 = self.min[1] + (pixel[1] - 5)/self.imageScale
   return (x1, y1)
 
 
@@ -305,7 +308,6 @@ class Calibrate:
   self.rectangleStartY = self.canvas.canvasy(event.y)
   self.rectangleEndX = self.rectangleStartX
   self.rectangleEndY = self.rectangleStartY
-  # create rectangle if not yet exist
   if self.rect is not None:
    self.canvas.delete(self.rect)
   self.rect = self.canvas.create_rectangle(self.rectangleStartX, self.rectangleStartY, 1, 1, outline='yellow')
@@ -333,22 +335,76 @@ class Calibrate:
  def Quit(self):
   quit()
 
- def TriangleFit(self, triangle, points):
+ def MeasureTriangleFit(self, triangle, points):
+  self.triangle = triangle
   sum = 0.0
-  tPoint0 = Point2D(triangle[0], triangle[1])
-  tPoint1 = Point2D(triangle[2], triangle[3])
-  tPoint2 = Point2D(triangle[4], triangle[5])
-  lines = [Line2D(tPoint0, tPoint1), Line2D(tPoint1, tPoint2), Line2D(tPoint2, tPoint0)]
+  tPoint0 = Point2D(self.triangle[0], self.triangle[1])
+  tPoint1 = Point2D(self.triangle[2], self.triangle[3])
+  tPoint2 = Point2D(self.triangle[4], self.triangle[5])
+  corners = [tPoint0, tPoint1, tPoint2]
+  edges = [Line2D(tPoint0, tPoint1), Line2D(tPoint1, tPoint2), Line2D(tPoint2, tPoint0)]
   for point in points:
    p = Point2D(point[0], point[1])
    nearestD2 = sys.float_info.max
-   for line in lines:
-    nearD2 = line.DistanceToPoint2(p)
+   cornerNear = True
+   for edge in edges:
+    nearD2 = edge.DistanceToPoint2(p)
     if nearD2[0] < nearestD2:
-     nearestD2 = nearD2[0]
+     if nearD2[1] >= 0.0 and nearD2[1] <= 1.0:
+      nearestD2 = nearD2[0]
+      cornerNear = False
+   if cornerNear:
+    for corner in corners:
+     cornerD2 = p.Sub(corner).Length2()
+     if cornerD2 < nearestD2:
+      nearestD2 = cornerD2
    sum += nearestD2
+  self.lastTriangleCost = sum
   return sum
 
+ def Progress(self, x):
+  self.progressCount += 1
+  #if not self.progressCount % 2 == 0:
+  # return
+  print("Triangle sum of squares: " + str(self.lastTriangleCost) + " after " + str(self.progressCount) + " iterations.")
+  self.PlotTriangle((255,255,0))
+
+ def PlotTriangle(self, colour):
+  point0= (self.triangle[0], self.triangle[1])
+  point1 = (self.triangle[2], self.triangle[3])
+  point2 = (self.triangle[4], self.triangle[5])
+  pixel0 = self.PointToPixel(point0)
+  pixel1 = self.PointToPixel(point1)
+  pixel2 = self.PointToPixel(point2)
+  self.draw.line([pixel0, pixel1], fill = colour, width=1)
+  self.draw.line([pixel1, pixel2], fill = colour, width=1)
+  self.draw.line([pixel2, pixel0], fill = colour, width=1)
+  self.image_tk = ImageTk.PhotoImage(self.image)
+  self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
+  self.canvas.update_idletasks()
+
+ def ScaleTriangle(self, scale):
+  point0 = Point2D(self.triangle[0], self.triangle[1])
+  point1 = Point2D(self.triangle[2], self.triangle[3])
+  point2 = Point2D(self.triangle[4], self.triangle[5])
+  centre = (point0.Add(point1).Add(point2)).Multiply(1.0/3.0)
+  point0 = centre.Add(point0.Sub(centre).Multiply(scale))
+  point1 = centre.Add(point1.Sub(centre).Multiply(scale))
+  point2 = centre.Add(point2.Sub(centre).Multiply(scale))
+  self.triangle[0] = point0.x
+  self.triangle[1] = point0.y
+  self.triangle[2] = point1.x
+  self.triangle[3] = point1.y
+  self.triangle[4] = point2.x
+  self.triangle[5] = point2.y
+
+ # TODO - this should fit a plane through the data and use Zs from that.
+ def TriangleTo3D(self, z0, z1, z2):
+  triangle3D = []
+  triangle3D.append(Vector3(self.triangle[0], self.triangle[1], z0))
+  triangle3D.append(Vector3(self.triangle[2], self.triangle[3], z1))
+  triangle3D.append(Vector3(self.triangle[4], self.triangle[5], z2))
+  return triangle3D
 
  def GatherTriangle(self):
 
@@ -393,23 +449,22 @@ class Calibrate:
      if area > biggestArea:
       biggestArea = area
       corners = (v0, v1, v2)
-
+  #corners = (hull.vertices[0], hull.vertices[5], hull.vertices[22])
   # Plot that triangle (diagnostic)
 
   if corners[0] >= 0:
-   point0= (perimiterXY[corners[0]][0], perimiterXY[corners[0]][1])
-   point1 = (perimiterXY[corners[1]][0], perimiterXY[corners[1]][1])
-   point2 = (perimiterXY[corners[2]][0], perimiterXY[corners[2]][1])
-   pixel0 = self.PointToPixel(point0)
-   pixel1 = self.PointToPixel(point1)
-   pixel2 = self.PointToPixel(point2)
-   self.draw.line([pixel0, pixel1], fill = (0,0,255), width=1)
-   self.draw.line([pixel1, pixel2], fill = (0,0,255), width=1)
-   self.draw.line([pixel2, pixel0], fill = (0,0,255), width=1)
-   self.image_tk = ImageTk.PhotoImage(self.image)
-   self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
-   triangle = [point0[0], point0[1], point1[0], point1[1], point2[0], point2[1]]
-   print(self.TriangleFit(triangle, perimiterXY))
+   self.triangle = [perimiterXY[corners[0]][0], perimiterXY[corners[0]][1], perimiterXY[corners[1]][0], perimiterXY[corners[1]][1], perimiterXY[corners[2]][0], perimiterXY[corners[2]][1]]
+   self.PlotTriangle((0,0,255))
+   #self.ScaleTriangle(0.8)
+   #self.PlotTriangle((0,0,255))
+   print("Starting sum of squares: " + str(self.MeasureTriangleFit(self.triangle, perimiterXY)))
+   self.progressCount = 0
+   minResult = minimize(self.MeasureTriangleFit, x0 = self.triangle, args = (perimiterXY,), callback = self.Progress)
+   self.triangle = minResult.x
+   print("Final sum of squares: " + str(self.lastTriangleCost))
+   self.PlotTriangle((255,0,0))
+   triangle3D = self.TriangleTo3D(perimiterPoints[corners[0]].z, perimiterPoints[corners[1]].z, perimiterPoints[corners[2]].z)
+   print("Triangle cost: " + str(self.scanner.OneTriangleCost(self.triangleSideLength, triangle3D)))
   else:
    print("No biggest triangle found!")
 
