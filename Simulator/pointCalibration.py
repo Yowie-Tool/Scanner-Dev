@@ -279,7 +279,6 @@ class Calibrate:
   yPos += 70
   self.quit.place(x=self.image.size[0] + 20, y=yPos)
 
-
   self.window.mainloop()
 
  def PointToPixel(self, point):
@@ -346,28 +345,27 @@ class Calibrate:
   for point in points:
    p = Point2D(point[0], point[1])
    nearestD2 = sys.float_info.max
-   cornerNear = True
    for edge in edges:
     nearD2 = edge.DistanceToPoint2(p)
+    #print("e: " + str(nearD2[0]) + ", " + str(nearD2[1]))
     if nearD2[0] < nearestD2:
      if nearD2[1] >= 0.0 and nearD2[1] <= 1.0:
       nearestD2 = nearD2[0]
-      cornerNear = False
-   if cornerNear:
-    for corner in corners:
-     cornerD2 = p.Sub(corner).Length2()
-     if cornerD2 < nearestD2:
-      nearestD2 = cornerD2
+   for corner in corners:
+    cornerD2 = p.Sub(corner).Length2()
+    #print("c: " + str(cornerD2))
+    if cornerD2 < nearestD2:
+     nearestD2 = cornerD2
    sum += nearestD2
   self.lastTriangleCost = sum
   return sum
 
  def Progress(self, x):
   self.progressCount += 1
-  #if not self.progressCount % 2 == 0:
-  # return
+  if not self.progressCount % 5 == 0:
+   return
   print("Triangle sum of squares: " + str(self.lastTriangleCost) + " after " + str(self.progressCount) + " iterations.")
-  self.PlotTriangle((255,255,0))
+  #self.PlotTriangle((255,255,0))
 
  def PlotTriangle(self, colour):
   point0= (self.triangle[0], self.triangle[1])
@@ -454,7 +452,7 @@ class Calibrate:
 
   if corners[0] >= 0:
    self.triangle = [perimiterXY[corners[0]][0], perimiterXY[corners[0]][1], perimiterXY[corners[1]][0], perimiterXY[corners[1]][1], perimiterXY[corners[2]][0], perimiterXY[corners[2]][1]]
-   self.PlotTriangle((0,0,255))
+   #self.PlotTriangle((0,0,255))
    #self.ScaleTriangle(0.8)
    #self.PlotTriangle((0,0,255))
    print("Starting sum of squares: " + str(self.MeasureTriangleFit(self.triangle, perimiterXY)))
