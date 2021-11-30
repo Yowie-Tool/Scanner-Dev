@@ -235,10 +235,11 @@ def PlotRooms(room1, room2, imageFile, scale):
   picture.SavePicture(imageFile)
 
 class Calibrate:
- def __init__(self, scanner, triangleSideLength, triangleFileNames, imageScale):
+ def __init__(self, scanner, triangleSideLength, triangleFileNames, imageScale, sample):
   self.box = None
   self.recoveredRooms = []
   self.scanner = scanner
+  self.sample = sample
   self.triangleSideLength = triangleSideLength
   for name in triangleFileNames:
    pixelsAndAngles = LoadPixelsAndAngles(triangleFileNames[0])
@@ -397,6 +398,8 @@ class Calibrate:
   self.triangle[5] = point2.y
 
  # TODO - this should fit a plane through the data and use Zs from that.
+ # It should then project the three points back into pixels for
+ # use in the second stage of the optimisation.
  def TriangleTo3D(self, z0, z1, z2):
   triangle3D = []
   triangle3D.append(Vector3(self.triangle[0], self.triangle[1], z0))
@@ -418,12 +421,15 @@ class Calibrate:
   perimiterXY = []
   perimiterPoints = []
   room = self.recoveredRooms[self.currentScan]
+  count = 0
   for r in room:
    if r.x > minX and r.x < maxX and r.y > minY and r.y < maxY:
-    perimiterXY.append((r.x, r.y))
-    perimiterPoints.append(r)
-    pixel = self.PointToPixel((r.x, r.y))
-    self.image.putpixel(pixel, (0,128,0))
+    count += 1
+    if count%self.sample == 0:
+     perimiterXY.append((r.x, r.y))
+     perimiterPoints.append(r)
+     pixel = self.PointToPixel((r.x, r.y))
+     self.image.putpixel(pixel, (0,128,0))
 
   # Find the Convex Hull of those points
 
@@ -447,14 +453,14 @@ class Calibrate:
      if area > biggestArea:
       biggestArea = area
       corners = (v0, v1, v2)
-  #corners = (hull.vertices[0], hull.vertices[5], hull.vertices[22])
+
   # Plot that triangle (diagnostic)
 
   if corners[0] >= 0:
    self.triangle = [perimiterXY[corners[0]][0], perimiterXY[corners[0]][1], perimiterXY[corners[1]][0], perimiterXY[corners[1]][1], perimiterXY[corners[2]][0], perimiterXY[corners[2]][1]]
    #self.PlotTriangle((0,0,255))
-   #self.ScaleTriangle(0.8)
-   #self.PlotTriangle((0,0,255))
+   self.ScaleTriangle(0.8)
+   self.PlotTriangle((0,0,255))
    print("Starting sum of squares: " + str(self.MeasureTriangleFit(self.triangle, perimiterXY)))
    self.progressCount = 0
    minResult = minimize(self.MeasureTriangleFit, x0 = self.triangle, args = (perimiterXY,), callback = self.Progress)
@@ -462,7 +468,7 @@ class Calibrate:
    print("Final sum of squares: " + str(self.lastTriangleCost))
    self.PlotTriangle((255,0,0))
    triangle3D = self.TriangleTo3D(perimiterPoints[corners[0]].z, perimiterPoints[corners[1]].z, perimiterPoints[corners[2]].z)
-   print("Triangle cost: " + str(self.scanner.OneTriangleCost(self.triangleSideLength, triangle3D)))
+   print("Triangle cost relative to true sidelength: " + str(self.scanner.OneTriangleCost(self.triangleSideLength, triangle3D)))
   else:
    print("No biggest triangle found!")
 
@@ -488,4 +494,4 @@ triangleFileNames = []
 triangleFileNames.append("RoomReaderScanDebug.txt")
 #OptimiseFromTriangleScans(scanner, 500, triangleFileNames)
 
-c = Calibrate(scanner, 500, triangleFileNames, 0.5)
+c = Calibrate(scanner, 500, triangleFileNames, 0.5, 10)
