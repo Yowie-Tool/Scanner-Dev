@@ -12,6 +12,11 @@ from scipy.spatial import ConvexHull
 
 #******************************************************************************************************
 
+# The file format is:
+# 0 2911.0048076923076 0.0 camera1
+# ^     ^               ^     ^
+# Y     X       angle (deg)  which cam
+
 def LoadPixelsAndAngles(pixelFile):
  pixels = []
  angles = []
@@ -45,6 +50,8 @@ def OptimiseFromTriangleScans(scanner, triangleSideLength, triangleFileNames):
  return scanner
 
 #***************************************************************************************************************
+
+# Generate fake triangles for testing.
 
 def FakeTriangle(scanner, triangleSideLength):
  triangle = []
@@ -82,6 +89,11 @@ def OptimiseFromSimulatedTriangleScan(scanner, triangleSideLength, triangleCount
 
 #******************************************************************************************************************************************
 
+# This is for comparing James's code to Adrian's. It loads the room reconstructions from James's
+# calculations and Adrian's, and the raw pixels and angles from the scan. It then runs the optimisation
+# of the scanner configuration in Adrian's code to make the Adrian model scanner most closely match James's.
+# It samples 1 in 30 of the points to speed up the process. This can be changed, of course.
+
 def GetRoomFromJamesesScan(scanFile):
  room = []
  with open(scanFile) as scnFile:
@@ -103,8 +115,9 @@ def OptimiseFromRoomScan(scanner):
  dataCount = len(pixelsAndAnglesJB[0])
  print("There are " + str(dataCount) + " pixels in the scan.")
 
+ # Sample 1 in 30.
+
  coarse = 30
- sample = int(dataCount/coarse)
 
  room = []
  pixels = []
@@ -118,7 +131,11 @@ def OptimiseFromRoomScan(scanner):
 
  print("Sampled " + str(len(pixels)) + " pixels for the optimisation.")
 
+ # Generate random scanners and find the one that matches best.
+
  scanner = scanner.MonteCarloPoints(room, shortPixelsAndAnglesJB, 8, 3, 100)
+
+ # Use the best random scanner as the basis for running a minimisation optimisation.
 
  scanner = scanner.OptimisePoints(room, shortPixelsAndAnglesJB)
 
@@ -130,10 +147,38 @@ def OptimiseFromRoomScan(scanner):
 
  return scanner
 
-#***************************************************************************************************************************************************
+#***************************************************************************************************************************************
 
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Interface to the graphics library (to allow several to be easily substituted)
+# Find the minimum enclosing 2D rectangle round the room
+
+def RoomXY(room, fromBefore):
+ if fromBefore is None:
+  minX = sys.float_info.max
+  minY = minX
+  maxX = sys.float_info.min
+  maxY = maxX
+ else:
+  m = fromBefore[0]
+  minX = m[0]
+  minY = m[1]
+  m = fromBefore[1]
+  maxX = m[0]
+  maxY = m[1]
+ for r in room:
+  if r.x > maxX:
+   maxX = r.x
+  if r.x < minX:
+   minX = r.x
+  if r.y > maxY:
+   maxY = r.y
+  if r.y < minY:
+   minY = r.y
+ return [[minX, minY], [maxX, maxY]]
+
+#*****************************************************************************************************************************************
+
+# This graphics code is used by the James/Adrian comparison functions, but not by the triangle
+# calibration functions.
 
 class Picture:
 # New image x by y pixels
@@ -178,32 +223,6 @@ def PlotPoint(picture, x, y, original):
   #picture.SetPixel(x-1, y+1, (255,0,0))
   #picture.SetPixel(x-1, y, (255,0,0))
 
-# Find the minimum enclosing rectangle round the room
-
-def RoomXY(room, fromBefore):
- if fromBefore is None:
-  minX = sys.float_info.max
-  minY = minX
-  maxX = sys.float_info.min
-  maxY = maxX
- else:
-  m = fromBefore[0]
-  minX = m[0]
-  minY = m[1]
-  m = fromBefore[1]
-  maxX = m[0]
-  maxY = m[1]
- for r in room:
-  if r.x > maxX:
-   maxX = r.x
-  if r.x < minX:
-   minX = r.x
-  if r.y > maxY:
-   maxY = r.y
-  if r.y < minY:
-   minY = r.y
- return [[minX, minY], [maxX, maxY]]
-
 def PlotRooms(room1, room2, imageFile, scale):
  if room1 is not None:
   box = RoomXY(room1, None)
@@ -234,6 +253,10 @@ def PlotRooms(room1, room2, imageFile, scale):
  if imageFile is not None:
   picture.SavePicture(imageFile)
 
+#***************************************************************************************************************************************
+
+# Calibrate the scanner from one or more scanned triangles in one or more scan files.
+
 class Calibrate:
  def __init__(self, scanner, triangleSideLength, triangleFileNames, imageScale, sample):
   self.box = None
@@ -241,12 +264,21 @@ class Calibrate:
   self.scanner = scanner
   self.sample = sample
   self.triangleSideLength = triangleSideLength
+
+  # Load all the scan files and reconstruct the scanned room for each one.
+
   for name in triangleFileNames:
    pixelsAndAngles = LoadPixelsAndAngles(triangleFileNames[0])
    recoveredRoom = scanner.ReconstructRoomFromPixelsAndAngles(pixelsAndAngles)
    self.box = RoomXY(recoveredRoom, self.box)
    self.recoveredRooms.append(recoveredRoom)
   self.currentScan = -1;
+
+  # Set up the graphics window now we know how big it needs to be.
+
+  # 2mm per pixel
+
+  self.worldScale = 2
 
   name = "Calibrate scanner"
   self.min = self.box[0]
@@ -259,14 +291,15 @@ class Calibrate:
   self.canvas = tkinter.Canvas(self.window, width=topCorner[0] + 160, height=topCorner[1] + 10)
   self.canvas.pack()
   self.image_tk = ImageTk.PhotoImage(self.image)
-  self.image_on_canvas = self.canvas.create_image(self.image.size[0]//2, self.image.size[1]//2, image=self.image_tk)
+  self.imageOnCanvas = self.canvas.create_image(self.image.size[0] // self.worldScale, self.image.size[1] // self.worldScale, image=self.image_tk)
+
+  # Buttons for interaction
 
   self.canvas.bind("<ButtonPress-1>", self.OnButtonPress)
   self.canvas.bind("<B1-Motion>", self.OnMovePressing)
   self.canvas.bind("<ButtonRelease-1>", self.OnButtonRelease)
 
   self.rect = None
-
   self.rectangleStartX = None
   self.rectangleStartY = None
 
@@ -280,7 +313,11 @@ class Calibrate:
   yPos += 70
   self.quit.place(x=self.image.size[0] + 20, y=yPos)
 
+  # Pass control to the graphics software
+
   self.window.mainloop()
+
+ # Real world to pixel and the other way
 
  def PointToPixel(self, point):
   x1 = round(self.imageScale * (point[0] - self.min[0])) + 5
@@ -293,15 +330,17 @@ class Calibrate:
   return (x1, y1)
 
 
+ # What it says
+
  def PlotRoom(self):
   room = self.recoveredRooms[self.currentScan]
   for r in room:
    pixel = self.PointToPixel((r.x, r.y))
    self.image.putpixel(pixel, (255,0,0))
   self.image_tk = ImageTk.PhotoImage(self.image)
-  self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
+  self.canvas.itemconfig(self.imageOnCanvas, image = self.image_tk)
 
-
+ # Start to drag a rectangle round something
  def OnButtonPress(self, event):
   # save mouse drag start position
   self.rectangleStartX = self.canvas.canvasx(event.x)
@@ -312,6 +351,8 @@ class Calibrate:
    self.canvas.delete(self.rect)
   self.rect = self.canvas.create_rectangle(self.rectangleStartX, self.rectangleStartY, 1, 1, outline='yellow')
 
+ # Drag the rectangle
+
  def OnMovePressing(self, event):
   curX = self.canvas.canvasx(event.x)
   curY = self.canvas.canvasy(event.y)
@@ -320,10 +361,12 @@ class Calibrate:
   self.rectangleEndX = curX
   self.rectangleEndY = curY
 
+ # What to do when the rectangle is established
 
  def OnButtonRelease(self, event):
     self.GatherTriangle()
 
+ # Load the scan from the next file (if any)
 
  def NextScan(self):
   self.currentScan += 1
@@ -332,8 +375,13 @@ class Calibrate:
   else:
    self.PlotRoom()
 
+ # Bye!
+
  def Quit(self):
   quit()
+
+ # We have a triangle and some points. Return the sum of squared
+ # distances between the points and the triangle.
 
  def MeasureTriangleFit(self, triangle, points):
   self.triangle = triangle
@@ -346,20 +394,32 @@ class Calibrate:
   for point in points:
    p = Point2D(point[0], point[1])
    nearestD2 = sys.float_info.max
+
+   # Start with the triangle's edges
+
    for edge in edges:
     nearD2 = edge.DistanceToPoint2(p)
     #print("e: " + str(nearD2[0]) + ", " + str(nearD2[1]))
     if nearD2[0] < nearestD2:
      if nearD2[1] >= 0.0 and nearD2[1] <= 1.0:
       nearestD2 = nearD2[0]
+
+   # Are any corners nearer?
+
    for corner in corners:
     cornerD2 = p.Sub(corner).Length2()
     #print("c: " + str(cornerD2))
     if cornerD2 < nearestD2:
      nearestD2 = cornerD2
    sum += nearestD2
+
+  # Remember the answer
+
   self.lastTriangleCost = sum
+
   return sum
+
+ # Called by the optimiser to keep us ammused.
 
  def Progress(self, x):
   self.progressCount += 1
@@ -379,8 +439,10 @@ class Calibrate:
   self.draw.line([pixel1, pixel2], fill = colour, width=1)
   self.draw.line([pixel2, pixel0], fill = colour, width=1)
   self.image_tk = ImageTk.PhotoImage(self.image)
-  self.canvas.itemconfig(self.image_on_canvas, image = self.image_tk)
+  self.canvas.itemconfig(self.imageOnCanvas, image = self.image_tk)
   self.canvas.update_idletasks()
+
+ # Scale a triangle about its centroid
 
  def ScaleTriangle(self, scale):
   point0 = Point2D(self.triangle[0], self.triangle[1])
@@ -397,6 +459,8 @@ class Calibrate:
   self.triangle[4] = point2.x
   self.triangle[5] = point2.y
 
+ # We have been working in the 2D plane of the reconstructed room. Put the
+ # triangle back into 3D.
  # TODO - this should fit a plane through the data and use Zs from that.
  # It should then project the three points back into pixels for
  # use in the second stage of the optimisation.
@@ -406,6 +470,8 @@ class Calibrate:
   triangle3D.append(Vector3(self.triangle[2], self.triangle[3], z1))
   triangle3D.append(Vector3(self.triangle[4], self.triangle[5], z2))
   return triangle3D
+
+ # Find the triangle in the user's dragged rectangle and process it
 
  def GatherTriangle(self):
 
@@ -459,7 +525,7 @@ class Calibrate:
   if corners[0] >= 0:
    self.triangle = [perimiterXY[corners[0]][0], perimiterXY[corners[0]][1], perimiterXY[corners[1]][0], perimiterXY[corners[1]][1], perimiterXY[corners[2]][0], perimiterXY[corners[2]][1]]
    #self.PlotTriangle((0,0,255))
-   self.ScaleTriangle(0.8)
+   #self.ScaleTriangle(0.8)
    self.PlotTriangle((0,0,255))
    print("Starting sum of squares: " + str(self.MeasureTriangleFit(self.triangle, perimiterXY)))
    self.progressCount = 0
